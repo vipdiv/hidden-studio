@@ -14,6 +14,7 @@ window.Draw = (function() {
 
   let drawing = false;
   let currentPath = '';
+  let rawPoints   = [];     // sampled points for the current live stroke
   let currentColor = '#1a1613';
   let currentWidth = 3;
   let currentDash  = '';   // '' = solid | 'dash' | 'dot'
@@ -43,6 +44,7 @@ window.Draw = (function() {
      wx, wy are in world coordinates (1600-space). */
   function beginStroke(wx, wy, erase = false) {
     drawing = true;
+    rawPoints   = [{ x: wx, y: wy }];
     currentPath = `M ${wx.toFixed(1)} ${wy.toFixed(1)}`;
     const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     p.setAttribute('d', currentPath);
@@ -62,6 +64,11 @@ window.Draw = (function() {
 
   function continueStroke(wx, wy) {
     if (!drawing) return;
+    // Minimum distance filter — keeps noise out of raw points
+    const last = rawPoints[rawPoints.length - 1];
+    const dx = wx - last.x, dy = wy - last.y;
+    if (dx * dx + dy * dy < 9) return; // 3 world-unit minimum
+    rawPoints.push({ x: wx, y: wy });
     currentPath += ` L ${wx.toFixed(1)} ${wy.toFixed(1)}`;
     const p = cursorLayer.firstChild;
     if (p) p.setAttribute('d', currentPath);
@@ -79,9 +86,10 @@ window.Draw = (function() {
       return null;
     }
 
+    const smoothD = rawPoints.length >= 3 ? _smoothPath(rawPoints) : currentPath;
     const stroke = {
       id:    _id(),
-      d:     currentPath,
+      d:     smoothD || currentPath,
       color: currentColor,
       width: currentWidth,
       dash:  currentDash,
@@ -115,6 +123,55 @@ window.Draw = (function() {
       }
     }
     return false;
+  }
+
+  /* ─────── CURVE SMOOTHING ─────── */
+
+  /* Perpendicular distance from pt to the line a→b */
+  function _ptLineDist(pt, a, b) {
+    const dx = b.x - a.x, dy = b.y - a.y;
+    const len2 = dx * dx + dy * dy;
+    if (len2 === 0) return Math.hypot(pt.x - a.x, pt.y - a.y);
+    const t = ((pt.x - a.x) * dx + (pt.y - a.y) * dy) / len2;
+    return Math.hypot(a.x + t * dx - pt.x, a.y + t * dy - pt.y);
+  }
+
+  /* Ramer-Douglas-Peucker point simplification */
+  function _rdp(pts, tol) {
+    if (pts.length <= 2) return pts.slice();
+    let maxD = 0, maxI = 0;
+    const last = pts.length - 1;
+    for (let i = 1; i < last; i++) {
+      const d = _ptLineDist(pts[i], pts[0], pts[last]);
+      if (d > maxD) { maxD = d; maxI = i; }
+    }
+    if (maxD > tol) {
+      const L = _rdp(pts.slice(0, maxI + 1), tol);
+      const R = _rdp(pts.slice(maxI), tol);
+      return [...L.slice(0, -1), ...R];
+    }
+    return [pts[0], pts[last]];
+  }
+
+  /* Catmull-Rom → cubic bezier smooth path from an array of {x,y} points */
+  function _smoothPath(pts) {
+    const s = _rdp(pts, 2.0); // tolerance in world-coord units
+    if (s.length < 2) return null;
+    const f = v => v.toFixed(1);
+    if (s.length === 2) return `M ${f(s[0].x)} ${f(s[0].y)} L ${f(s[1].x)} ${f(s[1].y)}`;
+    let d = `M ${f(s[0].x)} ${f(s[0].y)}`;
+    for (let i = 0; i < s.length - 1; i++) {
+      const p0 = s[Math.max(0, i - 1)];
+      const p1 = s[i];
+      const p2 = s[i + 1];
+      const p3 = s[Math.min(s.length - 1, i + 2)];
+      const c1x = p1.x + (p2.x - p0.x) / 6;
+      const c1y = p1.y + (p2.y - p0.y) / 6;
+      const c2x = p2.x - (p3.x - p1.x) / 6;
+      const c2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(p2.x)} ${f(p2.y)}`;
+    }
+    return d;
   }
 
   function parsePoints(pathD) {
