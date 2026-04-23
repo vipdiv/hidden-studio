@@ -142,6 +142,10 @@
         <button class="ghost-btn" id="setBaseUpload">Upload image…</button>
         <input type="file" id="baseUploadInput" accept="image/*" style="display:none">
       </div>
+      <details class="xf-details">
+        <summary>Rotate & adjust base layer</summary>
+        <div id="baseTransformPanel"></div>
+      </details>
     </div>
 
     <!-- Selected item properties (dynamic) -->
@@ -192,6 +196,7 @@
 <!-- ═══ JS modules (load order matters) ═══ -->
 <script src="js/data/scene.svg.js"></script>
 <script src="js/data/presets.js"></script>
+<script src="js/transforms.js"></script>
 <script src="js/audio.js"></script>
 <script src="js/animations.js"></script>
 <script src="js/sprites.js"></script>
