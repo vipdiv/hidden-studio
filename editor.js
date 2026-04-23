@@ -248,6 +248,12 @@ window.Editor = (function() {
     });
     parts.push(`</div>`);
 
+    // Transform + filter panel for surprises (so the revealed sprite can be rotated, tinted, etc.)
+    if (kind === 'surprise') {
+      data.transform = window.Transforms.normalize(data.transform);
+      parts.push(`<details class="xf-details" style="margin-top:10px"><summary>Rotate & adjust</summary><div id="sel-xf-panel"></div></details>`);
+    }
+
     parts.push(`<button class="delete-btn" id="sel-delete">🗑 Delete this ${kind}</button>`);
 
     selectedContent.innerHTML = parts.join('');
@@ -284,6 +290,22 @@ window.Editor = (function() {
         data.sprite = e.target.value;
         schedSave();
       });
+      // Wire transform panel
+      const xfHost = document.getElementById('sel-xf-panel');
+      if (xfHost) {
+        function wireSurpriseXf() {
+          xfHost.innerHTML = window.Transforms.renderUI(data.transform, { prefix: 'selxf' });
+          window.Transforms.wireUI(data.transform, (updated) => {
+            data.transform = updated;
+            const rotSlider = document.getElementById('selxf-rotation');
+            if (rotSlider && parseFloat(rotSlider.value) !== updated.rotation) {
+              wireSurpriseXf(); // Reset happened — rebuild UI
+            }
+            schedSave();
+          }, { prefix: 'selxf' });
+        }
+        wireSurpriseXf();
+      }
     }
     document.querySelectorAll('#sel-anims .anim-chip').forEach(chip => {
       chip.addEventListener('click', () => {
