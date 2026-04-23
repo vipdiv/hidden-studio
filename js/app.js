@@ -278,7 +278,7 @@
 
       if (isDrawing) {
         const w = window.Game.screenToWorld(p.x, p.y);
-        window.Editor.onDrawMove(w.x, w.y);
+        window.Editor.onDrawMoveRecord(w.x, w.y);
         return;
       }
 

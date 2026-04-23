@@ -111,17 +111,22 @@ window.Editor = (function() {
     tool = t;
     toolBtns.forEach(b => b.classList.toggle('active', b.dataset.tool === t));
     // Cursor hints
-    stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor');
-    if (t === 'pen')                 stage.classList.add('pen-cursor');
-    else if (t === 'eraser')         stage.classList.add('erase-cursor');
+    stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor', 'crosshair-cursor');
+    if (t === 'pen')                              stage.classList.add('pen-cursor');
+    else if (t === 'eraser')                      stage.classList.add('erase-cursor');
     else if (t === 'addItem' || t === 'addSurprise') stage.classList.add('add-cursor');
-    // Pen options panel visibility
-    penOptions.classList.toggle('hidden', t !== 'pen' && t !== 'eraser');
+    else if (t === 'rect' || t === 'ellipse' || t === 'star') stage.classList.add('crosshair-cursor');
+    // Pen options panel visibility — also show for shape tools
+    const isPenLike = ['pen','eraser','rect','ellipse','star'].includes(t);
+    penOptions.classList.toggle('hidden', !isPenLike);
     // Hint
     if (t === 'addItem')      showHint('Tap the scene to place an item');
     else if (t === 'addSurprise') showHint('Tap the scene to place a surprise');
-    else if (t === 'pen')     showHint('Drag to draw on the scene');
+    else if (t === 'pen')     showHint('Drag to draw');
     else if (t === 'eraser')  showHint('Drag over strokes to erase');
+    else if (t === 'rect')    showHint('Drag to draw a rectangle');
+    else if (t === 'ellipse') showHint('Drag to draw an ellipse');
+    else if (t === 'star')    showHint('Drag to draw a star');
     else if (t === 'import')  { fileImportDialog(); setTool('select'); }
     else hideHint();
   }
@@ -1210,15 +1215,35 @@ window.Editor = (function() {
   }
 
   /* Draw stroke handling — called from app.js with world coordinates */
+  const SHAPE_TOOLS = ['rect', 'ellipse', 'star'];
+
   function onDrawStart(wx, wy) {
+    if (SHAPE_TOOLS.includes(tool)) {
+      window.Draw.beginShape(tool, wx, wy);
+      return true;
+    }
     if (tool !== 'pen' && tool !== 'eraser') return false;
     window.Draw.beginStroke(wx, wy, tool === 'eraser');
     return true;
   }
   function onDrawMove(wx, wy) {
-    window.Draw.moveStroke(wx, wy);
+    if (SHAPE_TOOLS.includes(tool)) {
+      window.Draw.previewShape(wx, wy);
+    } else {
+      window.Draw.moveStroke(wx, wy);
+    }
   }
   function onDrawEnd() {
+    if (SHAPE_TOOLS.includes(tool)) {
+      const stroke = window.Draw.commitShape(..._lastWorldPoint());
+      if (stroke) {
+        project.drawings = project.drawings || [];
+        project.drawings.push(stroke);
+        schedSave();
+      }
+      renderLayersPanel();
+      return;
+    }
     const stroke = window.Draw.endStroke(tool === 'eraser');
     if (stroke) {
       project.drawings = project.drawings || [];
@@ -1230,6 +1255,10 @@ window.Editor = (function() {
     }
     renderLayersPanel();
   }
+
+  let _lastWX = 0, _lastWY = 0;
+  function _lastWorldPoint() { return [_lastWX, _lastWY]; }
+  function onDrawMoveRecord(wx, wy) { _lastWX = wx; _lastWY = wy; onDrawMove(wx, wy); }
 
   function openModal(title, bodyHtml) {
     modalTitle.textContent = title;
@@ -1248,7 +1277,7 @@ window.Editor = (function() {
     init, setProject, getProject,
     setTool, getTool,
     onStageTap,
-    onDrawStart, onDrawMove, onDrawEnd,
+    onDrawStart, onDrawMove, onDrawEnd, onDrawMoveRecord,
     renderBaseLayer, applyBaseTransform, renderBaseTransformPanel,
     renderSprites, renderLayersPanel,
     selectSprite, selectBase, selectStroke,

@@ -205,11 +205,107 @@ window.Draw = (function() {
 
   function isDrawing() { return drawing; }
 
+  /* ─────── SHAPE HELPERS ─────── */
+
+  function _rectPath(x1, y1, x2, y2) {
+    return `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2} L ${x1} ${y2} Z`;
+  }
+
+  function _ellipsePath(cx, cy, rx, ry) {
+    const k = 0.5523;
+    const x = cx, y = cy;
+    return [
+      `M ${x} ${y - ry}`,
+      `C ${x + rx*k} ${y - ry} ${x + rx} ${y - ry*k} ${x + rx} ${y}`,
+      `C ${x + rx} ${y + ry*k} ${x + rx*k} ${y + ry} ${x} ${y + ry}`,
+      `C ${x - rx*k} ${y + ry} ${x - rx} ${y + ry*k} ${x - rx} ${y}`,
+      `C ${x - rx} ${y - ry*k} ${x - rx*k} ${y - ry} ${x} ${y - ry} Z`,
+    ].join(' ');
+  }
+
+  function _starPath(cx, cy, outerR, innerR = null, points = 5) {
+    if (innerR === null) innerR = outerR * 0.42;
+    const pts = [];
+    for (let i = 0; i < points * 2; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const a = (Math.PI * i / points) - Math.PI / 2;
+      pts.push(`${(cx + r * Math.cos(a)).toFixed(1)} ${(cy + r * Math.sin(a)).toFixed(1)}`);
+    }
+    return `M ${pts.join(' L ')} Z`;
+  }
+
+  /* Begin a shape preview (shown while dragging to size it).
+     shapeType: 'rect' | 'ellipse' | 'star'
+     originX/Y: world coords of the first click */
+  let shapeOrigin = null;
+  let shapeType   = null;
+
+  function beginShape(type, wx, wy) {
+    shapeOrigin = { x: wx, y: wy };
+    shapeType   = type;
+    cursorLayer.innerHTML = '';
+  }
+
+  function previewShape(wx, wy) {
+    if (!shapeOrigin) return;
+    const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy);
+    if (!d) return;
+    cursorLayer.innerHTML = '';
+    const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    p.setAttribute('d', d);
+    p.setAttribute('stroke', currentColor);
+    p.setAttribute('stroke-width', currentWidth);
+    p.setAttribute('stroke-linecap', 'round');
+    p.setAttribute('stroke-linejoin', 'round');
+    p.setAttribute('fill', 'none');
+    cursorLayer.appendChild(p);
+  }
+
+  function _shapePath(type, x1, y1, x2, y2) {
+    if (type === 'rect') {
+      return _rectPath(x1, y1, x2, y2);
+    }
+    if (type === 'ellipse') {
+      const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+      const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+      if (rx < 1 || ry < 1) return null;
+      return _ellipsePath(cx, cy, rx, ry);
+    }
+    if (type === 'star') {
+      const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
+      const r  = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) / 2;
+      if (r < 2) return null;
+      return _starPath(cx, cy, r);
+    }
+    return null;
+  }
+
+  function commitShape(wx, wy) {
+    if (!shapeOrigin) return null;
+    const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy);
+    shapeOrigin = null;
+    shapeType   = null;
+    cursorLayer.innerHTML = '';
+    if (!d) return null;
+    const stroke = { id: _id(), d, color: currentColor, width: currentWidth, tx: 0, ty: 0 };
+    strokes.push(stroke);
+    render();
+    return stroke;
+  }
+
+  function cancelShape() {
+    shapeOrigin = null;
+    shapeType   = null;
+    if (cursorLayer) cursorLayer.innerHTML = '';
+  }
+
+  function isShaping() { return !!shapeOrigin; }
+
   return {
     init, setColor, setWidth,
     beginStroke, continueStroke, endStroke, cancelStroke,
-    // legacy alias so app.js's onDrawMove still works
     moveStroke: continueStroke,
+    beginShape, previewShape, commitShape, cancelShape, isShaping,
     render, clearAll, loadFrom, getStrokes, getStroke,
     isDrawing,
     setSelected, deleteStroke, setStrokeTranslation, updateStroke,
