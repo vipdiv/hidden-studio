@@ -235,50 +235,60 @@
     let totalDelta = 0;
     let lastScreenX = 0, lastScreenY = 0;
 
+    const DRAW_TOOLS = ['pen', 'eraser', 'rect', 'ellipse', 'star'];
+
     function getPoint(e) {
       if (e.touches && e.touches[0]) return { x: e.touches[0].clientX, y: e.touches[0].clientY };
       if (e.changedTouches && e.changedTouches[0]) return { x: e.changedTouches[0].clientX, y: e.changedTouches[0].clientY };
       return { x: e.clientX, y: e.clientY };
     }
 
-    // True when spacebar is held or H-tool is active — everything pans
     function isPanMode() {
       if (document.body.classList.contains('space-pan')) return true;
       return window.Editor && window.Editor.getTool() === 'pan';
     }
 
-    function onDown(e) {
-      const p = getPoint(e);
-      const inEdit = document.body.classList.contains('edit-mode');
-      const inPan  = isPanMode();
+    /* ── Document-level CAPTURE listener for draw/shape tools ──────────────
+       Fires BEFORE any bubble-phase listeners (sprites, strokes, hit zones,
+       SVG content) so those can never swallow the event.  Only intercepts
+       when a draw tool is active and the click is inside the stage area. */
+    function onDrawCapture(e) {
+      if (!document.body.classList.contains('edit-mode')) return;
+      if (isPanMode()) return;
+      const _tool = window.Editor.getTool();
+      if (!DRAW_TOOLS.includes(_tool)) return;
+      // Only intercept clicks within the stage (not on panels / HUD)
+      if (!stage.contains(e.target) && e.target !== stage) return;
 
-      // In edit mode with a draw/shape tool, start drawing immediately —
-      // bypass hit-zone / sprite guards so any click on the canvas works.
-      if (inEdit && !inPan) {
-        const tool = window.Editor.getTool();
-        const DRAW_TOOLS = ['pen', 'eraser', 'rect', 'ellipse', 'star'];
-        if (DRAW_TOOLS.includes(tool)) {
-          const w = window.Game.screenToWorld(p.x, p.y);
-          if (window.Editor.onDrawStart(w.x, w.y)) {
-            pointerDown = true;
-            isDrawing = true;
-            startScreenX = p.x; startScreenY = p.y;
-            lastScreenX = p.x;  lastScreenY = p.y;
-            startCamX = window.Game.camX; startCamY = window.Game.camY;
-            totalDelta = 0;
-            // Capture pointer so moves/up always reach us, even over SVG content
-            stage.setPointerCapture(e.pointerId);
-            return;
-          }
-        }
-        // Non-draw tools: let hit zones and sprites handle their own events
+      const p = getPoint(e);
+      const w = window.Game.screenToWorld(p.x, p.y);
+      if (!window.Editor.onDrawStart(w.x, w.y)) return;
+
+      isDrawing    = true;
+      pointerDown  = true;
+      startScreenX = p.x; startScreenY = p.y;
+      lastScreenX  = p.x; lastScreenY  = p.y;
+      startCamX = window.Game.camX; startCamY = window.Game.camY;
+      totalDelta = 0;
+      try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+      // Stop propagation so no other pointerdown handler re-fires onDrawStart
+      e.stopPropagation();
+    }
+
+    function onDown(e) {
+      // Draw tools already handled by the capture listener above
+      if (isDrawing) return;
+
+      const inEdit = document.body.classList.contains('edit-mode');
+      if (inEdit && !isPanMode()) {
         if (e.target.closest('.hit')) return;
         if (e.target.closest('.sprite')) return;
       }
 
+      const p = getPoint(e);
       pointerDown = true;
       startScreenX = p.x; startScreenY = p.y;
-      lastScreenX = p.x;  lastScreenY = p.y;
+      lastScreenX  = p.x; lastScreenY  = p.y;
       startCamX = window.Game.camX; startCamY = window.Game.camY;
       totalDelta = 0;
       stage.classList.add('grabbing');
@@ -309,7 +319,6 @@
       stage.classList.remove('grabbing');
 
       if (isDrawing) {
-        // Pass the exact release coordinates so shape commit uses the right endpoint
         const p = getPoint(e);
         const w = window.Game.screenToWorld(p.x, p.y);
         window.Editor.onDrawMoveRecord(w.x, w.y);
@@ -331,23 +340,17 @@
       }
     }
 
+    // Capture-phase: draw tools get first crack at every pointerdown on the page
+    document.addEventListener('pointerdown', onDrawCapture, { capture: true });
+
     stage.addEventListener('pointerdown', onDown);
     stage.addEventListener('pointermove', onMove);
     stage.addEventListener('pointerup',   onUp);
     stage.addEventListener('pointercancel', onUp);
-    stage.addEventListener('pointerleave', (e) => {
-      // Don't treat leaving as cancel — user can continue drag outside stage
-    });
 
-    // Also listen on document for moves that go outside stage during drag
-    document.addEventListener('pointermove', (e) => {
-      if (!pointerDown) return;
-      // Only handle if the original target was the stage
-      onMove(e);
-    });
-    document.addEventListener('pointerup', (e) => {
-      if (pointerDown) onUp(e);
-    });
+    // Document listeners for drags that leave the stage bounds
+    document.addEventListener('pointermove', (e) => { if (pointerDown) onMove(e); });
+    document.addEventListener('pointerup',   (e) => { if (pointerDown) onUp(e); });
   }
 
   /* ————————————————————————————————————————
