@@ -43,6 +43,18 @@ window.Editor = (function() {
     const penSize = document.getElementById('penSize');
     penSize.addEventListener('input', () => window.Draw.setWidth(parseInt(penSize.value)));
 
+    // Dash style buttons
+    panel.querySelectorAll('.dash-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        panel.querySelectorAll('.dash-btn').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        window.Draw.setDash(btn.dataset.dash);
+        document.getElementById('dashSpacingRow').classList.toggle('hidden', !btn.dataset.dash);
+      });
+    });
+    const dashSpacing = document.getElementById('dashSpacing');
+    if (dashSpacing) dashSpacing.addEventListener('input', () => window.Draw.setGap(parseInt(dashSpacing.value)));
+
     // Base layer controls
     document.getElementById('setBasePlanet').addEventListener('click', () => setBasePlanet());
     document.getElementById('setBaseScan').addEventListener('click',   () => setBaseScan());
@@ -623,13 +635,23 @@ window.Editor = (function() {
       `<button class="color-swatch${stroke.color === c ? ' active' : ''}" style="background:${c}" data-color="${c}"></button>`
     ).join('');
 
+    const dashGap = stroke.gap != null ? stroke.gap : 8;
     selectedContent.innerHTML = `
-      <div style="font-family:'Caveat',cursive;font-size:15px;color:rgba(245,239,226,.75);margin-bottom:8px">Stroke</div>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ui-text-dim);margin-bottom:8px">Stroke</div>
       <div class="color-row" id="stroke-colors">${swatches}</div>
-      <label class="slider-row" style="font-family:'Caveat',cursive;font-size:14px;margin-bottom:12px">
+      <label class="slider-row" style="margin-bottom:8px">
         Width <input type="range" id="stroke-width" min="1" max="20" value="${stroke.width}">
       </label>
-      <button class="delete-btn" id="stroke-delete">🗑 Delete stroke</button>
+      <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ui-text-dim);margin-bottom:4px">Line style</div>
+      <div class="dash-row" id="stroke-dash-row">
+        <button class="dash-btn${!stroke.dash ? ' active' : ''}" data-dash="" title="Solid">— </button>
+        <button class="dash-btn${stroke.dash === 'dash' ? ' active' : ''}" data-dash="dash" title="Dashed">- -</button>
+        <button class="dash-btn${stroke.dash === 'dot' ? ' active' : ''}" data-dash="dot" title="Dotted">· · ·</button>
+      </div>
+      <label class="slider-row${stroke.dash ? '' : ' hidden'}" id="stroke-gap-row">
+        Gap <input type="range" id="stroke-gap" min="2" max="40" value="${dashGap}">
+      </label>
+      <button class="delete-btn" id="stroke-delete" style="margin-top:8px">🗑 Delete stroke</button>
     `;
 
     document.querySelectorAll('#stroke-colors .color-swatch').forEach(sw => {
@@ -643,6 +665,22 @@ window.Editor = (function() {
     });
     document.getElementById('stroke-width').addEventListener('input', (e) => {
       window.Draw.updateStroke(selectedStroke, { width: parseFloat(e.target.value) });
+      project.drawings = window.Draw.getStrokes();
+      schedSave();
+    });
+    document.querySelectorAll('#stroke-dash-row .dash-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('#stroke-dash-row .dash-btn').forEach(x => x.classList.remove('active'));
+        btn.classList.add('active');
+        window.Draw.updateStroke(selectedStroke, { dash: btn.dataset.dash });
+        project.drawings = window.Draw.getStrokes();
+        document.getElementById('stroke-gap-row').classList.toggle('hidden', !btn.dataset.dash);
+        schedSave();
+      });
+    });
+    const gapEl = document.getElementById('stroke-gap');
+    if (gapEl) gapEl.addEventListener('input', () => {
+      window.Draw.updateStroke(selectedStroke, { gap: parseInt(gapEl.value) });
       project.drawings = window.Draw.getStrokes();
       schedSave();
     });

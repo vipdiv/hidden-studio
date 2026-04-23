@@ -16,6 +16,8 @@ window.Draw = (function() {
   let currentPath = '';
   let currentColor = '#1a1613';
   let currentWidth = 3;
+  let currentDash  = '';   // '' = solid | 'dash' | 'dot'
+  let currentGap   = 8;    // gap size for dash/dot
   let selectedId = null;     // currently-selected stroke id
 
   function _id() { return 'str_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 5); }
@@ -27,6 +29,15 @@ window.Draw = (function() {
 
   function setColor(c) { currentColor = c; }
   function setWidth(w) { currentWidth = Math.max(1, Math.min(40, w)); }
+  function setDash(d)  { currentDash = d || ''; }
+  function setGap(g)   { currentGap = Math.max(1, Math.min(100, g)); }
+
+  function _dashArray(dash, gap) {
+    if (!dash) return null;
+    if (dash === 'dash') return `${gap * 2} ${gap}`;
+    if (dash === 'dot')  return `1 ${gap}`;
+    return null;
+  }
 
   /* Called by editor when pen/eraser mode is active and user starts dragging.
      wx, wy are in world coordinates (1600-space). */
@@ -40,6 +51,10 @@ window.Draw = (function() {
     p.setAttribute('stroke-linecap', 'round');
     p.setAttribute('stroke-linejoin', 'round');
     p.setAttribute('fill', 'none');
+    if (!erase) {
+      const da = _dashArray(currentDash, currentGap);
+      if (da) p.setAttribute('stroke-dasharray', da);
+    }
     if (erase) p.setAttribute('data-erase', '1');
     cursorLayer.innerHTML = '';
     cursorLayer.appendChild(p);
@@ -69,6 +84,8 @@ window.Draw = (function() {
       d:     currentPath,
       color: currentColor,
       width: currentWidth,
+      dash:  currentDash,
+      gap:   currentGap,
       tx:    0,
       ty:    0,
     };
@@ -140,6 +157,8 @@ window.Draw = (function() {
       p.setAttribute('stroke-linecap', 'round');
       p.setAttribute('stroke-linejoin', 'round');
       p.setAttribute('fill', 'none');
+      const da = _dashArray(s.dash || '', s.gap != null ? s.gap : 8);
+      if (da) p.setAttribute('stroke-dasharray', da);
       g.appendChild(p);
 
       // Wide transparent hit area so thin strokes are easy to click
@@ -167,6 +186,8 @@ window.Draw = (function() {
       d:     s.d,
       color: s.color,
       width: s.width,
+      dash:  s.dash  || '',
+      gap:   s.gap   != null ? s.gap : 8,
       tx:    s.tx || 0,
       ty:    s.ty || 0,
     })) : [];
@@ -287,7 +308,7 @@ window.Draw = (function() {
     shapeType   = null;
     cursorLayer.innerHTML = '';
     if (!d) return null;
-    const stroke = { id: _id(), d, color: currentColor, width: currentWidth, tx: 0, ty: 0 };
+    const stroke = { id: _id(), d, color: currentColor, width: currentWidth, dash: currentDash, gap: currentGap, tx: 0, ty: 0 };
     strokes.push(stroke);
     render();
     return stroke;
@@ -302,7 +323,7 @@ window.Draw = (function() {
   function isShaping() { return !!shapeOrigin; }
 
   return {
-    init, setColor, setWidth,
+    init, setColor, setWidth, setDash, setGap,
     beginStroke, continueStroke, endStroke, cancelStroke,
     moveStroke: continueStroke,
     beginShape, previewShape, commitShape, cancelShape, isShaping,
