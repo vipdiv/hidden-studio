@@ -280,7 +280,7 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 const D = __PROJECT_DATA__;
 const B = __BASE_LAYER__;
 // Transform builder (matches Transforms module)
-function xfCss(t){if(!t)return {transform:'',filter:''};const p=[];if(t.rotation)p.push('rotate('+t.rotation+'deg)');const sx=(t.flipH?-1:1)*(t.scale||1);const sy=(t.flipV?-1:1)*(t.scale||1);if(sx!==1||sy!==1)p.push('scale('+sx+','+sy+')');const f=[];if(t.brightness!==undefined&&t.brightness!==1)f.push('brightness('+t.brightness+')');if(t.contrast!==undefined&&t.contrast!==1)f.push('contrast('+t.contrast+')');if(t.saturation!==undefined&&t.saturation!==1)f.push('saturate('+t.saturation+')');if(t.hue)f.push('hue-rotate('+t.hue+'deg)');if(t.blur)f.push('blur('+t.blur+'px)');if(t.grayscale)f.push('grayscale('+t.grayscale+')');if(t.invert)f.push('invert('+t.invert+')');return {transform:p.join(' '),filter:f.join(' ')}}
+function xfCss(t){if(!t)return {transform:'',filter:'',opacity:''};const p=[];if(t.rotation)p.push('rotate('+t.rotation+'deg)');const sx=(t.flipH?-1:1)*(t.scale||1);const sy=(t.flipV?-1:1)*(t.scale||1);if(sx!==1||sy!==1)p.push('scale('+sx+','+sy+')');const f=[];if(t.brightness!==undefined&&t.brightness!==1)f.push('brightness('+t.brightness+')');if(t.contrast!==undefined&&t.contrast!==1)f.push('contrast('+t.contrast+')');if(t.saturation!==undefined&&t.saturation!==1)f.push('saturate('+t.saturation+')');if(t.hue)f.push('hue-rotate('+t.hue+'deg)');if(t.blur)f.push('blur('+t.blur+'px)');if(t.grayscale)f.push('grayscale('+t.grayscale+')');if(t.invert)f.push('invert('+t.invert+')');const op=(t.opacity!==undefined&&t.opacity!==1)?String(t.opacity):'';return {transform:p.join(' '),filter:f.join(' '),opacity:op}}
 // Render base
 const base = document.getElementById('base');
 if (B.type === 'svg') base.innerHTML = B.content;
@@ -291,6 +291,7 @@ if (D.baseTransform && base.firstElementChild) {
   base.firstElementChild.style.transformOrigin = 'center center';
   base.firstElementChild.style.transform = bx.transform;
   base.firstElementChild.style.filter    = bx.filter;
+  if (bx.opacity) base.firstElementChild.style.opacity = bx.opacity;
 }
 // Drawings
 const dLayer = document.getElementById('draw');
@@ -306,7 +307,7 @@ const sprLayer = document.getElementById('sprs');
   const el = document.createElement('div');
   el.className = 'sprite';
   const sx = xfCss(s.transform || {rotation: s.rotation || 0});
-  el.style.cssText = 'left:' + (s.x - s.w/2) + 'px;top:' + (s.y - s.h/2) + 'px;width:' + s.w + 'px;height:' + s.h + 'px;transform:' + sx.transform + ';filter:' + sx.filter + ';';
+  el.style.cssText = 'left:' + (s.x - s.w/2) + 'px;top:' + (s.y - s.h/2) + 'px;width:' + s.w + 'px;height:' + s.h + 'px;transform:' + sx.transform + ';filter:' + sx.filter + ';' + (sx.opacity ? 'opacity:' + sx.opacity + ';' : '');
   if (s.imageData) el.innerHTML = '<img src="' + s.imageData + '">';
   sprLayer.appendChild(el);
 });
