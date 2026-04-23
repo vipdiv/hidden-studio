@@ -7,6 +7,7 @@ window.Editor = (function() {
   let project = null;
   let selected = null;       // { kind: 'item'|'surprise', id }
   let selectedSprite = null; // sprite id, or null
+  let selectedBase = false;  // true when base layer is selected
   let tool = 'select';
 
   // DOM refs
@@ -73,6 +74,8 @@ window.Editor = (function() {
 
     // Click on hit zones to select
     hitsLayer.addEventListener('pointerdown', onHitPointerDown);
+    // Click on base layer to select (edit mode only; handler checks mode+tool)
+    document.getElementById('baseLayer').addEventListener('pointerdown', onBaseLayerPointerDown);
   }
 
   function setProject(p) {
@@ -84,10 +87,14 @@ window.Editor = (function() {
         if (s.rotation) s.transform.rotation = s.rotation;
       }
     });
+    // Ensure base transform data exists
+    if (!p.baseTransform) p.baseTransform = window.Transforms.defaults();
+    if (p.baseX === undefined) p.baseX = 0;
+    if (p.baseY === undefined) p.baseY = 0;
     selected = null;
     selectedSprite = null;
+    selectedBase = false;
     updateSelectedPanel();
-    renderBaseTransformPanel();
   }
 
   function getProject() { return project; }
@@ -175,11 +182,12 @@ window.Editor = (function() {
 
   function select(kind, id) {
     selected = { kind, id };
-    // Clear sprite selection without full re-render
     selectedSprite = null;
+    selectedBase = false;
+    const bl = document.getElementById('baseLayer');
+    if (bl) bl.classList.remove('base-selected');
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
-    // Visual selection on hit zones
     hitsLayer.querySelectorAll('.hit').forEach(el => {
       el.classList.toggle('selected',
         el.dataset.id === id && el.dataset.kind === kind);
@@ -190,9 +198,12 @@ window.Editor = (function() {
   function deselect() {
     selected = null;
     selectedSprite = null;
+    selectedBase = false;
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
+    const bl = document.getElementById('baseLayer');
+    if (bl) bl.classList.remove('base-selected');
     updateSelectedPanel();
   }
 
@@ -473,6 +484,112 @@ window.Editor = (function() {
   }
 
   /* ————————————————————————————————————————
+     BASE LAYER SELECTION
+  ———————————————————————————————————————— */
+  function selectBase() {
+    if (!project) return;
+    selected = null;
+    selectedSprite = null;
+    selectedBase = true;
+    hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
+    const bl = document.getElementById('baseLayer');
+    if (bl) bl.classList.add('base-selected');
+
+    selectedPanel.classList.remove('hidden');
+    const t = project.baseTransform;
+    selectedContent.innerHTML = `
+      <div style="font-family:'Caveat',cursive;font-size:15px;color:rgba(245,239,226,.75);margin-bottom:8px">Base Layer</div>
+      <label style="font-family:'Caveat',cursive;font-size:13px;color:rgba(245,239,226,.6)">
+        X offset <span id="bl-ox-val">${Math.round(project.baseX || 0)}px</span>
+        <input type="range" id="bl-ox" min="-800" max="800" value="${project.baseX || 0}">
+      </label>
+      <label style="font-family:'Caveat',cursive;font-size:13px;color:rgba(245,239,226,.6);margin-bottom:10px">
+        Y offset <span id="bl-oy-val">${Math.round(project.baseY || 0)}px</span>
+        <input type="range" id="bl-oy" min="-800" max="800" value="${project.baseY || 0}">
+      </label>
+      ${window.Transforms.renderUI(t, { prefix: 'bl' })}
+      <button class="ghost-btn" id="bl-reset-pos" style="margin-top:4px;width:100%">↺ Reset position</button>
+      <button class="delete-btn" id="bl-remove" style="margin-top:6px">🗑 Remove base layer</button>
+    `;
+
+    window.Transforms.wireUI(t, (newT) => {
+      project.baseTransform = newT;
+      applyBaseTransform();
+      schedSave();
+    }, { prefix: 'bl' });
+
+    const oxEl = document.getElementById('bl-ox');
+    const oyEl = document.getElementById('bl-oy');
+    if (oxEl) oxEl.addEventListener('input', () => {
+      project.baseX = parseFloat(oxEl.value);
+      document.getElementById('bl-ox-val').textContent = Math.round(project.baseX) + 'px';
+      applyBaseTransform();
+      schedSave();
+    });
+    if (oyEl) oyEl.addEventListener('input', () => {
+      project.baseY = parseFloat(oyEl.value);
+      document.getElementById('bl-oy-val').textContent = Math.round(project.baseY) + 'px';
+      applyBaseTransform();
+      schedSave();
+    });
+    document.getElementById('bl-reset-pos').addEventListener('click', () => {
+      project.baseX = 0; project.baseY = 0;
+      if (oxEl) oxEl.value = 0;
+      if (oyEl) oyEl.value = 0;
+      document.getElementById('bl-ox-val').textContent = '0px';
+      document.getElementById('bl-oy-val').textContent = '0px';
+      applyBaseTransform();
+      schedSave();
+    });
+    document.getElementById('bl-remove').addEventListener('click', () => {
+      if (!confirm('Remove the base layer?')) return;
+      project.baseType = null;
+      project.baseContent = null;
+      renderBaseLayer();
+      deselect();
+      schedSave();
+    });
+  }
+
+  function onBaseLayerPointerDown(e) {
+    if (!document.body.classList.contains('edit-mode')) return;
+    if (tool !== 'select') return; // let pen/eraser/addItem events propagate naturally
+    e.stopPropagation();
+
+    selectBase();
+
+    // Drag to reposition
+    const startPt = { x: e.clientX, y: e.clientY };
+    const startX = project.baseX || 0;
+    const startY = project.baseY || 0;
+    let moved = false;
+
+    const onMove = (ev) => {
+      const dx = (ev.clientX - startPt.x) / (window.Game.scale || 1);
+      const dy = (ev.clientY - startPt.y) / (window.Game.scale || 1);
+      if (Math.abs(dx) + Math.abs(dy) > 2) moved = true;
+      if (!moved) return;
+      project.baseX = startX + dx;
+      project.baseY = startY + dy;
+      applyBaseTransform();
+      // Sync sliders if panel is open
+      const ox = document.getElementById('bl-ox');
+      const oy = document.getElementById('bl-oy');
+      if (ox) { ox.value = project.baseX; document.getElementById('bl-ox-val').textContent = Math.round(project.baseX) + 'px'; }
+      if (oy) { oy.value = project.baseY; document.getElementById('bl-oy-val').textContent = Math.round(project.baseY) + 'px'; }
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (moved) schedSave();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  /* ————————————————————————————————————————
      BASE LAYER SWAP + TRANSFORM
   ———————————————————————————————————————— */
   function setBasePlanet() {
@@ -517,19 +634,21 @@ window.Editor = (function() {
   function applyBaseTransform() {
     const inner = document.getElementById('baseLayer')?.firstElementChild;
     if (!inner || !project) return;
-    window.Transforms.applyTo(inner, project.baseTransform);
+    const t = window.Transforms.normalize(project.baseTransform || {});
+    const x = project.baseX || 0;
+    const y = project.baseY || 0;
+    const parts = [];
+    if (x !== 0 || y !== 0) parts.push(`translate(${x}px, ${y}px)`);
+    if (t.rotation) parts.push(`rotate(${t.rotation}deg)`);
+    const sx = (t.flipH ? -1 : 1) * t.scale;
+    const sy = (t.flipV ? -1 : 1) * t.scale;
+    if (sx !== 1 || sy !== 1) parts.push(`scale(${sx}, ${sy})`);
+    inner.style.transform = parts.join(' ');
+    inner.style.filter = window.Transforms.buildFilter(t);
   }
 
   function renderBaseTransformPanel() {
-    const container = document.getElementById('baseTransformPanel');
-    if (!container || !project) return;
-    if (!project.baseTransform) project.baseTransform = window.Transforms.defaults();
-    container.innerHTML = window.Transforms.renderUI(project.baseTransform, { prefix: 'base' });
-    window.Transforms.wireUI(project.baseTransform, (t) => {
-      project.baseTransform = t;
-      applyBaseTransform();
-      schedSave();
-    }, { prefix: 'base' });
+    // No-op: base layer now selected by clicking on it (see selectBase)
   }
 
   /* ————————————————————————————————————————
@@ -671,8 +790,11 @@ window.Editor = (function() {
   function selectSprite(id) {
     selected = null;
     selectedSprite = id;
+    selectedBase = false;
+    const bl = document.getElementById('baseLayer');
+    if (bl) bl.classList.remove('base-selected');
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
-    renderSprites();        // re-render to show selection highlight + handle
+    renderSprites();
     renderSpriteEditor();
   }
 
@@ -791,7 +913,8 @@ window.Editor = (function() {
     onDrawStart, onDrawMove, onDrawEnd,
     renderBaseLayer, applyBaseTransform, renderBaseTransformPanel,
     renderSprites,
-    selectSprite,
+    selectSprite, selectBase,
+    get selectedBase() { return selectedBase; },
     deleteSelected, duplicateSelected, nudgeSelected,
     bringForward, sendBackward, bringToFront, sendToBack,
     loadProjectAssets,

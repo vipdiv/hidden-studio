@@ -283,6 +283,24 @@ const B = __BASE_LAYER__;
 const base = document.getElementById('base');
 if (B.type === 'svg') base.innerHTML = B.content;
 else if (B.type === 'image') base.innerHTML = '<img src="' + B.content + '">';
+(function(){
+  const bi = base.firstElementChild; if (!bi) return;
+  const t = D.baseTransform || {}, x = D.baseX || 0, y = D.baseY || 0;
+  const tp = []; if (x||y) tp.push('translate('+x+'px,'+y+'px)');
+  if (t.rotation) tp.push('rotate('+t.rotation+'deg)');
+  const sx=(t.flipH?-1:1)*(t.scale||1), sy=(t.flipV?-1:1)*(t.scale||1);
+  if (sx!==1||sy!==1) tp.push('scale('+sx+','+sy+')');
+  if (tp.length) bi.style.transform=tp.join(' ');
+  const fp=[];
+  if (t.brightness&&t.brightness!==1) fp.push('brightness('+t.brightness+')');
+  if (t.contrast&&t.contrast!==1) fp.push('contrast('+t.contrast+')');
+  if (t.saturation&&t.saturation!==1) fp.push('saturate('+t.saturation+')');
+  if (t.hue) fp.push('hue-rotate('+t.hue+'deg)');
+  if (t.blur) fp.push('blur('+t.blur+'px)');
+  if (t.grayscale) fp.push('grayscale('+t.grayscale+')');
+  if (t.invert) fp.push('invert('+t.invert+')');
+  if (fp.length) bi.style.filter=fp.join(' ');
+})();
 // Drawings
 const dLayer = document.getElementById('draw');
 (D.drawings || []).forEach(s => {
@@ -296,7 +314,8 @@ const sprLayer = document.getElementById('sprs');
 (D.sprites || []).forEach(s => {
   const el = document.createElement('div');
   el.className = 'sprite';
-  el.style.cssText = 'left:' + (s.x - s.w/2) + 'px;top:' + (s.y - s.h/2) + 'px;width:' + s.w + 'px;height:' + s.h + 'px;' + (s.rotation ? 'transform:rotate(' + s.rotation + 'deg);' : '');
+  const st = s.transform || {}; const stp=[]; if (st.rotation) stp.push('rotate('+st.rotation+'deg)'); const sfx=(st.flipH?-1:1), sfy=(st.flipV?-1:1); if(sfx!==1||sfy!==1) stp.push('scale('+sfx+','+sfy+')');
+  el.style.cssText = 'left:' + (s.x - s.w/2) + 'px;top:' + (s.y - s.h/2) + 'px;width:' + s.w + 'px;height:' + s.h + 'px;' + (stp.length?'transform:'+stp.join(' ')+';':'');
   if (s.imageData) el.innerHTML = '<img src="' + s.imageData + '">';
   sprLayer.appendChild(el);
 });

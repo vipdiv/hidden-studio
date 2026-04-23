@@ -293,6 +293,14 @@ button.chip.off { opacity: 0.55; }
   position: absolute; inset: 0;
   pointer-events: none;
 }
+.edit-mode .base-layer {
+  pointer-events: auto;
+  cursor: move;
+}
+.edit-mode .base-layer.base-selected {
+  outline: 2px dashed rgba(190, 150, 80, 0.55);
+  outline-offset: -3px;
+}
 .base-layer img, .base-layer svg {
   width: 100%; height: 100%;
   display: block;
@@ -300,6 +308,13 @@ button.chip.off { opacity: 0.55; }
 }
 .base-layer.fit-cover img { object-fit: cover; }
 
+.base-hint {
+  font-family: 'Caveat', cursive;
+  font-size: 12px;
+  color: rgba(245, 239, 226, 0.45);
+  margin: 6px 0 0;
+  line-height: 1.4;
+}
 .drawing-layer, .drawing-cursor {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
