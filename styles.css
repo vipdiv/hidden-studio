@@ -382,8 +382,8 @@ button.chip.off { opacity: 0.55; }
   pointer-events: auto;
 }
 
-/* In play mode, hit zones are invisible */
-.play-mode .hit { border: none; background: transparent; cursor: pointer; }
+/* In play mode, hit zones are invisible and non-interactive — let clicks fall through to stage */
+.play-mode .hit { border: none; background: transparent; cursor: pointer; pointer-events: none; }
 .play-mode .hit .label, .play-mode .hit .resize { display: none; }
 
 /* 5. PLAY MODE UI ─────────────────────────────────── */

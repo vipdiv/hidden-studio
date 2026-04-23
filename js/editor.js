@@ -433,6 +433,7 @@ window.Editor = (function() {
   let dragTarget = null;
 
   function onHitPointerDown(e) {
+    if (!document.body.classList.contains('edit-mode')) return;
     if (tool !== 'select') return;
     const hitEl = e.target.closest('.hit');
     if (!hitEl) return;
