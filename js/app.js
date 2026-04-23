@@ -264,7 +264,8 @@
       // Start drawing only when NOT in pan mode
       if (document.body.classList.contains('edit-mode') && !isPanMode()) {
         const tool = window.Editor.getTool();
-        if (tool === 'pen' || tool === 'eraser') {
+        const DRAW_TOOLS = ['pen', 'eraser', 'rect', 'ellipse', 'star'];
+        if (DRAW_TOOLS.includes(tool)) {
           const w = window.Game.screenToWorld(p.x, p.y);
           if (window.Editor.onDrawStart(w.x, w.y)) {
             isDrawing = true;

@@ -64,10 +64,12 @@ window.Draw = (function() {
 
   function continueStroke(wx, wy) {
     if (!drawing) return;
-    // Minimum distance filter — keeps noise out of raw points
+    // Minimum distance filter: ~1.5 screen-pixels worth of world units
+    const scale = (window.Game && window.Game.scale) || 0.4;
+    const minD = (1.5 / scale);
     const last = rawPoints[rawPoints.length - 1];
     const dx = wx - last.x, dy = wy - last.y;
-    if (dx * dx + dy * dy < 9) return; // 3 world-unit minimum
+    if (dx * dx + dy * dy < minD * minD) return;
     rawPoints.push({ x: wx, y: wy });
     currentPath += ` L ${wx.toFixed(1)} ${wy.toFixed(1)}`;
     const p = cursorLayer.firstChild;
@@ -155,7 +157,10 @@ window.Draw = (function() {
 
   /* Catmull-Rom → cubic bezier smooth path from an array of {x,y} points */
   function _smoothPath(pts) {
-    const s = _rdp(pts, 2.0); // tolerance in world-coord units
+    // Tolerance: ~3 screen pixels in world-unit space (adapts to zoom)
+    const scale = (window.Game && window.Game.scale) || 0.4;
+    const tol = Math.max(1.0, 3.0 / scale);
+    const s = _rdp(pts, tol);
     if (s.length < 2) return null;
     const f = v => v.toFixed(1);
     if (s.length === 2) return `M ${f(s[0].x)} ${f(s[0].y)} L ${f(s[1].x)} ${f(s[1].y)}`;
