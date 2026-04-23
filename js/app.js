@@ -301,6 +301,10 @@
       stage.classList.remove('grabbing');
 
       if (isDrawing) {
+        // Pass the exact release coordinates so shape commit uses the right endpoint
+        const p = getPoint(e);
+        const w = window.Game.screenToWorld(p.x, p.y);
+        window.Editor.onDrawMoveRecord(w.x, w.y);
         window.Editor.onDrawEnd();
         isDrawing = false;
         return;
