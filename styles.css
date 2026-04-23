@@ -49,7 +49,7 @@ html, body {
   width: 100%; height: 100%;
   background: var(--ui-bg);
   color: var(--ui-text);
-  font-family: 'Fraunces', Georgia, serif;
+  font-family: 'Source Sans 3', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   overflow: hidden;
   user-select: none;
   -webkit-user-select: none;
@@ -233,7 +233,6 @@ input, textarea { font: inherit; }
 .icon-btn:hover { background: var(--panel-bg-2); border-color: var(--ui-text); }
 
 .project-name {
-  font-family: 'Fraunces', serif;
   font-style: italic;
   font-weight: 300;
   font-size: 16px;
@@ -259,14 +258,12 @@ input, textarea { font: inherit; }
 .mode-btn {
   padding: 6px 16px;
   color: var(--paper);
-  font-family: 'Caveat', cursive;
   font-size: 18px;
   transition: all 0.2s;
 }
 .mode-btn.active { background: var(--ui-blue); color: #fff; }
 
 .chip {
-  font-family: 'Caveat', cursive;
   font-size: 17px;
   padding: 5px 14px;
   border: 1.5px solid var(--panel-border);
@@ -327,7 +324,6 @@ button.chip.off { opacity: 0.55; }
 .base-layer.fit-cover img { object-fit: cover; }
 
 .base-hint {
-  font-family: 'Caveat', cursive;
   font-size: 12px;
   color: rgba(212, 212, 212, 0.45);
   margin: 6px 0 0;
@@ -385,7 +381,6 @@ button.chip.off { opacity: 0.55; }
   position: absolute;
   top: -22px; left: 50%;
   transform: translateX(-50%);
-  font-family: 'Caveat', cursive;
   font-size: 14px;
   color: var(--paper);
   background: var(--panel-bg);
@@ -438,7 +433,6 @@ button.chip.off { opacity: 0.55; }
 
 .pop, .miss {
   position: absolute;
-  font-family: 'Caveat', cursive;
   font-weight: 700;
   pointer-events: none;
   z-index: 7;
@@ -688,7 +682,6 @@ button.chip.off { opacity: 0.55; }
 
 .tool-section { margin-bottom: 18px; }
 .tool-section h3 {
-  font-family: 'Caveat', cursive;
   font-size: 16px;
   color: rgba(212, 212, 212, 0.75);
   margin-bottom: 8px;
@@ -744,7 +737,6 @@ button.chip.off { opacity: 0.55; }
   display: flex;
   align-items: center;
   gap: 8px;
-  font-family: 'Caveat', cursive;
   font-size: 14px;
 }
 .slider-row input[type="range"] { flex: 1; }
@@ -760,7 +752,6 @@ button.chip.off { opacity: 0.55; }
   color: var(--paper);
   padding: 7px 12px;
   border-radius: 20px 22px 19px 24px;
-  font-family: 'Caveat', cursive;
   font-size: 15px;
   line-height: 1;
   transition: all 0.15s;
@@ -785,7 +776,6 @@ button.chip.off { opacity: 0.55; }
 
 .save-status {
   margin-top: 10px;
-  font-family: 'Fraunces', serif;
   font-style: italic;
   font-size: 11px;
   color: rgba(212, 212, 212, 0.5);
@@ -794,13 +784,11 @@ button.chip.off { opacity: 0.55; }
 .save-status.unsaved { color: var(--accent-2); }
 
 #selectedContent {
-  font-family: 'Fraunces', serif;
   font-size: 13px;
 }
 #selectedContent label {
   display: block;
   margin-bottom: 8px;
-  font-family: 'Caveat', cursive;
   font-size: 15px;
   color: rgba(212, 212, 212, 0.85);
 }
@@ -813,7 +801,6 @@ button.chip.off { opacity: 0.55; }
   border: 1px solid var(--panel-border);
   color: var(--paper);
   border-radius: 4px 6px 3px 5px;
-  font-family: 'Caveat', cursive;
   font-size: 16px;
   margin-top: 4px;
 }
@@ -832,7 +819,6 @@ button.chip.off { opacity: 0.55; }
   border-radius: 20px;
   background: rgba(212, 212, 212, 0.04);
   color: var(--paper);
-  font-family: 'Caveat', cursive;
   font-size: 13px;
   cursor: pointer;
   transition: all 0.15s;
@@ -851,7 +837,6 @@ button.chip.off { opacity: 0.55; }
   border: 1px solid rgba(196, 63, 46, 0.4);
   color: var(--accent-2);
   border-radius: 4px;
-  font-family: 'Caveat', cursive;
   font-size: 14px;
   cursor: pointer;
 }
@@ -875,7 +860,6 @@ button.chip.off { opacity: 0.55; }
   border-radius: 4px 6px 3px 5px;
   border: 1px solid transparent;
   cursor: pointer;
-  font-family: 'Caveat', cursive;
   font-size: 14px;
   color: rgba(212, 212, 212, 0.8);
   transition: background 0.12s, border-color 0.12s;
@@ -916,7 +900,6 @@ button.chip.off { opacity: 0.55; }
 .layer-order:hover { background: rgba(212, 212, 212, 0.15); }
 .layer-del:hover   { background: rgba(196, 63, 46, 0.3); border-color: var(--accent); }
 .layer-empty {
-  font-family: 'Caveat', cursive;
   font-size: 13px;
   color: rgba(212, 212, 212, 0.3);
   font-style: italic;
@@ -929,7 +912,6 @@ button.chip.off { opacity: 0.55; }
   bottom: 130px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Caveat', cursive;
   font-size: 16px;
   color: var(--paper);
   background: var(--panel-bg);
@@ -969,7 +951,6 @@ button.chip.off { opacity: 0.55; }
   border-bottom: 1px dashed var(--panel-border);
 }
 .modal-header h3 {
-  font-family: 'Caveat', cursive;
   font-weight: 700;
   font-size: 22px;
   color: var(--paper);
@@ -981,7 +962,6 @@ button.chip.off { opacity: 0.55; }
 }
 .modal-body label {
   display: block;
-  font-family: 'Caveat', cursive;
   font-size: 15px;
   margin-bottom: 4px;
   color: rgba(212, 212, 212, 0.85);
@@ -993,7 +973,6 @@ button.chip.off { opacity: 0.55; }
   border: 1px solid var(--panel-border);
   color: var(--paper);
   border-radius: 4px;
-  font-family: 'Caveat', cursive;
   font-size: 16px;
   margin-bottom: 12px;
 }
@@ -1021,7 +1000,6 @@ button.chip.off { opacity: 0.55; }
 }
 .xf-details summary {
   cursor: pointer;
-  font-family: 'Caveat', cursive;
   font-size: 15px;
   color: rgba(212, 212, 212, 0.75);
   padding: 4px 0;
@@ -1044,13 +1022,11 @@ button.chip.off { opacity: 0.55; }
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  font-family: 'Caveat', cursive;
   font-size: 14px;
   color: rgba(212, 212, 212, 0.8);
   margin-bottom: 2px;
 }
 .xf-val {
-  font-family: 'Fraunces', serif;
   font-size: 12px;
   color: rgba(212, 212, 212, 0.55);
   font-weight: 500;
@@ -1071,7 +1047,6 @@ button.chip.off { opacity: 0.55; }
   border: 1px solid var(--panel-border);
   border-radius: 4px;
   color: rgba(212, 212, 212, 0.75);
-  font-family: 'Caveat', cursive;
   font-size: 14px;
   cursor: pointer;
   transition: all 0.15s;
@@ -1086,7 +1061,6 @@ button.chip.off { opacity: 0.55; }
   color: var(--paper);
 }
 .xf-group-title {
-  font-family: 'Fraunces', serif;
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
