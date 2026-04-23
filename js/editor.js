@@ -691,54 +691,51 @@ window.Editor = (function() {
   }
 
   /* ————————————————————————————————————————
-     LAYERS PANEL
+     LAYERS PANEL + DRAG-AND-DROP
   ———————————————————————————————————————— */
   function renderLayersPanel() {
     const listEl = document.getElementById('layersList');
     if (!listEl || !project) return;
 
     const rows = [];
-
-    // Sprites — last in array = frontmost (drawn on top)
     const sprites = project.sprites || [];
+    const strokes = window.Draw.getStrokes();
+
+    // Sprites — last in array = frontmost; shown first in panel
     for (let i = sprites.length - 1; i >= 0; i--) {
       const s = sprites[i];
       const active = selectedSprite === s.id;
-      const canUp   = i < sprites.length - 1;
-      const canDown = i > 0;
-      rows.push(`<li class="layer-row${active ? ' active' : ''}" data-layer-type="sprite" data-layer-id="${s.id}">
+      rows.push(`<li class="layer-row${active ? ' active' : ''}"
+          data-layer-type="sprite" data-layer-id="${s.id}" data-arr-idx="${i}">
+        <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
         <span class="layer-icon">🖼</span>
         <span class="layer-name">Sprite ${i + 1}</span>
         <span class="layer-actions">
-          ${canUp   ? `<button class="layer-order" data-order="up"   data-idx="${i}" title="Move forward">↑</button>` : ''}
-          ${canDown ? `<button class="layer-order" data-order="down" data-idx="${i}" title="Move back">↓</button>`    : ''}
           <button class="layer-del" data-del-type="sprite" data-del-id="${s.id}" title="Delete">×</button>
         </span>
       </li>`);
     }
 
-    // Strokes — last in array = frontmost
-    const strokes = window.Draw.getStrokes();
+    // Strokes — last in array = frontmost; shown after sprites
     for (let i = strokes.length - 1; i >= 0; i--) {
       const s = strokes[i];
       const active = selectedStroke === s.id;
-      const canUp   = i < strokes.length - 1;
-      const canDown = i > 0;
-      rows.push(`<li class="layer-row${active ? ' active' : ''}" data-layer-type="stroke" data-layer-id="${s.id}">
-        <span class="layer-icon" style="display:inline-block;width:12px;height:12px;background:${s.color};border-radius:50%;flex-shrink:0;margin-top:1px"></span>
+      rows.push(`<li class="layer-row${active ? ' active' : ''}"
+          data-layer-type="stroke" data-layer-id="${s.id}" data-arr-idx="${i}">
+        <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
+        <span class="layer-icon" style="display:inline-block;width:10px;height:10px;background:${s.color};border-radius:50%;flex-shrink:0"></span>
         <span class="layer-name">Stroke ${i + 1}</span>
         <span class="layer-actions">
-          ${canUp   ? `<button class="layer-order" data-order="up"   data-stroke-idx="${i}" title="Move forward">↑</button>` : ''}
-          ${canDown ? `<button class="layer-order" data-order="down" data-stroke-idx="${i}" title="Move back">↓</button>`    : ''}
           <button class="layer-del" data-del-type="stroke" data-del-id="${s.id}" title="Delete">×</button>
         </span>
       </li>`);
     }
 
-    // Base layer — always at bottom of stack
+    // Base layer — locked at bottom, not draggable
     if (project.baseType) {
       const label = project.baseType === 'svg' ? 'Planet SVG' : 'Base image';
-      rows.push(`<li class="layer-row${selectedBase ? ' active' : ''}" data-layer-type="base">
+      rows.push(`<li class="layer-row${selectedBase ? ' active' : ''} layer-base" data-layer-type="base">
+        <span class="layer-drag-handle" style="opacity:.2;cursor:default">⠿</span>
         <span class="layer-icon">🌐</span>
         <span class="layer-name">${label}</span>
       </li>`);
@@ -746,21 +743,18 @@ window.Editor = (function() {
 
     listEl.innerHTML = rows.length
       ? rows.join('')
-      : `<li class="layer-empty">nothing yet — draw or import an image</li>`;
+      : `<li class="layer-empty">nothing yet</li>`;
 
-    // Wire row clicks (select)
+    // Click to select
     listEl.querySelectorAll('.layer-row').forEach(row => {
-      row.addEventListener('click', (e) => {
-        if (e.target.classList.contains('layer-del') || e.target.classList.contains('layer-order')) return;
-        const type = row.dataset.layerType;
-        const id   = row.dataset.layerId;
-        if (type === 'sprite') selectSprite(id);
-        else if (type === 'stroke') selectStroke(id);
-        else if (type === 'base') selectBase();
+      row.addEventListener('pointerdown', (e) => {
+        if (e.target.classList.contains('layer-del')) return;
+        // Start a drag if pointer moves, otherwise treat as click
+        _startLayerDragOrClick(e, row);
       });
     });
 
-    // Wire delete buttons
+    // Delete buttons
     listEl.querySelectorAll('.layer-del').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -770,50 +764,94 @@ window.Editor = (function() {
           if (!confirm('Delete this sprite?')) return;
           project.sprites = (project.sprites || []).filter(s => s.id !== id);
           if (selectedSprite === id) { selectedSprite = null; selectedPanel.classList.add('hidden'); }
-          renderSprites();
-          renderLayersPanel();
-          schedSave();
+          renderSprites(); renderLayersPanel(); schedSave();
         } else if (type === 'stroke') {
           window.Draw.deleteStroke(id);
           project.drawings = window.Draw.getStrokes();
           if (selectedStroke === id) { selectedStroke = null; selectedPanel.classList.add('hidden'); }
-          renderLayersPanel();
-          schedSave();
+          renderLayersPanel(); schedSave();
         }
       });
     });
+  }
 
-    // Wire reorder buttons
-    listEl.querySelectorAll('.layer-order').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const order = btn.dataset.order;
-        if (btn.dataset.idx !== undefined) {
-          // Sprite reorder
-          const i = parseInt(btn.dataset.idx);
-          const arr = project.sprites;
-          const to = order === 'up' ? i + 1 : i - 1;
-          if (to >= 0 && to < arr.length) {
-            arr.splice(to, 0, arr.splice(i, 1)[0]);
-            renderSprites();
-            renderLayersPanel();
-            schedSave();
-          }
-        } else if (btn.dataset.strokeIdx !== undefined) {
-          // Stroke reorder
-          const i = parseInt(btn.dataset.strokeIdx);
-          const strokes = window.Draw.getStrokes();
-          const to = order === 'up' ? i + 1 : i - 1;
-          if (to >= 0 && to < strokes.length) {
-            strokes.splice(to, 0, strokes.splice(i, 1)[0]);
-            window.Draw.loadFrom(strokes);
-            project.drawings = window.Draw.getStrokes();
-            renderLayersPanel();
-            schedSave();
-          }
-        }
-      });
-    });
+  function _startLayerDragOrClick(e, row) {
+    const type = row.dataset.layerType;
+    const id   = row.dataset.layerId;
+    if (type === 'base') {
+      // Base layer: click-only, no drag
+      _selectLayerRow(type, id);
+      return;
+    }
+
+    const startX = e.clientX, startY = e.clientY;
+    let dragging = false;
+    let ghost = null;
+
+    const onMove = (ev) => {
+      const dx = ev.clientX - startX, dy = ev.clientY - startY;
+      if (!dragging && Math.abs(dx) + Math.abs(dy) > 5) {
+        dragging = true;
+        // Create ghost
+        ghost = document.createElement('div');
+        ghost.className = 'layer-drag-ghost';
+        ghost.textContent = row.querySelector('.layer-name')?.textContent || 'layer';
+        document.body.appendChild(ghost);
+        row.classList.add('layer-dragging');
+      }
+      if (!dragging) return;
+      ghost.style.left = (ev.clientX + 12) + 'px';
+      ghost.style.top  = (ev.clientY - 10) + 'px';
+
+      // Highlight drop target
+      document.querySelectorAll('.layer-row').forEach(r => r.classList.remove('drag-over'));
+      const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.layer-row');
+      if (target && target !== row && target.dataset.layerType === type) {
+        target.classList.add('drag-over');
+      }
+    };
+
+    const onUp = (ev) => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (ghost) ghost.remove();
+      row.classList.remove('layer-dragging');
+      document.querySelectorAll('.layer-row').forEach(r => r.classList.remove('drag-over'));
+
+      if (!dragging) {
+        _selectLayerRow(type, id);
+        return;
+      }
+
+      // Find drop target
+      const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.layer-row');
+      if (!target || target === row || target.dataset.layerType !== type) return;
+
+      const fromIdx = parseInt(row.dataset.arrIdx);
+      const toIdx   = parseInt(target.dataset.arrIdx);
+      if (isNaN(fromIdx) || isNaN(toIdx)) return;
+
+      if (type === 'sprite') {
+        const arr = project.sprites;
+        arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0]);
+        renderSprites(); renderLayersPanel(); schedSave();
+      } else if (type === 'stroke') {
+        const strokes = window.Draw.getStrokes();
+        strokes.splice(toIdx, 0, strokes.splice(fromIdx, 1)[0]);
+        window.Draw.loadFrom(strokes);
+        project.drawings = window.Draw.getStrokes();
+        renderLayersPanel(); schedSave();
+      }
+    };
+
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  function _selectLayerRow(type, id) {
+    if (type === 'sprite') selectSprite(id);
+    else if (type === 'stroke') selectStroke(id);
+    else if (type === 'base') selectBase();
   }
 
   function onBaseLayerPointerDown(e) {

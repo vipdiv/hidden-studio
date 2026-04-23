@@ -879,40 +879,68 @@ button.chip.off { opacity: 0.45; }
   border-color: var(--panel-border);
 }
 .layer-row.active {
-  background: rgba(196, 63, 46, 0.18);
-  border-color: var(--accent);
-  color: var(--paper);
+  background: var(--ui-blue-dim);
+  border-color: var(--ui-blue);
+  color: var(--ui-text);
 }
-.layer-icon { font-size: 13px; flex-shrink: 0; }
-.layer-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.layer-row.drag-over {
+  border-top: 2px solid var(--ui-blue);
+  background: rgba(20, 115, 230, 0.08);
+}
+.layer-row.layer-dragging { opacity: 0.4; }
+.layer-drag-handle {
+  font-size: 12px;
+  color: var(--ui-text-dim);
+  cursor: grab;
+  flex-shrink: 0;
+  padding-right: 2px;
+  touch-action: none;
+}
+.layer-drag-handle:active { cursor: grabbing; }
+.layer-icon { font-size: 12px; flex-shrink: 0; }
+.layer-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
 .layer-actions {
   display: flex;
-  gap: 3px;
+  gap: 2px;
   flex-shrink: 0;
   opacity: 0;
   transition: opacity 0.12s;
 }
 .layer-row:hover .layer-actions { opacity: 1; }
 .layer-row.active .layer-actions { opacity: 1; }
-.layer-order, .layer-del {
-  width: 18px; height: 18px;
-  font-size: 11px;
-  border: 1px solid var(--panel-border);
-  border-radius: 3px;
-  color: var(--paper);
-  background: rgba(212, 212, 212, 0.06);
+.layer-del {
+  width: 16px; height: 16px;
+  font-size: 12px;
+  border: 1px solid transparent;
+  border-radius: 2px;
+  color: var(--ui-text-dim);
+  background: transparent;
   cursor: pointer;
   display: grid; place-items: center;
   line-height: 1;
   padding: 0;
 }
-.layer-order:hover { background: rgba(212, 212, 212, 0.15); }
-.layer-del:hover   { background: rgba(196, 63, 46, 0.3); border-color: var(--accent); }
+.layer-del:hover { background: rgba(228,92,92,0.25); border-color: var(--ui-red); color: var(--ui-red); }
 .layer-empty {
-  font-size: 13px;
-  color: rgba(212, 212, 212, 0.3);
+  font-size: 11px;
+  color: var(--ui-text-dim);
   font-style: italic;
-  padding: 4px 2px;
+  padding: 6px 4px;
+}
+
+/* Drag ghost — follows cursor */
+.layer-drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  background: var(--ui-blue);
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  white-space: nowrap;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  opacity: 0.92;
 }
 
 /* Hint tip (for "click somewhere to place a hit zone") */
