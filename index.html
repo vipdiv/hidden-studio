@@ -135,6 +135,15 @@
         <span>Size</span>
         <input type="range" id="penSize" min="1" max="20" value="3">
       </label>
+      <div class="dash-row">
+        <button class="dash-btn active" data-dash="" title="Solid">— </button>
+        <button class="dash-btn" data-dash="dash" title="Dashed">- -</button>
+        <button class="dash-btn" data-dash="dot"  title="Dotted">· · ·</button>
+      </div>
+      <label class="slider-row hidden" id="dashSpacingRow">
+        <span>Gap</span>
+        <input type="range" id="dashSpacing" min="2" max="40" value="8">
+      </label>
     </div>
 
     <!-- Base layer controls -->
