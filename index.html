@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hidden Studio — make & play your own hidden object games</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════
+     START SCREEN — pick or create a project
+═══════════════════════════════════════════════════ -->
+<div class="start-screen" id="startScreen">
+  <div class="start-card">
+    <h1>Hidden <em>Studio</em></h1>
+    <p class="tagline">— make & play tiny finding games —</p>
+
+    <div class="start-options">
+      <button class="start-option" data-action="new-planet">
+        <div class="start-option-title">Hidden Planet</div>
+        <div class="start-option-sub">Start from the SVG planet game</div>
+      </button>
+      <button class="start-option" data-action="new-scan">
+        <div class="start-option-title">Original Scan</div>
+        <div class="start-option-sub">Start from Vipul's pen-and-ink drawing</div>
+      </button>
+      <button class="start-option" data-action="new-blank">
+        <div class="start-option-title">Blank Canvas</div>
+        <div class="start-option-sub">Empty project, import your own image</div>
+      </button>
+    </div>
+
+    <div class="projects-section" id="projectsSection">
+      <h3 class="projects-title">Your projects</h3>
+      <ul class="projects-list" id="projectsList"></ul>
+    </div>
+
+    <div class="start-footer">
+      <button class="ghost-btn" id="importProjectBtn">⬆ Import Project (JSON)</button>
+      <input type="file" id="importProjectInput" accept=".json" style="display:none">
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     MAIN APP — hidden until a project is chosen
+═══════════════════════════════════════════════════ -->
+<div class="app hidden" id="app">
+
+  <!-- Top bar — shared between play/edit modes -->
+  <header class="hud-top">
+    <div class="hud-left">
+      <button class="icon-btn" id="backBtn" title="Back to projects">←</button>
+      <div class="project-name" id="projectName">Untitled</div>
+    </div>
+
+    <div class="hud-center">
+      <div class="mode-toggle">
+        <button class="mode-btn active" data-mode="play">▶ Play</button>
+        <button class="mode-btn" data-mode="edit">✎ Edit</button>
+      </div>
+    </div>
+
+    <div class="hud-right">
+      <button class="chip" id="soundToggle">🔊 sound</button>
+      <div class="chip" id="counter">found <b>0</b> / <span id="total">0</span></div>
+    </div>
+  </header>
+
+  <!-- Stage — the pan-and-zoom world -->
+  <div class="stage" id="stage">
+    <div class="world" id="world">
+      <!-- Base layer (image or SVG) -->
+      <div class="base-layer" id="baseLayer"></div>
+      <!-- Drawings (SVG overlay for pen strokes) -->
+      <svg class="drawing-layer" id="drawingLayer" viewBox="0 0 1600 1600" preserveAspectRatio="none"></svg>
+      <!-- Imported sprites -->
+      <div class="sprite-layer" id="spriteLayer"></div>
+      <!-- Hit zones (in edit mode they're visible, in play mode invisible) -->
+      <div class="hits-layer" id="hitsLayer"></div>
+      <!-- Play-mode overlays (marks, pops) -->
+      <div class="play-layer" id="playLayer"></div>
+      <!-- Drawing cursor in-progress -->
+      <svg class="drawing-cursor" id="drawingCursor" viewBox="0 0 1600 1600" preserveAspectRatio="none"></svg>
+    </div>
+  </div>
+
+  <!-- ═══ PLAY MODE UI ═══ -->
+  <aside class="list-panel" id="listPanel">
+    <h2>Find These</h2>
+    <p class="hint">Drag to pan. Tap what you find.</p>
+    <ul class="find-list" id="list"></ul>
+    <p class="secret-line"><em>secrets:</em> <b id="secretCount">0</b> / <span id="secretTotal">0</span></p>
+  </aside>
+  <button class="panel-toggle" id="panelToggle">📋</button>
+  <div class="minimap" id="minimap">
+    <div class="mini-planet"></div>
+    <div class="viewbox" id="viewbox"></div>
+  </div>
+
+  <!-- ═══ EDIT MODE UI ═══ -->
+  <aside class="edit-panel hidden" id="editPanel">
+    <!-- Tool palette -->
+    <div class="tool-section">
+      <h3>Tools</h3>
+      <div class="tool-grid">
+        <button class="tool-btn active" data-tool="select" title="Select & move">↖</button>
+        <button class="tool-btn" data-tool="addItem" title="Add find-it item">⊕</button>
+        <button class="tool-btn" data-tool="addSurprise" title="Add surprise">✨</button>
+        <button class="tool-btn" data-tool="pen" title="Draw">✎</button>
+        <button class="tool-btn" data-tool="eraser" title="Erase">⌫</button>
+        <button class="tool-btn" data-tool="import" title="Import image as sprite">🖼</button>
+      </div>
+    </div>
+
+    <!-- Pen options (shown when pen tool active) -->
+    <div class="tool-options hidden" id="penOptions">
+      <h3>Pen</h3>
+      <div class="color-row">
+        <button class="color-swatch active" style="background:#1a1613" data-color="#1a1613"></button>
+        <button class="color-swatch" style="background:#c43f2e" data-color="#c43f2e"></button>
+        <button class="color-swatch" style="background:#5a7a3a" data-color="#5a7a3a"></button>
+        <button class="color-swatch" style="background:#e6a030" data-color="#e6a030"></button>
+        <button class="color-swatch" style="background:#3860a8" data-color="#3860a8"></button>
+      </div>
+      <label class="slider-row">
+        <span>Size</span>
+        <input type="range" id="penSize" min="1" max="20" value="3">
+      </label>
+    </div>
+
+    <!-- Base layer controls -->
+    <div class="tool-section">
+      <h3>Base layer</h3>
+      <div class="base-controls">
+        <button class="ghost-btn" id="setBasePlanet">Planet SVG</button>
+        <button class="ghost-btn" id="setBaseScan">Original scan</button>
+        <button class="ghost-btn" id="setBaseUpload">Upload image…</button>
+        <input type="file" id="baseUploadInput" accept="image/*" style="display:none">
+      </div>
+    </div>
+
+    <!-- Selected item properties (dynamic) -->
+    <div class="tool-section hidden" id="selectedPanel">
+      <h3>Selected</h3>
+      <div id="selectedContent"></div>
+    </div>
+
+    <!-- Project actions -->
+    <div class="tool-section actions-section">
+      <h3>Project</h3>
+      <button class="ghost-btn" id="renameBtn">✎ Rename</button>
+      <button class="ghost-btn" id="exportJsonBtn">⬇ Export JSON</button>
+      <button class="ghost-btn" id="exportHtmlBtn">⬇ Export as playable HTML</button>
+      <button class="ghost-btn danger" id="clearDrawingsBtn">Clear drawings</button>
+      <div class="save-status" id="saveStatus">saved</div>
+    </div>
+  </aside>
+
+  <!-- Floating toolbar for when pen is on mobile (collapsed panel) -->
+  <button class="edit-panel-toggle hidden" id="editPanelToggle">🛠</button>
+
+  <!-- Win overlay -->
+  <div class="win" id="win">
+    <div class="win-card">
+      <h2>You found them all!</h2>
+      <p>Nice eyes. There's probably more hiding in there.</p>
+      <button onclick="Game.restart()">play again</button>
+    </div>
+  </div>
+
+  <!-- Edit-mode transient tips -->
+  <div class="hint-tip" id="hintTip"></div>
+
+  <!-- Modal for editing hit zone / surprise details -->
+  <div class="modal-backdrop hidden" id="modalBackdrop">
+    <div class="modal" id="modal">
+      <div class="modal-header">
+        <h3 id="modalTitle">Edit</h3>
+        <button class="icon-btn" id="modalClose">×</button>
+      </div>
+      <div class="modal-body" id="modalBody"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ JS modules (load order matters) ═══ -->
+<script src="js/data/scene.svg.js"></script>
+<script src="js/data/presets.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/sprites.js"></script>
+<script src="js/draw.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/game.js"></script>
+<script src="js/editor.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
