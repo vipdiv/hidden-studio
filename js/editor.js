@@ -1075,6 +1075,8 @@ window.Editor = (function() {
 
   function onSpritePointerDown(e, sprite) {
     if (!document.body.classList.contains('edit-mode')) return;
+    // Only intercept in select mode; other tools (pen, shapes) need the event to reach the stage
+    if (tool !== 'select') return;
     e.stopPropagation();
     const startPt = getScreenPoint(e);
     const startW  = window.Game.screenToWorld(startPt.x, startPt.y);

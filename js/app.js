@@ -248,31 +248,39 @@
     }
 
     function onDown(e) {
-      // In edit mode, let hit zones and sprites capture events — UNLESS
-      // spacebar is held or the Hand tool is active (pan overrides everything)
-      if (document.body.classList.contains('edit-mode') && !isPanMode()) {
-        if (e.target.closest('.hit')) return;
-        if (e.target.closest('.sprite')) return;
-      }
       const p = getPoint(e);
-      pointerDown = true;
-      startScreenX = p.x; startScreenY = p.y;
-      lastScreenX = p.x;  lastScreenY = p.y;
-      startCamX = window.Game.camX; startCamY = window.Game.camY;
-      totalDelta = 0;
+      const inEdit = document.body.classList.contains('edit-mode');
+      const inPan  = isPanMode();
 
-      // Start drawing only when NOT in pan mode
-      if (document.body.classList.contains('edit-mode') && !isPanMode()) {
+      // In edit mode with a draw/shape tool, start drawing immediately —
+      // bypass hit-zone / sprite guards so any click on the canvas works.
+      if (inEdit && !inPan) {
         const tool = window.Editor.getTool();
         const DRAW_TOOLS = ['pen', 'eraser', 'rect', 'ellipse', 'star'];
         if (DRAW_TOOLS.includes(tool)) {
           const w = window.Game.screenToWorld(p.x, p.y);
           if (window.Editor.onDrawStart(w.x, w.y)) {
+            pointerDown = true;
             isDrawing = true;
+            startScreenX = p.x; startScreenY = p.y;
+            lastScreenX = p.x;  lastScreenY = p.y;
+            startCamX = window.Game.camX; startCamY = window.Game.camY;
+            totalDelta = 0;
+            // Capture pointer so moves/up always reach us, even over SVG content
+            stage.setPointerCapture(e.pointerId);
             return;
           }
         }
+        // Non-draw tools: let hit zones and sprites handle their own events
+        if (e.target.closest('.hit')) return;
+        if (e.target.closest('.sprite')) return;
       }
+
+      pointerDown = true;
+      startScreenX = p.x; startScreenY = p.y;
+      lastScreenX = p.x;  lastScreenY = p.y;
+      startCamX = window.Game.camX; startCamY = window.Game.camY;
+      totalDelta = 0;
       stage.classList.add('grabbing');
     }
 

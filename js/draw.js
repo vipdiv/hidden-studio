@@ -64,9 +64,9 @@ window.Draw = (function() {
 
   function continueStroke(wx, wy) {
     if (!drawing) return;
-    // Minimum distance filter: ~1.5 screen-pixels worth of world units
+    // Minimum distance filter: ~3 screen-pixels worth of world units
     const scale = (window.Game && window.Game.scale) || 0.4;
-    const minD = (1.5 / scale);
+    const minD = (3.0 / scale);
     const last = rawPoints[rawPoints.length - 1];
     const dx = wx - last.x, dy = wy - last.y;
     if (dx * dx + dy * dy < minD * minD) return;
@@ -157,9 +157,9 @@ window.Draw = (function() {
 
   /* Catmull-Rom → cubic bezier smooth path from an array of {x,y} points */
   function _smoothPath(pts) {
-    // Tolerance: ~3 screen pixels in world-unit space (adapts to zoom)
+    // Tolerance: ~8 screen pixels in world-unit space — aggressively removes hand tremor
     const scale = (window.Game && window.Game.scale) || 0.4;
-    const tol = Math.max(1.0, 3.0 / scale);
+    const tol = Math.max(2.0, 8.0 / scale);
     const s = _rdp(pts, tol);
     if (s.length < 2) return null;
     const f = v => v.toFixed(1);
