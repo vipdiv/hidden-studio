@@ -5,9 +5,10 @@
 window.Editor = (function() {
 
   let project = null;
-  let selected = null;       // { kind: 'item'|'surprise', id }
-  let selectedSprite = null; // sprite id, or null
-  let selectedBase = false;  // true when base layer is selected
+  let selected = null;        // { kind: 'item'|'surprise', id }
+  let selectedSprite = null;  // sprite id, or null
+  let selectedBase = false;   // true when base layer is selected
+  let selectedStroke = null;  // stroke id, or null
   let tool = 'select';
 
   // DOM refs
@@ -62,6 +63,9 @@ window.Editor = (function() {
       if (confirm('Clear all pen drawings? (Cannot be undone.)')) {
         window.Draw.clearAll();
         project.drawings = [];
+        selectedStroke = null;
+        selectedPanel.classList.add('hidden');
+        renderLayersPanel();
         schedSave();
       }
     });
@@ -76,6 +80,8 @@ window.Editor = (function() {
     hitsLayer.addEventListener('pointerdown', onHitPointerDown);
     // Click on base layer to select (edit mode only; handler checks mode+tool)
     document.getElementById('baseLayer').addEventListener('pointerdown', onBaseLayerPointerDown);
+    // Click on drawing strokes to select and drag (edit mode only)
+    document.getElementById('drawingLayer').addEventListener('pointerdown', onStrokePointerDown);
   }
 
   function setProject(p) {
@@ -94,7 +100,9 @@ window.Editor = (function() {
     selected = null;
     selectedSprite = null;
     selectedBase = false;
+    selectedStroke = null;
     updateSelectedPanel();
+    renderLayersPanel();
   }
 
   function getProject() { return project; }
@@ -184,6 +192,8 @@ window.Editor = (function() {
     selected = { kind, id };
     selectedSprite = null;
     selectedBase = false;
+    selectedStroke = null;
+    window.Draw.setSelected(null);
     const bl = document.getElementById('baseLayer');
     if (bl) bl.classList.remove('base-selected');
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
@@ -199,12 +209,15 @@ window.Editor = (function() {
     selected = null;
     selectedSprite = null;
     selectedBase = false;
+    selectedStroke = null;
+    window.Draw.setSelected(null);
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
     const bl = document.getElementById('baseLayer');
     if (bl) bl.classList.remove('base-selected');
     updateSelectedPanel();
+    renderLayersPanel();
   }
 
   function getSelected() {
@@ -329,6 +342,16 @@ window.Editor = (function() {
   }
 
   function deleteSelected() {
+    // Handle stroke deletion
+    if (selectedStroke) {
+      window.Draw.deleteStroke(selectedStroke);
+      project.drawings = window.Draw.getStrokes();
+      selectedStroke = null;
+      selectedPanel.classList.add('hidden');
+      renderLayersPanel();
+      schedSave();
+      return;
+    }
     // Handle sprite deletion
     if (selectedSprite) {
       project.sprites = (project.sprites || []).filter(s => s.id !== selectedSprite);
@@ -380,6 +403,15 @@ window.Editor = (function() {
   }
 
   function nudgeSelected(dx, dy) {
+    if (selectedStroke) {
+      const s = window.Draw.getStroke(selectedStroke);
+      if (s) {
+        window.Draw.setStrokeTranslation(selectedStroke, (s.tx || 0) + dx, (s.ty || 0) + dy);
+        project.drawings = window.Draw.getStrokes();
+        schedSave();
+      }
+      return;
+    }
     if (selectedSprite) {
       const sprite = (project.sprites || []).find(s => s.id === selectedSprite);
       if (sprite) { sprite.x += dx; sprite.y += dy; renderSprites(); schedSave(); }
@@ -492,6 +524,8 @@ window.Editor = (function() {
     selected = null;
     selectedSprite = null;
     selectedBase = true;
+    selectedStroke = null;
+    window.Draw.setSelected(null);
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
@@ -551,6 +585,234 @@ window.Editor = (function() {
       renderBaseLayer();
       deselect();
       schedSave();
+    });
+    renderLayersPanel();
+  }
+
+  /* ————————————————————————————————————————
+     STROKE SELECTION
+  ———————————————————————————————————————— */
+  function selectStroke(id) {
+    if (!project) return;
+    selected = null;
+    selectedSprite = null;
+    selectedBase = false;
+    selectedStroke = id;
+    hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
+    const bl = document.getElementById('baseLayer');
+    if (bl) bl.classList.remove('base-selected');
+    window.Draw.setSelected(id);
+    renderStrokeEditor();
+    renderLayersPanel();
+  }
+
+  function renderStrokeEditor() {
+    const stroke = window.Draw.getStroke(selectedStroke);
+    if (!stroke) { selectedPanel.classList.add('hidden'); return; }
+    selectedPanel.classList.remove('hidden');
+
+    const colors = ['#1a1613','#c43f2e','#5a7a3a','#e6a030','#3860a8','#ffffff'];
+    const swatches = colors.map(c =>
+      `<button class="color-swatch${stroke.color === c ? ' active' : ''}" style="background:${c}" data-color="${c}"></button>`
+    ).join('');
+
+    selectedContent.innerHTML = `
+      <div style="font-family:'Caveat',cursive;font-size:15px;color:rgba(245,239,226,.75);margin-bottom:8px">Stroke</div>
+      <div class="color-row" id="stroke-colors">${swatches}</div>
+      <label class="slider-row" style="font-family:'Caveat',cursive;font-size:14px;margin-bottom:12px">
+        Width <input type="range" id="stroke-width" min="1" max="20" value="${stroke.width}">
+      </label>
+      <button class="delete-btn" id="stroke-delete">🗑 Delete stroke</button>
+    `;
+
+    document.querySelectorAll('#stroke-colors .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        document.querySelectorAll('#stroke-colors .color-swatch').forEach(x => x.classList.remove('active'));
+        sw.classList.add('active');
+        window.Draw.updateStroke(selectedStroke, { color: sw.dataset.color });
+        project.drawings = window.Draw.getStrokes();
+        schedSave();
+      });
+    });
+    document.getElementById('stroke-width').addEventListener('input', (e) => {
+      window.Draw.updateStroke(selectedStroke, { width: parseFloat(e.target.value) });
+      project.drawings = window.Draw.getStrokes();
+      schedSave();
+    });
+    document.getElementById('stroke-delete').addEventListener('click', () => {
+      window.Draw.deleteStroke(selectedStroke);
+      project.drawings = window.Draw.getStrokes();
+      selectedStroke = null;
+      selectedPanel.classList.add('hidden');
+      renderLayersPanel();
+      schedSave();
+    });
+  }
+
+  function onStrokePointerDown(e) {
+    if (!document.body.classList.contains('edit-mode')) return;
+    if (tool !== 'select') return;
+    const g = e.target.closest('[data-stroke-id]');
+    if (!g) return;
+    const id = g.dataset.strokeId;
+    e.stopPropagation();
+
+    selectStroke(id);
+
+    const stroke = window.Draw.getStroke(id);
+    if (!stroke) return;
+
+    const startPt  = { x: e.clientX, y: e.clientY };
+    const startW   = window.Game.screenToWorld(startPt.x, startPt.y);
+    const startTx  = stroke.tx || 0;
+    const startTy  = stroke.ty || 0;
+    let moved = false;
+
+    const onMove = (ev) => {
+      const w = window.Game.screenToWorld(ev.clientX, ev.clientY);
+      const dx = w.x - startW.x;
+      const dy = w.y - startW.y;
+      if (Math.abs(dx) + Math.abs(dy) > 1) moved = true;
+      if (!moved) return;
+      window.Draw.setStrokeTranslation(id, startTx + dx, startTy + dy);
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (moved) {
+        project.drawings = window.Draw.getStrokes();
+        schedSave();
+      }
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  /* ————————————————————————————————————————
+     LAYERS PANEL
+  ———————————————————————————————————————— */
+  function renderLayersPanel() {
+    const listEl = document.getElementById('layersList');
+    if (!listEl || !project) return;
+
+    const rows = [];
+
+    // Sprites — last in array = frontmost (drawn on top)
+    const sprites = project.sprites || [];
+    for (let i = sprites.length - 1; i >= 0; i--) {
+      const s = sprites[i];
+      const active = selectedSprite === s.id;
+      const canUp   = i < sprites.length - 1;
+      const canDown = i > 0;
+      rows.push(`<li class="layer-row${active ? ' active' : ''}" data-layer-type="sprite" data-layer-id="${s.id}">
+        <span class="layer-icon">🖼</span>
+        <span class="layer-name">Sprite ${i + 1}</span>
+        <span class="layer-actions">
+          ${canUp   ? `<button class="layer-order" data-order="up"   data-idx="${i}" title="Move forward">↑</button>` : ''}
+          ${canDown ? `<button class="layer-order" data-order="down" data-idx="${i}" title="Move back">↓</button>`    : ''}
+          <button class="layer-del" data-del-type="sprite" data-del-id="${s.id}" title="Delete">×</button>
+        </span>
+      </li>`);
+    }
+
+    // Strokes — last in array = frontmost
+    const strokes = window.Draw.getStrokes();
+    for (let i = strokes.length - 1; i >= 0; i--) {
+      const s = strokes[i];
+      const active = selectedStroke === s.id;
+      const canUp   = i < strokes.length - 1;
+      const canDown = i > 0;
+      rows.push(`<li class="layer-row${active ? ' active' : ''}" data-layer-type="stroke" data-layer-id="${s.id}">
+        <span class="layer-icon" style="display:inline-block;width:12px;height:12px;background:${s.color};border-radius:50%;flex-shrink:0;margin-top:1px"></span>
+        <span class="layer-name">Stroke ${i + 1}</span>
+        <span class="layer-actions">
+          ${canUp   ? `<button class="layer-order" data-order="up"   data-stroke-idx="${i}" title="Move forward">↑</button>` : ''}
+          ${canDown ? `<button class="layer-order" data-order="down" data-stroke-idx="${i}" title="Move back">↓</button>`    : ''}
+          <button class="layer-del" data-del-type="stroke" data-del-id="${s.id}" title="Delete">×</button>
+        </span>
+      </li>`);
+    }
+
+    // Base layer — always at bottom of stack
+    if (project.baseType) {
+      const label = project.baseType === 'svg' ? 'Planet SVG' : 'Base image';
+      rows.push(`<li class="layer-row${selectedBase ? ' active' : ''}" data-layer-type="base">
+        <span class="layer-icon">🌐</span>
+        <span class="layer-name">${label}</span>
+      </li>`);
+    }
+
+    listEl.innerHTML = rows.length
+      ? rows.join('')
+      : `<li class="layer-empty">nothing yet — draw or import an image</li>`;
+
+    // Wire row clicks (select)
+    listEl.querySelectorAll('.layer-row').forEach(row => {
+      row.addEventListener('click', (e) => {
+        if (e.target.classList.contains('layer-del') || e.target.classList.contains('layer-order')) return;
+        const type = row.dataset.layerType;
+        const id   = row.dataset.layerId;
+        if (type === 'sprite') selectSprite(id);
+        else if (type === 'stroke') selectStroke(id);
+        else if (type === 'base') selectBase();
+      });
+    });
+
+    // Wire delete buttons
+    listEl.querySelectorAll('.layer-del').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.delType;
+        const id   = btn.dataset.delId;
+        if (type === 'sprite') {
+          if (!confirm('Delete this sprite?')) return;
+          project.sprites = (project.sprites || []).filter(s => s.id !== id);
+          if (selectedSprite === id) { selectedSprite = null; selectedPanel.classList.add('hidden'); }
+          renderSprites();
+          renderLayersPanel();
+          schedSave();
+        } else if (type === 'stroke') {
+          window.Draw.deleteStroke(id);
+          project.drawings = window.Draw.getStrokes();
+          if (selectedStroke === id) { selectedStroke = null; selectedPanel.classList.add('hidden'); }
+          renderLayersPanel();
+          schedSave();
+        }
+      });
+    });
+
+    // Wire reorder buttons
+    listEl.querySelectorAll('.layer-order').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const order = btn.dataset.order;
+        if (btn.dataset.idx !== undefined) {
+          // Sprite reorder
+          const i = parseInt(btn.dataset.idx);
+          const arr = project.sprites;
+          const to = order === 'up' ? i + 1 : i - 1;
+          if (to >= 0 && to < arr.length) {
+            arr.splice(to, 0, arr.splice(i, 1)[0]);
+            renderSprites();
+            renderLayersPanel();
+            schedSave();
+          }
+        } else if (btn.dataset.strokeIdx !== undefined) {
+          // Stroke reorder
+          const i = parseInt(btn.dataset.strokeIdx);
+          const strokes = window.Draw.getStrokes();
+          const to = order === 'up' ? i + 1 : i - 1;
+          if (to >= 0 && to < strokes.length) {
+            strokes.splice(to, 0, strokes.splice(i, 1)[0]);
+            window.Draw.loadFrom(strokes);
+            project.drawings = window.Draw.getStrokes();
+            renderLayersPanel();
+            schedSave();
+          }
+        }
+      });
     });
   }
 
@@ -690,6 +952,7 @@ window.Editor = (function() {
       project.sprites = project.sprites || [];
       project.sprites.push(sprite);
       renderSprites();
+      renderLayersPanel();
       schedSave();
       showHint('Sprite placed — tap to select, drag to move');
     };
@@ -792,6 +1055,8 @@ window.Editor = (function() {
     selected = null;
     selectedSprite = id;
     selectedBase = false;
+    selectedStroke = null;
+    window.Draw.setSelected(null);
     const bl = document.getElementById('baseLayer');
     if (bl) bl.classList.remove('base-selected');
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
@@ -892,6 +1157,7 @@ window.Editor = (function() {
       project.drawings = window.Draw.getStrokes();
       schedSave();
     }
+    renderLayersPanel();
   }
 
   function openModal(title, bodyHtml) {
@@ -913,9 +1179,10 @@ window.Editor = (function() {
     onStageTap,
     onDrawStart, onDrawMove, onDrawEnd,
     renderBaseLayer, applyBaseTransform, renderBaseTransformPanel,
-    renderSprites,
-    selectSprite, selectBase,
+    renderSprites, renderLayersPanel,
+    selectSprite, selectBase, selectStroke,
     get selectedBase() { return selectedBase; },
+    get selectedStroke() { return selectedStroke; },
     deleteSelected, duplicateSelected, nudgeSelected,
     bringForward, sendBackward, bringToFront, sendToBack,
     loadProjectAssets,
