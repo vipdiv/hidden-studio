@@ -276,7 +276,10 @@ button.chip.off { opacity: 0.55; }
   touch-action: none;
 }
 .stage.grabbing { cursor: grabbing; }
-.stage.pen-cursor { cursor: crosshair; }
+.stage.pen-cursor {
+  /* Pencil cursor — hotspot at the tip (bottom-left of 20×20 icon) */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23ffd966' stroke='%23222' stroke-width='0.8' stroke-linejoin='round' d='M13 2 L18 7 L7 18 L2 18 L2 13 Z'/%3E%3Cpath fill='%23c8a200' stroke='%23222' stroke-width='0.8' stroke-linejoin='round' d='M13 2 L18 7 L15.5 9.5 L10.5 4.5 Z'/%3E%3Cpath fill='%23f0c8a0' stroke='%23222' stroke-width='0.8' d='M2 13 L7 18 L4.5 18 L2 15.5 Z'/%3E%3Cline x1='2' y1='18' x2='2.5' y2='17.5' stroke='%23222' stroke-width='0.8'/%3E%3C/svg%3E") 2 18, crosshair;
+}
 .stage.erase-cursor { cursor: not-allowed; }
 .stage.add-cursor { cursor: cell; }
 
