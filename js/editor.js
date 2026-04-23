@@ -778,58 +778,59 @@ window.Editor = (function() {
   function _startLayerDragOrClick(e, row) {
     const type = row.dataset.layerType;
     const id   = row.dataset.layerId;
-    if (type === 'base') {
-      // Base layer: click-only, no drag
-      _selectLayerRow(type, id);
-      return;
-    }
+    if (type === 'base') { _selectLayerRow(type, id); return; }
+
+    // Capture pointer so move/up fire reliably even outside the element
+    row.setPointerCapture(e.pointerId);
 
     const startX = e.clientX, startY = e.clientY;
     let dragging = false;
     let ghost = null;
+    let currentTarget = null;
 
-    const onMove = (ev) => {
+    function onMove(ev) {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
       if (!dragging && Math.abs(dx) + Math.abs(dy) > 5) {
         dragging = true;
-        // Create ghost
         ghost = document.createElement('div');
         ghost.className = 'layer-drag-ghost';
+        ghost.style.pointerEvents = 'none';
         ghost.textContent = row.querySelector('.layer-name')?.textContent || 'layer';
         document.body.appendChild(ghost);
         row.classList.add('layer-dragging');
       }
       if (!dragging) return;
-      ghost.style.left = (ev.clientX + 12) + 'px';
-      ghost.style.top  = (ev.clientY - 10) + 'px';
+      ghost.style.left = (ev.clientX + 14) + 'px';
+      ghost.style.top  = (ev.clientY - 8)  + 'px';
 
-      // Highlight drop target
+      // Use bounding-rect hit detection (reliable even with pointer capture)
       document.querySelectorAll('.layer-row').forEach(r => r.classList.remove('drag-over'));
-      const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.layer-row');
-      if (target && target !== row && target.dataset.layerType === type) {
-        target.classList.add('drag-over');
-      }
-    };
+      currentTarget = null;
+      document.querySelectorAll('#layersList .layer-row').forEach(r => {
+        if (r === row) return;
+        if (r.dataset.layerType !== type) return;
+        const rect = r.getBoundingClientRect();
+        if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+          r.classList.add('drag-over');
+          currentTarget = r;
+        }
+      });
+    }
 
-    const onUp = (ev) => {
-      document.removeEventListener('pointermove', onMove);
-      document.removeEventListener('pointerup', onUp);
+    function onUp() {
+      row.removeEventListener('pointermove', onMove);
+      row.removeEventListener('pointerup',   onUp);
+      row.removeEventListener('pointercancel', onUp);
       if (ghost) ghost.remove();
       row.classList.remove('layer-dragging');
       document.querySelectorAll('.layer-row').forEach(r => r.classList.remove('drag-over'));
 
-      if (!dragging) {
-        _selectLayerRow(type, id);
-        return;
-      }
-
-      // Find drop target
-      const target = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('.layer-row');
-      if (!target || target === row || target.dataset.layerType !== type) return;
+      if (!dragging) { _selectLayerRow(type, id); return; }
+      if (!currentTarget) return;
 
       const fromIdx = parseInt(row.dataset.arrIdx);
-      const toIdx   = parseInt(target.dataset.arrIdx);
-      if (isNaN(fromIdx) || isNaN(toIdx)) return;
+      const toIdx   = parseInt(currentTarget.dataset.arrIdx);
+      if (isNaN(fromIdx) || isNaN(toIdx) || fromIdx === toIdx) return;
 
       if (type === 'sprite') {
         const arr = project.sprites;
@@ -842,10 +843,11 @@ window.Editor = (function() {
         project.drawings = window.Draw.getStrokes();
         renderLayersPanel(); schedSave();
       }
-    };
+    }
 
-    document.addEventListener('pointermove', onMove);
-    document.addEventListener('pointerup', onUp);
+    row.addEventListener('pointermove',   onMove);
+    row.addEventListener('pointerup',     onUp);
+    row.addEventListener('pointercancel', onUp);
   }
 
   function _selectLayerRow(type, id) {
