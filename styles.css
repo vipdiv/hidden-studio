@@ -1019,13 +1019,97 @@ button.chip.off { opacity: 0.45; }
 @media (max-width: 700px) {
   .hud-top { grid-template-columns: auto 1fr auto; }
   .hud-center { justify-self: end; }
+  .project-name { max-width: 100px; }
+}
+
+/* ── Mobile: panels as bottom sheets ── */
+@media (max-width: 640px) {
   .project-name { display: none; }
-  .list-panel, .edit-panel {
-    width: calc(100vw - 28px);
-    max-width: 280px;
+
+  /* Edit panel — slide up from bottom */
+  .edit-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0; left: 0; right: 0;
+    width: 100% !important;
+    max-height: 60vh;
+    border-right: none;
+    border-top: 1px solid var(--panel-border);
+    border-radius: 10px 10px 0 0;
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
-  .minimap { width: 80px; height: 80px; }
-  .minimap .mini-planet { width: 48px; height: 48px; }
+  .edit-panel.mobile-open { transform: translateY(0); }
+
+  /* Sheet drag-handle pill at top of bottom sheets */
+  .edit-panel::before,
+  .list-panel::before {
+    content: '';
+    display: block;
+    width: 36px; height: 4px;
+    background: var(--panel-border);
+    border-radius: 2px;
+    margin: 8px auto 2px;
+    flex-shrink: 0;
+  }
+
+  /* List panel — slide up from bottom */
+  .list-panel {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0; left: 0; right: 0;
+    width: 100% !important;
+    max-width: 100%;
+    max-height: 60vh;
+    border-radius: 10px 10px 0 0;
+    border-top: 1px solid var(--panel-border);
+    transform: translateY(100%);
+    transition: transform 0.3s ease;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .list-panel.mobile-open { transform: translateY(0); }
+
+  /* Floating toggle buttons */
+  .panel-toggle {
+    display: flex !important;
+    align-items: center; justify-content: center;
+    position: fixed;
+    bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    top: auto !important;
+    width: auto; height: auto;
+    padding: 9px 20px;
+    border-radius: 20px;
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap;
+    z-index: 22;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .list-panel.mobile-open ~ .panel-toggle { display: none !important; }
+
+  .edit-panel-toggle {
+    display: flex !important;
+    align-items: center; justify-content: center;
+    position: fixed;
+    bottom: 16px; left: 50%;
+    transform: translateX(-50%);
+    top: auto !important;
+    width: auto; height: auto;
+    padding: 9px 20px;
+    border-radius: 20px;
+    font-size: 13px; font-weight: 600;
+    white-space: nowrap;
+    z-index: 26;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+  .edit-panel.mobile-open ~ .edit-panel-toggle { display: none !important; }
+
+  /* Minimap is too small to be useful on phone */
+  .minimap { display: none; }
+
+  /* Hint tip above toggle */
+  .hint-tip { bottom: 72px; }
 }
 
 /* ═══════════════════════════════════════════════════

@@ -121,6 +121,9 @@
     // Expose setMode so shortcuts.js can toggle play/edit
     window.App = { setMode };
 
+    // Mobile bottom-sheet panel toggles
+    initMobileUI();
+
     // Window resize
     window.addEventListener('resize', () => {
       if (currentProject) {
@@ -201,6 +204,9 @@
     mode = m;
     document.body.classList.toggle('play-mode', m === 'play');
     document.body.classList.toggle('edit-mode', m === 'edit');
+    // Close any open mobile bottom sheets on mode switch
+    document.getElementById('editPanel')?.classList.remove('mobile-open');
+    document.getElementById('listPanel')?.classList.remove('mobile-open');
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.mode === m);
     });
@@ -328,6 +334,37 @@
     });
     document.addEventListener('pointerup', (e) => {
       if (pointerDown) onUp(e);
+    });
+  }
+
+  /* ————————————————————————————————————————
+     MOBILE UI — bottom-sheet panel toggles
+  ———————————————————————————————————————— */
+  function initMobileUI() {
+    const isMobile = () => window.innerWidth <= 640;
+    const editPanelEl = document.getElementById('editPanel');
+    const listPanelEl = document.getElementById('listPanel');
+    const panelToggleBtn = document.getElementById('panelToggle');
+    const editPanelToggleBtn = document.getElementById('editPanelToggle');
+
+    // Remove .hidden from edit-panel-toggle so CSS can show it on mobile
+    editPanelToggleBtn.classList.remove('hidden');
+
+    panelToggleBtn.addEventListener('click', () => {
+      if (!isMobile()) return;
+      listPanelEl.classList.toggle('mobile-open');
+    });
+    editPanelToggleBtn.addEventListener('click', () => {
+      if (!isMobile()) return;
+      editPanelEl.classList.toggle('mobile-open');
+    });
+
+    // Tapping the canvas closes panels on mobile
+    stage.addEventListener('pointerdown', (e) => {
+      if (!isMobile()) return;
+      if (e.target.closest('.edit-panel') || e.target.closest('.list-panel')) return;
+      editPanelEl.classList.remove('mobile-open');
+      listPanelEl.classList.remove('mobile-open');
     });
   }
 
