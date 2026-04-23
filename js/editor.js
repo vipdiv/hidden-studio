@@ -254,7 +254,7 @@ window.Editor = (function() {
     // Transform panel for surprises (configures how the sprite looks when revealed)
     if (kind === 'surprise') {
       if (!data.transform) data.transform = window.Transforms.defaults();
-      parts.push(`<details class="xf-details"><summary>Rotate & adjust reveal</summary>`);
+      parts.push(`<details class="xf-details" open><summary>Rotate & adjust reveal</summary>`);
       parts.push(window.Transforms.renderUI(data.transform, { prefix: 'sur', showScale: false }));
       parts.push(`</details>`);
     }
