@@ -1048,3 +1048,16 @@ button.chip.off { opacity: 0.55; }
   transform-origin: center center;
   transition: filter 0.15s;
 }
+
+/* ═══════════════════════════════════════════════════
+   KEYBOARD SHORTCUTS — body-level state classes
+═══════════════════════════════════════════════════ */
+
+/* Spacebar / H-tool: override stage cursor to grab */
+body.space-pan .stage       { cursor: grab !important; }
+body.space-pan .stage.grabbing { cursor: grabbing !important; }
+
+/* Tab: hide all panels for full-canvas view */
+body.panels-hidden .edit-panel,
+body.panels-hidden .list-panel,
+body.panels-hidden .hud-top { opacity: 0; pointer-events: none; transition: opacity 0.2s; }

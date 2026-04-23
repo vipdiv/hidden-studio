@@ -281,6 +281,7 @@ window.Game = (function() {
     el.style.pointerEvents = 'none';
     el.style.zIndex = 6;
     el.innerHTML = window.Sprites.renderBuiltin(spriteName);
+    if (s.transform) window.Transforms.applyTo(el, s.transform, { includeScale: false });
     window.Anim.apply(el, s.anim || ['pop']);
     playLayer.appendChild(el);
 

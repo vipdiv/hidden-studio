@@ -5,7 +5,8 @@
 window.Editor = (function() {
 
   let project = null;
-  let selected = null;   // { kind: 'item'|'surprise'|'sprite', id }
+  let selected = null;       // { kind: 'item'|'surprise', id }
+  let selectedSprite = null; // sprite id, or null
   let tool = 'select';
 
   // DOM refs
@@ -76,9 +77,20 @@ window.Editor = (function() {
 
   function setProject(p) {
     project = p;
+    // Migrate legacy sprite.rotation → sprite.transform
+    (p.sprites || []).forEach(s => {
+      if (!s.transform) {
+        s.transform = window.Transforms.defaults();
+        if (s.rotation) s.transform.rotation = s.rotation;
+      }
+    });
     selected = null;
+    selectedSprite = null;
     updateSelectedPanel();
+    renderBaseTransformPanel();
   }
+
+  function getProject() { return project; }
 
   function setTool(t) {
     tool = t;
@@ -163,7 +175,11 @@ window.Editor = (function() {
 
   function select(kind, id) {
     selected = { kind, id };
-    // Visual selection
+    // Clear sprite selection without full re-render
+    selectedSprite = null;
+    spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
+    // Visual selection on hit zones
     hitsLayer.querySelectorAll('.hit').forEach(el => {
       el.classList.toggle('selected',
         el.dataset.id === id && el.dataset.kind === kind);
@@ -173,7 +189,10 @@ window.Editor = (function() {
 
   function deselect() {
     selected = null;
+    selectedSprite = null;
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
+    spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
     updateSelectedPanel();
   }
 
@@ -212,7 +231,7 @@ window.Editor = (function() {
     parts.push(`<button class="ghost-btn" id="sel-upload-sound">⬆ Upload sound (MP3/WAV)</button>`);
     parts.push(`<button class="ghost-btn" id="sel-freesound">🔎 Search Freesound</button>`);
 
-    // Animation picker (combinable chips)
+    // Surprise-specific fields
     if (kind === 'surprise') {
       parts.push(`<label style="margin-top:10px">Sprite`);
       const spriteOpts = window.Sprites.BUILTIN_NAMES.map(n =>
@@ -222,6 +241,7 @@ window.Editor = (function() {
       parts.push(`</label>`);
     }
 
+    // Animation picker (combinable chips)
     parts.push(`<label style="margin-top:10px">Animation (click to combine)</label>`);
     parts.push(`<div class="anim-chips" id="sel-anims">`);
     const allAnims = [...window.Anim.LOOPING_NAMES, ...window.Anim.ONE_SHOT_NAMES];
@@ -230,6 +250,14 @@ window.Editor = (function() {
       parts.push(`<button class="anim-chip${active ? ' active' : ''}" data-anim="${a}">${window.Anim.PRESETS[a].label}</button>`);
     });
     parts.push(`</div>`);
+
+    // Transform panel for surprises (configures how the sprite looks when revealed)
+    if (kind === 'surprise') {
+      if (!data.transform) data.transform = window.Transforms.defaults();
+      parts.push(`<details class="xf-details"><summary>Rotate & adjust reveal</summary>`);
+      parts.push(window.Transforms.renderUI(data.transform, { prefix: 'sur', showScale: false }));
+      parts.push(`</details>`);
+    }
 
     parts.push(`<button class="delete-btn" id="sel-delete">🗑 Delete this ${kind}</button>`);
 
@@ -252,7 +280,6 @@ window.Editor = (function() {
     document.getElementById('sel-sound').addEventListener('change', (e) => {
       data.sound = e.target.value;
       schedSave();
-      // preview
       window.SFX.play(data.sound);
     });
     document.getElementById('sel-upload-sound').addEventListener('click', () => {
@@ -267,6 +294,11 @@ window.Editor = (function() {
         data.sprite = e.target.value;
         schedSave();
       });
+      // Wire the transform sliders — change is saved; visual preview happens on play-mode reveal
+      window.Transforms.wireUI(data.transform, (t) => {
+        data.transform = t;
+        schedSave();
+      }, { prefix: 'sur', showScale: false });
     }
     document.querySelectorAll('#sel-anims .anim-chip').forEach(chip => {
       chip.addEventListener('click', () => {
@@ -286,6 +318,15 @@ window.Editor = (function() {
   }
 
   function deleteSelected() {
+    // Handle sprite deletion
+    if (selectedSprite) {
+      project.sprites = (project.sprites || []).filter(s => s.id !== selectedSprite);
+      selectedSprite = null;
+      renderSprites();
+      selectedPanel.classList.add('hidden');
+      schedSave();
+      return;
+    }
     if (!selected) return;
     const arr = selected.kind === 'item' ? project.items : project.surprises;
     const idx = arr.findIndex(x => x.id === selected.id);
@@ -297,6 +338,81 @@ window.Editor = (function() {
     window.Game.renderSparkles();
     window.Game.updateCounter();
     schedSave();
+  }
+
+  function duplicateSelected() {
+    if (selectedSprite) {
+      const sprite = (project.sprites || []).find(s => s.id === selectedSprite);
+      if (!sprite) return;
+      const copy = JSON.parse(JSON.stringify(sprite));
+      copy.id = 'spr_' + Date.now().toString(36);
+      copy.x += 20; copy.y += 20;
+      project.sprites.push(copy);
+      selectSprite(copy.id);
+      schedSave();
+      return;
+    }
+    if (!selected) return;
+    const arr = selected.kind === 'item' ? project.items : project.surprises;
+    const data = (arr || []).find(x => x.id === selected.id);
+    if (!data) return;
+    const copy = JSON.parse(JSON.stringify(data));
+    const prefix = selected.kind === 'item' ? 'item_' : 'sur_';
+    copy.id = prefix + Date.now().toString(36);
+    copy.x += 20; copy.y += 20;
+    arr.push(copy);
+    window.Game.renderHits();
+    window.Game.renderList();
+    window.Game.updateCounter();
+    select(selected.kind, copy.id);
+    schedSave();
+  }
+
+  function nudgeSelected(dx, dy) {
+    if (selectedSprite) {
+      const sprite = (project.sprites || []).find(s => s.id === selectedSprite);
+      if (sprite) { sprite.x += dx; sprite.y += dy; renderSprites(); schedSave(); }
+      return;
+    }
+    if (!selected) return;
+    const data = getSelected();
+    if (!data) return;
+    data.x += dx; data.y += dy;
+    window.Game.renderHits();
+    hitsLayer.querySelectorAll('.hit').forEach(el => {
+      if (el.dataset.id === data.id) el.classList.add('selected');
+    });
+    schedSave();
+  }
+
+  /* ————————————————————————————————————————
+     SPRITE LAYER ORDER
+  ———————————————————————————————————————— */
+  function _moveSpriteInArray(fromIdx, toIdx) {
+    const arr = project.sprites;
+    arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0]);
+    renderSprites();
+    schedSave();
+  }
+  function bringForward() {
+    const arr = project.sprites || [];
+    const i = arr.findIndex(s => s.id === selectedSprite);
+    if (i >= 0 && i < arr.length - 1) _moveSpriteInArray(i, i + 1);
+  }
+  function sendBackward() {
+    const arr = project.sprites || [];
+    const i = arr.findIndex(s => s.id === selectedSprite);
+    if (i > 0) _moveSpriteInArray(i, i - 1);
+  }
+  function bringToFront() {
+    const arr = project.sprites || [];
+    const i = arr.findIndex(s => s.id === selectedSprite);
+    if (i >= 0) _moveSpriteInArray(i, arr.length - 1);
+  }
+  function sendToBack() {
+    const arr = project.sprites || [];
+    const i = arr.findIndex(s => s.id === selectedSprite);
+    if (i > 0) _moveSpriteInArray(i, 0);
   }
 
   /* ————————————————————————————————————————
@@ -335,12 +451,10 @@ window.Editor = (function() {
         data.r = Math.max(10, Math.min(300, Math.sqrt(dx*dx + dy*dy)));
       }
       window.Game.renderHits();
-      // keep selection highlight
       hitsLayer.querySelectorAll('.hit').forEach(el => {
         if (el.dataset.id === data.id) el.classList.add('selected');
       });
       window.Game.renderSparkles();
-      // Update range slider if shown
       const rInput = document.getElementById('sel-r');
       if (rInput) rInput.value = data.r;
     };
@@ -359,7 +473,7 @@ window.Editor = (function() {
   }
 
   /* ————————————————————————————————————————
-     BASE LAYER SWAP
+     BASE LAYER SWAP + TRANSFORM
   ———————————————————————————————————————— */
   function setBasePlanet() {
     project.baseType = 'svg';
@@ -379,7 +493,7 @@ window.Editor = (function() {
     const reader = new FileReader();
     reader.onload = (ev) => {
       project.baseType = 'image';
-      project.baseContent = ev.target.result; // data URL
+      project.baseContent = ev.target.result;
       renderBaseLayer();
       schedSave();
     };
@@ -397,6 +511,25 @@ window.Editor = (function() {
     } else {
       el.innerHTML = '';
     }
+    applyBaseTransform();
+  }
+
+  function applyBaseTransform() {
+    const inner = document.getElementById('baseLayer')?.firstElementChild;
+    if (!inner || !project) return;
+    window.Transforms.applyTo(inner, project.baseTransform);
+  }
+
+  function renderBaseTransformPanel() {
+    const container = document.getElementById('baseTransformPanel');
+    if (!container || !project) return;
+    if (!project.baseTransform) project.baseTransform = window.Transforms.defaults();
+    container.innerHTML = window.Transforms.renderUI(project.baseTransform, { prefix: 'base' });
+    window.Transforms.wireUI(project.baseTransform, (t) => {
+      project.baseTransform = t;
+      applyBaseTransform();
+      schedSave();
+    }, { prefix: 'base' });
   }
 
   /* ————————————————————————————————————————
@@ -417,10 +550,8 @@ window.Editor = (function() {
   }
 
   function importSpriteFromDataUrl(dataUrl) {
-    // Place it at center of current view
     const vw = window.innerWidth, vh = window.innerHeight;
     const centerW = window.Game.screenToWorld(vw / 2, vh / 2);
-    // Need image size to compute w/h
     const img = new Image();
     img.onload = () => {
       const maxSide = 200;
@@ -432,16 +563,15 @@ window.Editor = (function() {
       const sprite = {
         id: 'spr_' + Date.now().toString(36),
         imageData: dataUrl,
-        x: centerW.x,
-        y: centerW.y,
+        x: centerW.x, y: centerW.y,
         w, h,
-        rotation: 0,
+        transform: window.Transforms.defaults(),
       };
       project.sprites = project.sprites || [];
       project.sprites.push(sprite);
       renderSprites();
       schedSave();
-      showHint('Sprite placed — drag to move');
+      showHint('Sprite placed — tap to select, drag to move');
     };
     img.src = dataUrl;
   }
@@ -452,14 +582,26 @@ window.Editor = (function() {
       const el = document.createElement('div');
       el.className = 'sprite selectable';
       el.dataset.id = s.id;
-      el.style.left = `${s.x - s.w/2}px`;
-      el.style.top  = `${s.y - s.h/2}px`;
-      el.style.width = `${s.w}px`;
+      el.style.left   = `${s.x - s.w/2}px`;
+      el.style.top    = `${s.y - s.h/2}px`;
+      el.style.width  = `${s.w}px`;
       el.style.height = `${s.h}px`;
-      if (s.rotation) el.style.transform = `rotate(${s.rotation}deg)`;
+      // Apply rotation/flip/filters; size is via width/height so skip scale
+      window.Transforms.applyTo(el, s.transform || {}, { includeScale: false });
       if (s.imageData) el.innerHTML = `<img src="${s.imageData}" alt="" draggable="false">`;
       else if (s.builtin) el.innerHTML = window.Sprites.renderBuiltin(s.builtin);
-      // Drag to move
+      // Selection highlight + rotate handle
+      if (s.id === selectedSprite) {
+        el.classList.add('selected');
+        const line = document.createElement('div');
+        line.className = 'sprite-rotate-line';
+        el.appendChild(line);
+        const handle = document.createElement('div');
+        handle.className = 'sprite-rotate-handle';
+        handle.textContent = '↻';
+        handle.addEventListener('pointerdown', (ev) => onRotateHandleDown(ev, s));
+        el.appendChild(handle);
+      }
       el.addEventListener('pointerdown', (e) => onSpritePointerDown(e, s));
       spriteLayer.appendChild(el);
     });
@@ -468,11 +610,15 @@ window.Editor = (function() {
   function onSpritePointerDown(e, sprite) {
     if (!document.body.classList.contains('edit-mode')) return;
     e.stopPropagation();
-    const startScreen = getScreenPoint(e);
-    const startW = window.Game.screenToWorld(startScreen.x, startScreen.y);
+    const startPt = getScreenPoint(e);
+    const startW  = window.Game.screenToWorld(startPt.x, startPt.y);
     const sx0 = sprite.x, sy0 = sprite.y;
+    let moved = false;
+
     const onMove = (ev) => {
       const p = getScreenPoint(ev);
+      if (Math.abs(p.x - startPt.x) + Math.abs(p.y - startPt.y) > 3) moved = true;
+      if (!moved) return;
       const w = window.Game.screenToWorld(p.x, p.y);
       sprite.x = sx0 + (w.x - startW.x);
       sprite.y = sy0 + (w.y - startW.y);
@@ -481,10 +627,79 @@ window.Editor = (function() {
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
-      schedSave();
+      if (!moved) {
+        selectSprite(sprite.id);
+      } else {
+        schedSave();
+      }
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+  }
+
+  function onRotateHandleDown(e, sprite) {
+    e.stopPropagation();
+    e.preventDefault();
+    const sprEl = spriteLayer.querySelector(`[data-id="${sprite.id}"]`);
+    const rect  = sprEl.getBoundingClientRect();
+    const cx = rect.left + rect.width  / 2;
+    const cy = rect.top  + rect.height / 2;
+    const startAngle   = Math.atan2(e.clientY - cy, e.clientX - cx) * 180 / Math.PI;
+    if (!sprite.transform) sprite.transform = window.Transforms.defaults();
+    const startRotation = sprite.transform.rotation || 0;
+
+    const onMove = (ev) => {
+      const angle = Math.atan2(ev.clientY - cy, ev.clientX - cx) * 180 / Math.PI;
+      let delta = angle - startAngle;
+      if (ev.shiftKey) delta = Math.round(delta / 15) * 15;
+      let newRot = startRotation + delta;
+      while (newRot >  180) newRot -= 360;
+      while (newRot < -180) newRot += 360;
+      sprite.transform.rotation = parseFloat(newRot.toFixed(1));
+      renderSprites();
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      schedSave();
+      renderSpriteEditor(); // refresh rotation slider to match
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  function selectSprite(id) {
+    selected = null;
+    selectedSprite = id;
+    hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
+    renderSprites();        // re-render to show selection highlight + handle
+    renderSpriteEditor();
+  }
+
+  function renderSpriteEditor() {
+    const sprite = (project?.sprites || []).find(s => s.id === selectedSprite);
+    if (!sprite) { selectedPanel.classList.add('hidden'); return; }
+    selectedPanel.classList.remove('hidden');
+    if (!sprite.transform) sprite.transform = window.Transforms.defaults();
+
+    let html = window.Transforms.renderUI(sprite.transform, { prefix: 'spr', showScale: false });
+    html += `<button class="delete-btn" id="spr-delete" style="margin-top:8px">🗑 Delete sprite</button>`;
+    selectedContent.innerHTML = html;
+
+    window.Transforms.wireUI(sprite.transform, (t) => {
+      sprite.transform = t;
+      renderSprites();
+      schedSave();
+    }, { prefix: 'spr', showScale: false });
+
+    document.getElementById('spr-delete').addEventListener('click', () => {
+      if (!confirm('Delete this sprite?')) return;
+      project.sprites = (project.sprites || []).filter(s => s.id !== selectedSprite);
+      selectedSprite = null;
+      renderSprites();
+      selectedPanel.classList.add('hidden');
+      schedSave();
+    });
   }
 
   /* ————————————————————————————————————————
@@ -504,7 +719,7 @@ window.Editor = (function() {
         project.customSounds[itemId] = dataUrl;
         await window.SFX.loadCustomSound(itemId, dataUrl);
         schedSave();
-        updateSelectedPanel(); // refresh to show "custom sound loaded"
+        updateSelectedPanel();
       };
       reader.readAsDataURL(file);
     });
@@ -523,7 +738,6 @@ window.Editor = (function() {
     }
   }
 
-  /* Called when a project is loaded — hook up its custom sounds */
   async function loadProjectAssets(p) {
     if (p.customSounds) {
       for (const key of Object.keys(p.customSounds)) {
@@ -532,7 +746,6 @@ window.Editor = (function() {
     }
   }
 
-  /* Autosave helper */
   function schedSave() {
     window.Projects.scheduleAutosave(project);
   }
@@ -553,7 +766,6 @@ window.Editor = (function() {
       project.drawings.push(stroke);
       schedSave();
     } else if (tool === 'eraser') {
-      // strokes were removed; update project
       project.drawings = window.Draw.getStrokes();
       schedSave();
     }
@@ -573,12 +785,15 @@ window.Editor = (function() {
   }
 
   return {
-    init, setProject,
+    init, setProject, getProject,
     setTool, getTool,
     onStageTap,
     onDrawStart, onDrawMove, onDrawEnd,
-    renderBaseLayer,
+    renderBaseLayer, applyBaseTransform, renderBaseTransformPanel,
     renderSprites,
+    selectSprite,
+    deleteSelected, duplicateSelected, nudgeSelected,
+    bringForward, sendBackward, bringToFront, sendToBack,
     loadProjectAssets,
     deselect,
     openModal, closeModal,

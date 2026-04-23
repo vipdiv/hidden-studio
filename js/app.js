@@ -87,6 +87,11 @@
       e.target.value = '';
     });
 
+    // Shortcuts help button (? in HUD)
+    document.getElementById('shortcutsBtn').addEventListener('click', () => {
+      window.Shortcuts.showShortcutsModal();
+    });
+
     // Back button
     document.getElementById('backBtn').addEventListener('click', () => {
       if (currentProject) window.Projects.saveNow(currentProject);
@@ -109,6 +114,12 @@
 
     // Stage input
     setupStageInput();
+
+    // Keyboard shortcuts
+    window.Shortcuts.init();
+
+    // Expose setMode so shortcuts.js can toggle play/edit
+    window.App = { setMode };
 
     // Window resize
     window.addEventListener('resize', () => {
@@ -224,9 +235,16 @@
       return { x: e.clientX, y: e.clientY };
     }
 
+    // True when spacebar is held or H-tool is active — everything pans
+    function isPanMode() {
+      if (document.body.classList.contains('space-pan')) return true;
+      return window.Editor && window.Editor.getTool() === 'pan';
+    }
+
     function onDown(e) {
-      // If editing and clicked on a hit zone or sprite, let their own handlers take over
-      if (document.body.classList.contains('edit-mode')) {
+      // In edit mode, let hit zones and sprites capture events — UNLESS
+      // spacebar is held or the Hand tool is active (pan overrides everything)
+      if (document.body.classList.contains('edit-mode') && !isPanMode()) {
         if (e.target.closest('.hit')) return;
         if (e.target.closest('.sprite')) return;
       }
@@ -237,8 +255,8 @@
       startCamX = window.Game.camX; startCamY = window.Game.camY;
       totalDelta = 0;
 
-      // If in edit mode with pen/eraser, start drawing
-      if (document.body.classList.contains('edit-mode')) {
+      // Start drawing only when NOT in pan mode
+      if (document.body.classList.contains('edit-mode') && !isPanMode()) {
         const tool = window.Editor.getTool();
         if (tool === 'pen' || tool === 'eraser') {
           const w = window.Game.screenToWorld(p.x, p.y);
@@ -288,7 +306,7 @@
         const w = window.Game.screenToWorld(p.x, p.y);
         if (document.body.classList.contains('play-mode')) {
           window.Game.handleTap(p.x, p.y);
-        } else if (document.body.classList.contains('edit-mode')) {
+        } else if (document.body.classList.contains('edit-mode') && !isPanMode()) {
           window.Editor.onStageTap(w.x, w.y);
         }
       }
