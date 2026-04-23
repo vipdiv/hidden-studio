@@ -1070,15 +1070,45 @@ window.Editor = (function() {
     selectedPanel.classList.remove('hidden');
     if (!sprite.transform) sprite.transform = window.Transforms.defaults();
 
-    let html = window.Transforms.renderUI(sprite.transform, { prefix: 'spr', showScale: false });
+    // Size sliders (width + height, maintain aspect if shift held)
+    const sizeHtml = `
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ui-text-dim);margin-bottom:6px">Size</div>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:4px">
+          W <input type="range" id="spr-w" min="10" max="800" value="${Math.round(sprite.w)}">
+          <span id="spr-w-val" style="min-width:34px;text-align:right;font-size:11px;color:var(--ui-text-dim)">${Math.round(sprite.w)}px</span>
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px">
+          H <input type="range" id="spr-h" min="10" max="800" value="${Math.round(sprite.h)}">
+          <span id="spr-h-val" style="min-width:34px;text-align:right;font-size:11px;color:var(--ui-text-dim)">${Math.round(sprite.h)}px</span>
+        </label>
+      </div>
+    `;
+
+    let html = sizeHtml + window.Transforms.renderUI(sprite.transform, { prefix: 'spr' });
     html += `<button class="delete-btn" id="spr-delete" style="margin-top:8px">🗑 Delete sprite</button>`;
     selectedContent.innerHTML = html;
+
+    // Wire size sliders
+    const wSlider = document.getElementById('spr-w');
+    const hSlider = document.getElementById('spr-h');
+    const aspect = sprite.h / sprite.w;
+    wSlider.addEventListener('input', () => {
+      sprite.w = parseInt(wSlider.value);
+      document.getElementById('spr-w-val').textContent = sprite.w + 'px';
+      renderSprites(); schedSave();
+    });
+    hSlider.addEventListener('input', () => {
+      sprite.h = parseInt(hSlider.value);
+      document.getElementById('spr-h-val').textContent = sprite.h + 'px';
+      renderSprites(); schedSave();
+    });
 
     window.Transforms.wireUI(sprite.transform, (t) => {
       sprite.transform = t;
       renderSprites();
       schedSave();
-    }, { prefix: 'spr', showScale: false });
+    }, { prefix: 'spr' });
 
     document.getElementById('spr-delete').addEventListener('click', () => {
       if (!confirm('Delete this sprite?')) return;
@@ -1086,6 +1116,7 @@ window.Editor = (function() {
       selectedSprite = null;
       renderSprites();
       selectedPanel.classList.add('hidden');
+      renderLayersPanel();
       schedSave();
     });
   }
