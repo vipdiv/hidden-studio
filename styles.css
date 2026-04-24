@@ -1609,37 +1609,36 @@ body.edit-mode #counter { display: none; }
 .hint-tip.show { opacity: 1; }
 body.play-mode .hint-tip { display: none; }
 
-/* Play-mode empty state */
+/* Play-mode empty state — lives inside #world, pans/zooms with the canvas */
 .play-empty {
   display: none;
-  position: fixed;
-  top: calc(50% + 36px); /* offset for 72px HUD */
+  position: absolute;
+  top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  max-width: 340px;
-  width: 80%;
+  width: 600px;
   text-align: center;
-  padding: 0 16px;
+  padding: 0;
   pointer-events: none;
   z-index: 5;
 }
 body.play-mode .play-empty.visible { display: block; }
 .play-empty-quote {
   font-family: 'Fraunces', serif;
-  font-size: 15px;
+  font-size: 30px;
   font-weight: 300;
   font-style: italic;
-  color: rgba(245, 239, 226, 0.5);
-  line-height: 1.6;
-  margin: 0 0 10px;
+  color: rgba(245, 239, 226, 0.45);
+  line-height: 1.55;
+  margin: 0 0 16px;
 }
 .play-empty-sub {
-  font-size: 11px;
-  color: rgba(245, 239, 226, 0.22);
+  font-size: 18px;
+  color: rgba(245, 239, 226, 0.2);
   letter-spacing: 0.02em;
   margin: 0;
 }
-.play-empty-sub strong { color: rgba(245, 239, 226, 0.32); font-weight: 600; }
+.play-empty-sub strong { color: rgba(245, 239, 226, 0.3); font-weight: 600; }
 
 /* Modal */
 .modal-backdrop {
