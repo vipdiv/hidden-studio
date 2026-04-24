@@ -379,8 +379,9 @@ button.chip.off { opacity: 0.45; }
   top: 0; left: 0;
   transform-origin: 0 0;
   will-change: transform;
-  width: 1600px;
-  height: 1600px;
+  width: 1600px;  /* JS overrides via inline style when docWidth changes */
+  height: 1600px; /* JS overrides via inline style when docHeight changes */
+  box-shadow: 0 0 0 1.5px rgba(255,255,255,0.1), 0 8px 48px rgba(0,0,0,0.55);
 }
 
 .base-layer {

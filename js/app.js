@@ -124,12 +124,9 @@
     // Mobile bottom-sheet panel toggles
     initMobileUI();
 
-    // Window resize
+    // Window resize — re-fit to screen respecting current doc dimensions
     window.addEventListener('resize', () => {
-      if (currentProject) {
-        window.Game.scale = Math.min(window.innerWidth, window.innerHeight) * 0.85 / 900;
-        window.Game.applyCamera();
-      }
+      if (currentProject) window.Game.centerOnPlanet();
     });
   }
 

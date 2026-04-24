@@ -73,6 +73,7 @@ window.Editor = (function() {
       if (project) window.Projects.exportHtml(project);
     });
     document.getElementById('addFolderBtn')?.addEventListener('click', _createGroup);
+    document.getElementById('docSizeBtn')?.addEventListener('click', openDocSizeModal);
     document.getElementById('clearDrawingsBtn').addEventListener('click', () => {
       if (confirm('Clear all pen drawings? (Cannot be undone.)')) {
         window.Draw.clearAll();
@@ -126,10 +127,15 @@ window.Editor = (function() {
     });
     // Ensure groups array exists
     if (!p.groups) p.groups = [];
+    // Ensure document dimensions exist
+    if (!p.docWidth)  p.docWidth  = 1600;
+    if (!p.docHeight) p.docHeight = 1600;
+    if (!p.docDpi)    p.docDpi    = 150;
     selected = null;
     selectedSprite = null;
     selectedBase = false;
     selectedStroke = null;
+    applyDocSize();
     updateSelectedPanel();
     renderLayersPanel();
   }
@@ -1418,6 +1424,142 @@ window.Editor = (function() {
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
+  }
+
+  /* ————————————————————————————————————————
+     DOCUMENT SIZE
+  ———————————————————————————————————————— */
+  function applyDocSize() {
+    if (!project || !world) return;
+    const w = project.docWidth  || 1600;
+    const h = project.docHeight || 1600;
+    world.style.width  = w + 'px';
+    world.style.height = h + 'px';
+    document.getElementById('drawingLayer')?.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    document.getElementById('drawingCursor')?.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  }
+
+  function openDocSizeModal() {
+    if (!project) return;
+    const w   = project.docWidth  || 1600;
+    const h   = project.docHeight || 1600;
+    const dpi = project.docDpi    || 150;
+
+    const input = (id, val, min, max, step='1') =>
+      `<input type="number" id="${id}" value="${val}" min="${min}" max="${max}" step="${step}"
+       style="width:100%;margin-top:4px;background:var(--ui-bg);color:var(--ui-text);border:1px solid var(--panel-border);border-radius:3px;padding:4px 6px;font-size:14px">`;
+
+    openModal('Document Size', `
+      <div style="margin-bottom:12px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ui-text-dim);margin-bottom:6px">Units</div>
+        <div style="display:flex;gap:6px">
+          <button class="doc-unit-btn ghost-btn active" data-unit="px" style="flex:1">Pixels</button>
+          <button class="doc-unit-btn ghost-btn" data-unit="in" style="flex:1">Inches</button>
+        </div>
+      </div>
+
+      <div id="doc-px-inputs">
+        <label style="display:block;margin-bottom:8px;font-size:12px">Width (px)
+          ${input('doc-px-w', w, 100, 8000)}
+        </label>
+        <label style="display:block;margin-bottom:14px;font-size:12px">Height (px)
+          ${input('doc-px-h', h, 100, 8000)}
+        </label>
+      </div>
+
+      <div id="doc-in-inputs" style="display:none">
+        <label style="display:block;margin-bottom:8px;font-size:12px">Width (inches)
+          ${input('doc-in-w', (w/dpi).toFixed(2), 0.5, 50, 0.25)}
+        </label>
+        <label style="display:block;margin-bottom:8px;font-size:12px">Height (inches)
+          ${input('doc-in-h', (h/dpi).toFixed(2), 0.5, 50, 0.25)}
+        </label>
+        <label style="display:block;margin-bottom:6px;font-size:12px">DPI
+          ${input('doc-dpi', dpi, 72, 600)}
+        </label>
+        <div id="doc-px-equiv" style="font-size:11px;color:var(--ui-text-dim);margin-bottom:10px">${w} × ${h} px</div>
+      </div>
+
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ui-text-dim);margin-bottom:6px">Presets</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+          <button class="ghost-btn doc-preset" data-w="1600" data-h="1600"   style="font-size:11px;padding:4px">1600 × 1600</button>
+          <button class="ghost-btn doc-preset" data-w="2048" data-h="2048"   style="font-size:11px;padding:4px">2048 × 2048</button>
+          <button class="ghost-btn doc-preset" data-w="1275" data-h="1650"   style="font-size:11px;padding:4px">Letter 8.5" · 150dpi</button>
+          <button class="ghost-btn doc-preset" data-w="1240" data-h="1754"   style="font-size:11px;padding:4px">A4 · 150dpi</button>
+          <button class="ghost-btn doc-preset" data-w="1920" data-h="1080"   style="font-size:11px;padding:4px">1920 × 1080</button>
+          <button class="ghost-btn doc-preset" data-w="2480" data-h="3508"   style="font-size:11px;padding:4px">A4 · 300dpi</button>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px">
+        <button class="ghost-btn" id="doc-apply" style="flex:1">Apply</button>
+        <button class="ghost-btn danger" id="doc-cancel" style="flex:1">Cancel</button>
+      </div>
+    `);
+
+    let curUnit = 'px';
+
+    function updateEquiv() {
+      const inW = parseFloat(document.getElementById('doc-in-w')?.value) || 0;
+      const inH = parseFloat(document.getElementById('doc-in-h')?.value) || 0;
+      const d   = parseInt(document.getElementById('doc-dpi')?.value)    || 150;
+      const el  = document.getElementById('doc-px-equiv');
+      if (el) el.textContent = `${Math.round(inW * d)} × ${Math.round(inH * d)} px`;
+    }
+
+    function switchUnit(unit) {
+      curUnit = unit;
+      document.querySelectorAll('.doc-unit-btn').forEach(b =>
+        b.classList.toggle('active', b.dataset.unit === unit));
+      document.getElementById('doc-px-inputs').style.display = unit === 'px' ? '' : 'none';
+      document.getElementById('doc-in-inputs').style.display = unit === 'in' ? '' : 'none';
+      if (unit === 'in') updateEquiv();
+    }
+
+    document.querySelectorAll('.doc-unit-btn').forEach(btn =>
+      btn.addEventListener('click', () => switchUnit(btn.dataset.unit)));
+
+    ['doc-in-w', 'doc-in-h', 'doc-dpi'].forEach(id =>
+      document.getElementById(id)?.addEventListener('input', updateEquiv));
+
+    document.querySelectorAll('.doc-preset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const pw = parseInt(btn.dataset.w), ph = parseInt(btn.dataset.h);
+        if (curUnit === 'px') {
+          document.getElementById('doc-px-w').value = pw;
+          document.getElementById('doc-px-h').value = ph;
+        } else {
+          const d = parseInt(document.getElementById('doc-dpi')?.value) || 150;
+          document.getElementById('doc-in-w').value = (pw / d).toFixed(2);
+          document.getElementById('doc-in-h').value = (ph / d).toFixed(2);
+          updateEquiv();
+        }
+      });
+    });
+
+    document.getElementById('doc-cancel').addEventListener('click', closeModal);
+    document.getElementById('doc-apply').addEventListener('click', () => {
+      let newW, newH;
+      if (curUnit === 'px') {
+        newW = parseInt(document.getElementById('doc-px-w').value);
+        newH = parseInt(document.getElementById('doc-px-h').value);
+      } else {
+        const inW = parseFloat(document.getElementById('doc-in-w').value);
+        const inH = parseFloat(document.getElementById('doc-in-h').value);
+        const d   = parseInt(document.getElementById('doc-dpi').value) || 150;
+        project.docDpi = d;
+        newW = Math.round(inW * d);
+        newH = Math.round(inH * d);
+      }
+      if (!newW || !newH || newW < 100 || newH < 100) return;
+      project.docWidth  = newW;
+      project.docHeight = newH;
+      applyDocSize();
+      window.Game.centerOnPlanet();
+      closeModal();
+      schedSave();
+    });
   }
 
   /* ————————————————————————————————————————

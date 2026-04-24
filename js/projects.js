@@ -279,6 +279,10 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 <script>
 const D = __PROJECT_DATA__;
 const B = __BASE_LAYER__;
+// Apply document size
+const W=D.docWidth||1600,H=D.docHeight||1600;
+(function(){const w=document.getElementById('world');if(w){w.style.width=W+'px';w.style.height=H+'px';}
+const d=document.getElementById('draw');if(d)d.setAttribute('viewBox','0 0 '+W+' '+H);})();
 // Render base
 const base = document.getElementById('base');
 if (B.type === 'svg') base.innerHTML = B.content;
@@ -356,10 +360,10 @@ function addMark(it){const m=document.createElement('div');m.className='mark';m.
 function pop(t,x,y,cls){const p=document.createElement('div');p.className=cls;p.textContent=t;p.style.left=x+'px';p.style.top=y+'px';document.getElementById('world').appendChild(p);setTimeout(()=>p.remove(),1500)}
 // Camera
 let camX=0,camY=0,scale=1;
-function cScale(){return Math.min(innerWidth,innerHeight)*.85/900}
-function clampC(){const sW=1600*scale,sH=1600*scale;camX=Math.max(innerWidth/2-sW+innerWidth*.3,Math.min(innerWidth/2-innerWidth*.3,camX));camY=Math.max(innerHeight/2-sH+innerHeight*.3,Math.min(innerHeight/2-innerHeight*.3,camY))}
+function cScale(){return Math.min(innerWidth*.85/W,innerHeight*.85/H)}
+function clampC(){const sW=W*scale,sH=H*scale;camX=Math.max(innerWidth/2-sW+innerWidth*.3,Math.min(innerWidth/2-innerWidth*.3,camX));camY=Math.max(innerHeight/2-sH+innerHeight*.3,Math.min(innerHeight/2-innerHeight*.3,camY))}
 function applyC(){clampC();document.getElementById('world').style.transform='translate('+camX+'px,'+camY+'px) scale('+scale+')'}
-function center(){scale=cScale();camX=innerWidth/2-800*scale;camY=innerHeight/2-800*scale;applyC()}
+function center(){scale=cScale();camX=innerWidth/2-W/2*scale;camY=innerHeight/2-H/2*scale;applyC()}
 // Input
 let drg=false,sx=0,sy=0,scX=0,scY=0,dd=0,cx=0,cy=0;
 const stage=document.getElementById('stage');
@@ -370,7 +374,7 @@ function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('g
 stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEventListener('mouseup',pu);
 stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
 document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
-addEventListener('resize',()=>{scale=cScale();applyC()});
+addEventListener('resize',()=>{center()});
 function R(){found=new Set();document.querySelectorAll('.mark,.pop,.miss').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr()}
 window.R=R;
 buildList();center();updateCtr();

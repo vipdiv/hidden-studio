@@ -9,6 +9,10 @@ window.Game = (function() {
   const WORLD_W = 1600;
   const WORLD_H = 1600;
 
+  // Dynamic world size — reads from project when available, falls back to default
+  function worldW() { return (project && project.docWidth)  || WORLD_W; }
+  function worldH() { return (project && project.docHeight) || WORLD_H; }
+
   let project = null;
   let state = { found: new Set(), surprisesFound: new Set() };
 
@@ -60,11 +64,11 @@ window.Game = (function() {
   ———————————————————————————————————————— */
   function computeBaseScale() {
     const vw = window.innerWidth, vh = window.innerHeight;
-    return Math.min(vw, vh) * 0.85 / 900;
+    return Math.min(vw * 0.85 / worldW(), vh * 0.85 / worldH());
   }
   function clampCamera() {
     const vw = window.innerWidth, vh = window.innerHeight;
-    const sW = WORLD_W * scale, sH = WORLD_H * scale;
+    const sW = worldW() * scale, sH = worldH() * scale;
     const minX = vw / 2 - sW + vw * 0.3;
     const maxX = vw / 2 - vw * 0.3;
     const minY = vh / 2 - sH + vh * 0.3;
@@ -80,29 +84,29 @@ window.Game = (function() {
   function centerOnPlanet() {
     scale = computeBaseScale();
     const vw = window.innerWidth, vh = window.innerHeight;
-    camX = vw / 2 - 800 * scale;
-    camY = vh / 2 - 800 * scale;
+    camX = vw / 2 - (worldW() / 2) * scale;
+    camY = vh / 2 - (worldH() / 2) * scale;
     applyCamera();
   }
   function updateMinimap() {
-    const mapSize = minimapEl.offsetWidth;
+    const mapW = minimapEl.offsetWidth, mapH = minimapEl.offsetHeight;
     const vw = window.innerWidth, vh = window.innerHeight;
     const wx = (-camX) / scale;
     const wy = (-camY) / scale;
     const ww = vw / scale;
     const wh = vh / scale;
-    const mapScale = mapSize / WORLD_W;
-    viewboxEl.style.left   = `${wx * mapScale}px`;
-    viewboxEl.style.top    = `${wy * mapScale}px`;
-    viewboxEl.style.width  = `${ww * mapScale}px`;
-    viewboxEl.style.height = `${wh * mapScale}px`;
+    const msx = mapW / worldW(), msy = mapH / worldH();
+    viewboxEl.style.left   = `${wx * msx}px`;
+    viewboxEl.style.top    = `${wy * msy}px`;
+    viewboxEl.style.width  = `${ww * msx}px`;
+    viewboxEl.style.height = `${wh * msy}px`;
   }
   function onMinimapClick(e) {
     const rect = minimapEl.getBoundingClientRect();
     const mx = e.clientX - rect.left;
     const my = e.clientY - rect.top;
-    const mapScale = rect.width / WORLD_W;
-    const wx = mx / mapScale, wy = my / mapScale;
+    const wx = mx / (rect.width  / worldW());
+    const wy = my / (rect.height / worldH());
     const vw = window.innerWidth, vh = window.innerHeight;
     camX = vw / 2 - wx * scale;
     camY = vh / 2 - wy * scale;
