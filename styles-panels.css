@@ -73,3 +73,81 @@ body[data-theme="paper"] {
   z-index: 100;
   overflow: visible;
 }
+
+/* ── M4: 24px menu bar additions ────────────────── */
+
+/* Raise height from 22px → 24px */
+.menu-bar { height: 24px !important; }
+.hud-top  { top: 24px !important; }
+
+/* Center section: project name */
+.menu-center {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+}
+.menu-project-name {
+  font-size: 12px;
+  color: var(--ui-text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+/* Right section: Play/Edit + fullscreen */
+.menu-right {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 8px;
+  border-left: 1px solid var(--panel-border);
+  height: 100%;
+  flex-shrink: 0;
+}
+.menu-mode-btn {
+  background: none;
+  border: 1px solid var(--panel-border);
+  color: var(--ui-text-dim);
+  font-size: 11px;
+  padding: 1px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.08s;
+  height: 18px;
+  display: flex;
+  align-items: center;
+}
+.menu-mode-btn:hover { color: var(--ui-text); border-color: var(--ui-text-dim); }
+.menu-mode-btn.menu-mode-active {
+  background: var(--ui-blue);
+  border-color: var(--ui-blue);
+  color: #fff;
+}
+.menu-icon-btn {
+  background: none;
+  border: none;
+  color: var(--ui-text-dim);
+  font-size: 14px;
+  padding: 0 6px;
+  cursor: pointer;
+  height: 18px;
+  display: flex;
+  align-items: center;
+}
+.menu-icon-btn:hover { color: var(--ui-text); }
+
+/* Window menu section labels */
+.win-menu-label {
+  padding: 3px 14px 2px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+  cursor: default;
+}
+.win-menu-label:hover { background: transparent !important; }

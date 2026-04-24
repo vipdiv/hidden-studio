@@ -85,8 +85,9 @@
 ═══════════════════════════════════════════════════ -->
 <div class="app hidden" id="app">
 
-  <!-- Slim menu bar -->
+  <!-- ═══ NEW 24px MENU BAR ═══ -->
   <nav class="menu-bar" id="menuBar">
+    <!-- Left: menus -->
     <div class="menu-item" data-menu="file">File
       <ul class="menu-dropdown">
         <li data-action="back">Back to Projects</li>
@@ -112,27 +113,38 @@
         <li data-action="zoom-fit">Fit to Screen <span class="menu-shortcut">Ctrl+0</span></li>
         <li data-action="zoom-100">100% <span class="menu-shortcut">Ctrl+1</span></li>
         <li class="menu-sep"></li>
-        <li data-action="toggle-panels">Toggle Panels <span class="menu-shortcut">Tab</span></li>
+        <li data-action="toggle-rulers">Rulers <span class="menu-shortcut">Ctrl+R</span></li>
+        <li data-action="toggle-grid">Grid <span class="menu-shortcut">Ctrl+'</span></li>
+        <li data-action="outline-mode">Outline Mode <span class="menu-shortcut">Ctrl+Y</span></li>
+        <li class="menu-sep"></li>
         <li data-action="toggle-mode">Toggle Play / Edit <span class="menu-shortcut">F</span></li>
       </ul>
     </div>
-    <div class="menu-item" data-menu="panels">Panels
-      <ul class="menu-dropdown" id="panelsMenuDropdown">
-        <li data-action="toggle-panel-editor"     data-panel-id="editor">     <span class="panel-dot">●</span> Editor Panel</li>
-        <li data-action="toggle-panel-toolstrip"  data-panel-id="toolstrip">  <span class="panel-dot">●</span> Tool Strip</li>
-        <li data-action="toggle-panel-properties" data-panel-id="properties"> <span class="panel-dot">●</span> Properties Panel</li>
-        <li data-action="toggle-panel-minimap"    data-panel-id="minimap">    <span class="panel-dot">●</span> Minimap</li>
-        <li class="menu-sep"></li>
-        <li data-action="panels-show-all">Show All</li>
-        <li data-action="panels-hide-all">Hide All <span class="menu-shortcut">Tab</span></li>
-      </ul>
+    <!-- Window menu — dynamically populated by menu.js -->
+    <div class="menu-item" data-menu="window">Window
+      <ul class="menu-dropdown" id="windowMenuDropdown"></ul>
     </div>
     <div class="menu-item" data-menu="help">Help
-      <ul class="menu-dropdown" id="helpMenuDropdown">
+      <ul class="menu-dropdown">
         <li data-action="shortcuts">Keyboard Shortcuts <span class="menu-shortcut">?</span></li>
+        <li data-action="docs">Documentation</li>
+        <li class="menu-sep"></li>
+        <li data-action="settings">Settings&hellip;</li>
         <li class="menu-sep"></li>
         <li data-action="about">About Hidden Studio</li>
       </ul>
+    </div>
+
+    <!-- Center: project name (mirrors #projectName) -->
+    <div class="menu-center">
+      <span class="menu-project-name" id="menuProjectName">Untitled</span>
+    </div>
+
+    <!-- Right: Play / Edit + fullscreen -->
+    <div class="menu-right">
+      <button class="menu-mode-btn" id="menuPlayBtn" data-action="set-mode-play">&#9654; Play</button>
+      <button class="menu-mode-btn menu-mode-active" id="menuEditBtn" data-action="set-mode-edit">Edit</button>
+      <button class="menu-icon-btn" id="menuFullscreenBtn" title="Fullscreen (F11)">&#10178;</button>
     </div>
   </nav>
 

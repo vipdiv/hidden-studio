@@ -1,42 +1,125 @@
-/* ═══════════════════════════════════════════════════
-   MENU — slim menu bar (File / Edit / View / Help)
-═══════════════════════════════════════════════════ */
+/* =========================================================
+   MENU — 24px menu bar (File / Edit / View / Window / Help)
+   Window menu drives window.Panels for panel visibility
+   and theme switching.
+   ========================================================= */
 
 window.Menu = (function() {
 
   let anyOpen = false;
 
-  /* ── Per-panel visibility state ────────────────── */
-  const PANEL_KEY = 'hs_panelVisibility';
-  const PANEL_DEFS = [
-    { id: 'editor',     cls: 'panel-off-editor' },
-    { id: 'toolstrip',  cls: 'panel-off-toolstrip' },
-    { id: 'properties', cls: 'panel-off-properties' },
-    { id: 'minimap',    cls: 'panel-off-minimap' },
+  /* Four themes exposed in Window > Theme */
+  const THEMES = [
+    { id: 'classic', label: 'Classic' },
+    { id: 'night',   label: 'Night Studio' },
+    { id: 'warm',    label: 'Warm Studio' },
+    { id: 'paper',   label: 'Paper' },
   ];
 
-  function loadPanelState() {
-    try { return JSON.parse(localStorage.getItem(PANEL_KEY) || '{}'); } catch { return {}; }
-  }
-  function savePanelState(state) {
-    localStorage.setItem(PANEL_KEY, JSON.stringify(state));
-  }
-  function applyPanelState(state) {
-    PANEL_DEFS.forEach(({ id, cls }) => {
-      document.body.classList.toggle(cls, !!state[id]);
+  /* Build Window menu dynamically each time it opens */
+  function buildWindowMenu() {
+    const dd = document.getElementById('windowMenuDropdown');
+    if (!dd) return;
+    dd.innerHTML = '';
+
+    const regs = window.Panels._getRegs();
+    const panelIds = Object.keys(regs);
+
+    if (panelIds.length > 0) {
+      dd.appendChild(makeLabel('Panels'));
+      panelIds.forEach(id => {
+        const visible = window.Panels.isVisible(id);
+        const li = makeLi('window-panel-toggle', { panelId: id });
+        li.innerHTML = `<span style="color:${visible ? '#5aaa5a' : 'transparent'}">&#10003;</span> ${regs[id].title}`;
+        dd.appendChild(li);
+      });
+      dd.appendChild(makeSep());
+      const resetLi = makeLi('window-reset-layout', {});
+      resetLi.innerHTML = '<span style="color:transparent">&#10003;</span> Reset Panel Layout';
+      dd.appendChild(resetLi);
+    }
+
+    dd.appendChild(makeSep());
+    dd.appendChild(makeLabel('Theme'));
+    const currentTheme = window.Panels.getTheme();
+    THEMES.forEach(({ id, label }) => {
+      const li = makeLi('window-set-theme', { themeId: id });
+      li.innerHTML = `<span style="color:${id === currentTheme ? '#5aaa5a' : 'transparent'}">&#10003;</span> ${label}`;
+      dd.appendChild(li);
     });
-  }
-  function refreshDots() {
-    const state = loadPanelState();
-    document.querySelectorAll('#panelsMenuDropdown [data-panel-id]').forEach(li => {
-      const dot = li.querySelector('.panel-dot');
-      if (!dot) return;
-      const on = !state[li.dataset.panelId]; // "on" = NOT hidden
-      dot.classList.toggle('dot-on', on);
+
+    // Wire clicks inside the freshly-built dropdown
+    dd.querySelectorAll('[data-action]').forEach(li => {
+      li.addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        closeAll();
+        handleAction(li.dataset.action, li.dataset);
+      });
     });
   }
 
-  /* ── About modal with release notes drill-down ─── */
+  function makeLabel(text) {
+    const li = document.createElement('li');
+    li.className = 'win-menu-label';
+    li.textContent = text;
+    return li;
+  }
+  function makeSep() {
+    const li = document.createElement('li');
+    li.className = 'menu-sep';
+    return li;
+  }
+  function makeLi(action, data) {
+    const li = document.createElement('li');
+    li.dataset.action = action;
+    Object.assign(li.dataset, data);
+    return li;
+  }
+
+  /* Mirror #projectName content into #menuProjectName */
+  function syncProjectName() {
+    const src = document.getElementById('projectName');
+    const dst = document.getElementById('menuProjectName');
+    if (!src || !dst) return;
+    const copy = () => { dst.textContent = (src.textContent || src.innerText || 'Untitled').trim(); };
+    copy();
+    new MutationObserver(copy).observe(src, { childList: true, subtree: true, characterData: true });
+  }
+
+  /* Wire Play/Edit toggle buttons and fullscreen in menu-right */
+  function wireModeBtns() {
+    const playBtn = document.getElementById('menuPlayBtn');
+    const editBtn = document.getElementById('menuEditBtn');
+    const fsBtn   = document.getElementById('menuFullscreenBtn');
+
+    playBtn?.addEventListener('click', () => {
+      if (window.App) window.App.setMode('play');
+      refreshModeBtns();
+    });
+    editBtn?.addEventListener('click', () => {
+      if (window.App) window.App.setMode('edit');
+      refreshModeBtns();
+    });
+    fsBtn?.addEventListener('click', () => {
+      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
+      else document.exitFullscreen?.();
+    });
+
+    // Also refresh when hud-top mode buttons fire
+    document.querySelectorAll('.hud-center [data-mode]').forEach(btn =>
+      btn.addEventListener('click', () => setTimeout(refreshModeBtns, 0))
+    );
+
+    refreshModeBtns();
+  }
+
+  function refreshModeBtns() {
+    const inEdit = document.body.classList.contains('edit-mode');
+    document.getElementById('menuPlayBtn')?.classList.toggle('menu-mode-active', !inEdit);
+    document.getElementById('menuEditBtn')?.classList.toggle('menu-mode-active', inEdit);
+  }
+
+  /* About modal with release notes drill-down */
   function openAbout() {
     const changelog = window.CHANGELOG || [];
     const rows = changelog.map(entry => `
@@ -51,7 +134,7 @@ window.Menu = (function() {
         </div>
         <div style="display:flex;align-items:center;gap:10px">
           <span style="font-size:11px;color:var(--ui-text-dim)">${entry.date}</span>
-          <span style="color:var(--accent);font-size:16px">›</span>
+          <span style="color:var(--accent);font-size:16px">&#x203A;</span>
         </div>
       </div>
     `).join('');
@@ -69,13 +152,11 @@ window.Menu = (function() {
 
     window.Editor?.openModal?.('About Hidden Studio', body);
 
-    // Wire click handlers after DOM is updated
     document.querySelectorAll('.about-ver-row').forEach(row => {
       row.addEventListener('mouseenter', () => { row.style.borderColor = 'var(--accent)'; });
       row.addEventListener('mouseleave', () => { row.style.borderColor = 'var(--panel-border)'; });
       row.addEventListener('click', () => {
-        const ver = row.dataset.ver;
-        const entry = (window.CHANGELOG || []).find(e => e.version === ver);
+        const entry = (window.CHANGELOG || []).find(e => e.version === row.dataset.ver);
         if (entry) openReleaseNotes(entry);
       });
     });
@@ -91,9 +172,7 @@ window.Menu = (function() {
 
     const body = `
       <div style="margin-bottom:14px">
-        <button id="aboutBackBtn" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;padding:0;display:flex;align-items:center;gap:4px">
-          ‹ Back
-        </button>
+        <button id="aboutBackBtn" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;padding:0;display:flex;align-items:center;gap:4px">&#x2039; Back</button>
       </div>
       <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
         <span style="font-family:'Caveat',cursive;font-size:22px;font-weight:700">${entry.label}</span>
@@ -101,9 +180,7 @@ window.Menu = (function() {
       </div>
       <div style="font-size:12px;color:var(--ui-text-dim);font-style:italic;margin-bottom:12px">${entry.tagline}</div>
       <hr style="border:none;border-top:1px solid var(--panel-border);margin:0 0 4px">
-      <div style="max-height:54vh;overflow-y:auto;padding-right:4px">
-        ${sections}
-      </div>`;
+      <div style="max-height:54vh;overflow-y:auto;padding-right:4px">${sections}</div>`;
 
     window.Editor?.openModal?.('Release Notes', body);
     document.getElementById('aboutBackBtn')?.addEventListener('click', openAbout);
@@ -113,46 +190,45 @@ window.Menu = (function() {
     const bar = document.getElementById('menuBar');
     if (!bar) return;
 
-    // Apply saved panel visibility on startup
-    applyPanelState(loadPanelState());
+    syncProjectName();
+    wireModeBtns();
 
     const items = bar.querySelectorAll('.menu-item[data-menu]');
 
     items.forEach(item => {
-      item.addEventListener('mousedown', (e) => {
+      item.addEventListener('mousedown', e => {
         e.preventDefault();
         const wasOpen = item.classList.contains('open');
         closeAll();
         if (!wasOpen) {
           item.classList.add('open');
           anyOpen = true;
-          if (item.dataset.menu === 'panels') refreshDots();
+          if (item.dataset.menu === 'window') buildWindowMenu();
         }
       });
-      // Hover-to-open once any menu is already open
       item.addEventListener('mouseenter', () => {
         if (anyOpen && !item.classList.contains('open')) {
           closeAll();
           item.classList.add('open');
           anyOpen = true;
-          if (item.dataset.menu === 'panels') refreshDots();
+          if (item.dataset.menu === 'window') buildWindowMenu();
         }
       });
     });
 
     // Click outside closes everything
-    document.addEventListener('mousedown', (e) => {
+    document.addEventListener('mousedown', e => {
       if (!e.target.closest('#menuBar')) closeAll();
     });
 
-    // Wire each action item
+    // Wire static menu items (all except Window menu which is dynamic)
     bar.querySelectorAll('[data-action]').forEach(li => {
-      li.addEventListener('mousedown', (e) => {
+      li.addEventListener('mousedown', e => {
         if (li.classList.contains('menu-disabled')) { e.preventDefault(); return; }
         e.preventDefault();
         e.stopPropagation();
         closeAll();
-        handleAction(li.dataset.action);
+        handleAction(li.dataset.action, li.dataset);
       });
     });
   }
@@ -162,7 +238,7 @@ window.Menu = (function() {
     anyOpen = false;
   }
 
-  function handleAction(action) {
+  function handleAction(action, data = {}) {
     switch (action) {
 
       case 'back':
@@ -185,26 +261,12 @@ window.Menu = (function() {
         break;
       }
 
-      case 'duplicate':
-        window.Editor?.duplicateSelected?.();
-        break;
+      case 'duplicate': window.Editor?.duplicateSelected?.(); break;
+      case 'delete':    window.Editor?.deleteSelected?.(); break;
 
-      case 'delete':
-        window.Editor?.deleteSelected?.();
-        break;
-
-      case 'zoom-in':
-        window.Shortcuts?.zoomAt?.(1.25);
-        break;
-
-      case 'zoom-out':
-        window.Shortcuts?.zoomAt?.(1 / 1.25);
-        break;
-
-      case 'zoom-fit':
-        window.Game?.centerOnPlanet?.();
-        break;
-
+      case 'zoom-in':   window.Shortcuts?.zoomAt?.(1.25); break;
+      case 'zoom-out':  window.Shortcuts?.zoomAt?.(1 / 1.25); break;
+      case 'zoom-fit':  window.Game?.centerOnPlanet?.(); break;
       case 'zoom-100': {
         if (!window.Game) break;
         const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
@@ -216,47 +278,46 @@ window.Menu = (function() {
         break;
       }
 
-      case 'toggle-panels':
-        window.Shortcuts?.togglePanels?.();
-        break;
+      case 'toggle-rulers': window.Shortcuts?.toggleRulers?.(); break;
+      case 'toggle-grid':   window.Shortcuts?.toggleGrid?.(); break;
+      case 'outline-mode':  window.Shortcuts?.toggleOutlineMode?.(); break;
 
+      case 'toggle-panels': window.Shortcuts?.togglePanels?.(); break;
       case 'toggle-mode':
         if (window.App) {
           const inEdit = document.body.classList.contains('edit-mode');
           window.App.setMode(inEdit ? 'play' : 'edit');
+          setTimeout(refreshModeBtns, 0);
         }
         break;
 
-      case 'shortcuts':
-        window.Shortcuts?.showShortcutsModal?.();
+      case 'set-mode-play':
+        if (window.App) { window.App.setMode('play'); setTimeout(refreshModeBtns, 0); }
+        break;
+      case 'set-mode-edit':
+        if (window.App) { window.App.setMode('edit'); setTimeout(refreshModeBtns, 0); }
         break;
 
-      case 'about':
-        openAbout();
+      case 'shortcuts': window.Shortcuts?.showShortcutsModal?.(); break;
+      case 'docs':      window.Shortcuts?.showDocsModal?.(); break;
+      case 'settings':  window.Shortcuts?.showSettingsModal?.(); break;
+      case 'about':     openAbout(); break;
+
+      /* Window menu actions */
+      case 'window-panel-toggle':
+        if (data.panelId) window.Panels.toggle(data.panelId);
+        break;
+      case 'window-reset-layout':
+        window.Panels.resetLayout();
+        break;
+      case 'window-set-theme':
+        if (data.themeId) window.Panels.setTheme(data.themeId);
         break;
 
-      // ── Panels menu ──────────────────────────────────
-      case 'toggle-panel-editor':
-      case 'toggle-panel-toolstrip':
-      case 'toggle-panel-properties':
-      case 'toggle-panel-minimap': {
-        const id = action.replace('toggle-panel-', '');
-        const def = PANEL_DEFS.find(d => d.id === id);
-        if (!def) break;
-        const state = loadPanelState();
-        state[id] = !state[id];
-        savePanelState(state);
-        applyPanelState(state);
+      /* Legacy panel toggle actions (old CSS-class panels) */
+      case 'panels-show-all':
+        window.Shortcuts?.resetPanels?.();
         break;
-      }
-
-      case 'panels-show-all': {
-        savePanelState({});
-        applyPanelState({});
-        window.Shortcuts?.resetPanels?.(); // also clear Tab hide-all state
-        break;
-      }
-
       case 'panels-hide-all':
         window.Shortcuts?.togglePanels?.();
         break;
@@ -265,6 +326,6 @@ window.Menu = (function() {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { init };
+  return { init, refreshModeBtns };
 
 })();
