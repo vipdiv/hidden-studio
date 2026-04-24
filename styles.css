@@ -1111,7 +1111,8 @@ body.edit-mode .tool-strip { display: flex; }
 #editPanel .tool-section.sec-collapsed > h3::after {
   transform: rotate(-90deg);
 }
-#editPanel .tool-section.sec-collapsed > *:not(h3) {
+/* Hide content of collapsed sections — exclude #layersSection which uses its own rule */
+#editPanel .tool-section.sec-collapsed:not(#layersSection) > *:not(h3) {
   display: none !important;
 }
 /* Layers section has a .layers-header div instead of h3 */

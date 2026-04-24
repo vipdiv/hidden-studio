@@ -2497,6 +2497,7 @@ window.Editor = (function() {
       renderTexts();
       renderSprites();
       window.Draw.render();
+      renderLayersPanel();
       window.Game.centerOnPlanet();
       setTool('select');
       schedSave();
