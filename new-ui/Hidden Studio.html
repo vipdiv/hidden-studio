@@ -1,0 +1,1096 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<template id="__bundler_thumbnail" data-bg-color="#323232">
+  <svg viewBox="0 0 120 80" xmlns="http://www.w3.org/2000/svg">
+    <!-- Left toolbar -->
+    <rect x="4" y="8" width="14" height="64" rx="2" fill="#262626"/>
+    <rect x="7" y="12" width="8" height="8" rx="1" fill="#4a8acc" opacity="0.8"/>
+    <rect x="7" y="22" width="8" height="8" rx="1" fill="#555"/>
+    <rect x="7" y="34" width="8" height="8" rx="1" fill="#555"/>
+    <rect x="7" y="44" width="8" height="8" rx="1" fill="#555"/>
+    <!-- Canvas -->
+    <rect x="20" y="8" width="66" height="64" rx="1" fill="#404040"/>
+    <circle cx="53" cy="40" r="14" stroke="#555" stroke-width="1" fill="none"/>
+    <!-- Right panels -->
+    <rect x="88" y="8" width="28" height="20" rx="1" fill="#383838"/>
+    <rect x="88" y="30" width="28" height="20" rx="1" fill="#383838"/>
+    <rect x="88" y="52" width="28" height="20" rx="1" fill="#383838"/>
+    <!-- Panel tabs -->
+    <rect x="88" y="8" width="14" height="4" rx="0" fill="#4a8acc" opacity="0.6"/>
+    <rect x="88" y="30" width="14" height="4" rx="0" fill="#4a8acc" opacity="0.6"/>
+    <rect x="88" y="52" width="14" height="4" rx="0" fill="#4a8acc" opacity="0.6"/>
+  </svg>
+</template>
+<title>Hidden Studio</title>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="panel-contents.jsx"></script>
+<script type="text/babel" src="panel-system.jsx"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body, #root { width: 100%; height: 100%; overflow: hidden; }
+  body { font-family: 'Adobe Clean', 'Helvetica Neue', Arial, sans-serif; }
+  ::-webkit-scrollbar { width: 7px; height: 7px; }
+  ::-webkit-scrollbar-track { background: #2a2a2a; }
+  ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #777; }
+  input[type=range] { height: 4px; cursor: pointer; }
+  select { appearance: auto; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+// ─── Theme definitions ────────────────────────────────────────────────────────
+const THEMES = {
+  illustrator: {
+    name: 'Classic',
+    appBg:    '#535353',
+    canvasBg: '#404040',
+    panelBg:  '#383838',
+    headerBg: '#2e2e2e',
+    dockBg:   '#323232',
+    menuBg:   '#2a2a2a',
+    border:   '#484848',
+    text:     '#d0d0d0',
+    dimText:  '#888888',
+    accent:   '#4a8acc',
+  },
+  night: {
+    name: 'Night Studio',
+    appBg:    '#1e1e2e',
+    canvasBg: '#161622',
+    panelBg:  '#262638',
+    headerBg: '#1e1e2e',
+    dockBg:   '#1a1a2a',
+    menuBg:   '#181828',
+    border:   '#3a3a5a',
+    text:     '#d0d0e8',
+    dimText:  '#7070a0',
+    accent:   '#6a8aee',
+  },
+  warm: {
+    name: 'Warm Studio',
+    appBg:    '#3a3028',
+    canvasBg: '#2e2620',
+    panelBg:  '#3e342a',
+    headerBg: '#302820',
+    dockBg:   '#2a2218',
+    menuBg:   '#252018',
+    border:   '#5a4a38',
+    text:     '#e0d4c0',
+    dimText:  '#9a8870',
+    accent:   '#e8931a',
+  },
+};
+
+// PANEL_DEFS built inside App so it can close over shared state (see App)
+
+const INITIAL_GROUPS = [
+  { id: 'g1', tabs: ['layers', 'navigator'], activeTab: 0, minimized: false, floating: false, x: 0, y: 0, width: 264, height: 380, zIndex: 0 },
+  { id: 'g2', tabs: ['properties', 'transform', 'swatches'], activeTab: 0, minimized: false, floating: false, x: 0, y: 0, width: 264, height: 320, zIndex: 0 },
+  { id: 'g3', tabs: ['hitzone', 'surprise', 'difficulty'], activeTab: 0, minimized: false, floating: false, x: 0, y: 0, width: 264, height: 280, zIndex: 0 },
+  { id: 'g4', tabs: ['project', 'history'], activeTab: 0, minimized: false, floating: false, x: 0, y: 0, width: 264, height: 280, zIndex: 0 },
+];
+
+// ─── Left toolbar tools ───────────────────────────────────────────────────────
+const TOOLS = [
+  {
+    // Arrow + diagonal line — Select / Transform
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M3 3l3.5 9 2-3.5 3.5-2L3 3z" stroke="currentColor" strokeWidth="1.15" strokeLinejoin="round" fill="none"/>
+      <line x1="10" y1="10" x2="14" y2="14" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+    </svg>,
+    title: 'Select (V)'
+  },
+  {
+    // Hand — Pan
+    icon: <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
+      <path d="M5 8V3.5a1 1 0 0 1 2 0V8" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+      <path d="M7 5.5V3a1 1 0 0 1 2 0v2.5" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+      <path d="M9 5.5V4a1 1 0 0 1 2 0v3" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round"/>
+      <path d="M5 8V7a1 1 0 0 0-2 0v3c0 2 1.5 3.5 4 3.5s4-1.5 4-3.5V7" stroke="currentColor" strokeWidth="1.1" strokeLinecap="round" strokeLinejoin="round" fill="none"/>
+    </svg>,
+    title: 'Hand (H)'
+  },
+  null,
+  {
+    // Pencil — Draw
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <path d="M10 2l2 2-7 7H3v-2l7-7z" stroke="currentColor" strokeWidth="1.1" strokeLinejoin="round" fill="none"/>
+      <line x1="8.5" y1="3.5" x2="10.5" y2="5.5" stroke="currentColor" strokeWidth="1"/>
+    </svg>,
+    title: 'Draw (P)'
+  },
+  {
+    // Rectangle with X — Eraser / Delete zone
+    icon: <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+      <rect x="1" y="1" width="12" height="10" rx="1" stroke="currentColor" strokeWidth="1.1"/>
+      <line x1="3" y1="3" x2="11" y2="9" stroke="currentColor" strokeWidth="1.1"/>
+      <line x1="11" y1="3" x2="3" y2="9" stroke="currentColor" strokeWidth="1.1"/>
+    </svg>,
+    title: 'Erase (E)'
+  },
+  {
+    // Rectangle
+    icon: <svg width="13" height="11" viewBox="0 0 13 11" fill="none">
+      <rect x="1" y="1" width="11" height="9" rx="1" stroke="currentColor" strokeWidth="1.15"/>
+    </svg>,
+    title: 'Rectangle (R)'
+  },
+  {
+    // Circle
+    icon: <svg width="13" height="13" viewBox="0 0 13 13" fill="none">
+      <circle cx="6.5" cy="6.5" r="5" stroke="currentColor" strokeWidth="1.15"/>
+    </svg>,
+    title: 'Ellipse (O)'
+  },
+  {
+    // Star
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <polygon points="7,1.5 8.5,5.5 13,5.5 9.5,8.5 10.8,12.5 7,10 3.2,12.5 4.5,8.5 1,5.5 5.5,5.5" stroke="currentColor" strokeWidth="1.05" fill="none" strokeLinejoin="round"/>
+    </svg>,
+    title: 'Star (S)'
+  },
+  null,
+  {
+    // Circle with crosshair — Add object
+    icon: <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+      <circle cx="7" cy="7" r="5.5" stroke="currentColor" strokeWidth="1.15"/>
+      <line x1="7" y1="3.5" x2="7" y2="10.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+      <line x1="3.5" y1="7" x2="10.5" y2="7" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+    </svg>,
+    title: 'Add (A)'
+  },
+  {
+    // Sparkles — Surprise / Special
+    icon: <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <path d="M8 2l1 3.5L12.5 6l-3.5 1L8 11l-1-4L3 6l4-0.5L8 2z" stroke="currentColor" strokeWidth="1" fill="none" strokeLinejoin="round"/>
+      <path d="M13 1l0.5 1.5L15 3l-1.5 0.5L13 5l-0.5-1.5L11 3l1.5-0.5L13 1z" stroke="currentColor" strokeWidth="0.85" fill="none" strokeLinejoin="round"/>
+      <path d="M3.5 11l0.4 1.1L5 12.5l-1.1 0.4L3.5 14l-0.4-1.1L2 12.5l1.1-0.4L3.5 11z" stroke="currentColor" strokeWidth="0.85" fill="none" strokeLinejoin="round"/>
+    </svg>,
+    title: 'Surprise (U)'
+  },
+];
+
+// ─── Docs Modal ───────────────────────────────────────────────────────────────
+const DocsModal = ({ onClose }) => {
+  const [activeDoc, setActiveDoc] = React.useState('start');
+  const DOCS = {
+    start: { title: 'Getting Started', content: [
+      ['Create your first game', 'Use the Layers panel to set your Base Layer — this is the background image players will search. Then add objects to the Layers list. Each layer becomes a hidden object in your game.'],
+      ['Set up tap zones', 'Use Hit Zone layers to define where players should tap. Missed Tap layers define penalty zones. Surprise layers trigger special effects.'],
+      ['Test & export', 'Press Play to preview your game. When ready, use Project → Export as playable HTML to share it.'],
+    ]},
+    tools: { title: 'Tools Reference', content: [
+      ['Select (V)', 'Click to select objects on the canvas. Drag to move them.'],
+      ['Hand (H)', 'Pan around the canvas. Hold and drag to scroll.'],
+      ['Draw (P)', 'Freehand draw on the canvas.'],
+      ['Erase (E)', 'Erase parts of a layer.'],
+      ['Shapes', 'Rectangle (R), Ellipse (O), Star (S) — draw geometric hit zones.'],
+      ['Add (A)', 'Add a new hidden object to the scene.'],
+      ['Surprise (U)', 'Place a surprise element that triggers a special reaction.'],
+    ]},
+    layers: { title: 'Layers Guide', content: [
+      ['Base Layer', 'The background of your game. Can be an SVG, scanned image, or uploaded photo.'],
+      ['Layers', 'Each entry is a hidden object. Players must find all layers to complete the game.'],
+      ['Hit Zone', 'Defines the tappable area for a hidden object. Customize sound, text, and color feedback.'],
+      ['Missed Tap', 'Triggered when a player taps outside a hit zone. Configure penalty sound and text.'],
+      ['Surprise', 'Optional special layer that triggers a bonus animation or sound.'],
+      ['Color coding', 'Double-click a layer color swatch to open Layer Options and change its color.'],
+    ]},
+    export: { title: 'Export Guide', content: [
+      ['Export JSON', 'Exports the full game data as a JSON file. Use this to back up your project or import into other tools.'],
+      ['Export as playable HTML', 'Creates a self-contained HTML file with your game fully playable. Share via link, embed in a website, or send directly to players.'],
+      ['Document Size vs Project Size', 'Document Size is your canvas dimensions. Project Size reflects the actual exported game dimensions.'],
+    ]},
+  };
+  const NAV = [['start','Getting Started'],['tools','Tools Reference'],['layers','Layers Guide'],['export','Export Guide']];
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#2e2e2e', border: '1px solid #484848', borderRadius: 4, width: 640, maxHeight: '82vh', display: 'flex', flexDirection: 'column', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', color: '#d0d0d0', fontSize: 12 }}>
+        <div style={{ background: '#252525', borderBottom: '1px solid #484848', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+          <span style={{ fontWeight: 700, fontSize: 13 }}>Documentation</span>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+        </div>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden', minHeight: 0 }}>
+          <div style={{ width: 160, background: '#252525', borderRight: '1px solid #3a3a3a', padding: '8px 0', flexShrink: 0, overflowY: 'auto' }}>
+            {NAV.map(([id, label]) => (
+              <button key={id} onClick={() => setActiveDoc(id)}
+                style={{ display: 'block', width: '100%', textAlign: 'left', background: activeDoc === id ? '#0a4d8a' : 'none', border: 'none', color: activeDoc === id ? '#fff' : '#aaa', padding: '7px 14px', cursor: 'pointer', fontSize: 12 }}
+                onMouseEnter={e => { if (activeDoc !== id) e.currentTarget.style.background = '#2a2a2a'; }}
+                onMouseLeave={e => { if (activeDoc !== id) e.currentTarget.style.background = 'none'; }}
+              >{label}</button>
+            ))}
+          </div>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+            <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 14, color: '#e0e0e0' }}>{DOCS[activeDoc].title}</div>
+            {DOCS[activeDoc].content.map(([h, body]) => (
+              <div key={h} style={{ marginBottom: 14 }}>
+                <div style={{ fontWeight: 600, color: '#c0c0c0', marginBottom: 4 }}>{h}</div>
+                <div style={{ color: '#888', lineHeight: 1.6 }}>{body}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Settings Modal ────────────────────────────────────────────────────────────
+const SettingsModalBody = ({ onClose, enabledPanels, setEnabledPanels, panelDefs }) => {
+  const [autoSave, setAutoSave] = React.useState(true);
+  const [autoSaveInterval, setAutoSaveInterval] = React.useState(5);
+  const [defaultW, setDefaultW] = React.useState(1920);
+  const [defaultH, setDefaultH] = React.useState(1080);
+  const [gridSize, setGridSize] = React.useState(40);
+  const [exportFormat, setExportFormat] = React.useState('html');
+  const [minify, setMinify] = React.useState(false);
+  const [defaultDiff, setDefaultDiff] = React.useState('medium');
+  const [defaultFont, setDefaultFont] = React.useState('Caveat (handwriting)');
+  const [renderQuality, setRenderQuality] = React.useState('high');
+  const inp = { background: '#1a1a1a', border: '1px solid #484848', color: '#d0d0d0', padding: '3px 7px', borderRadius: 2, fontSize: 12, outline: 'none' };
+  const settingsRow = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 };
+  const settingsLbl = { color: '#aaa', fontSize: 12 };
+  const Section = ({ title, children }) => (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ color: '#8a8a8a', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8, paddingBottom: 4, borderBottom: '1px solid #3a3a3a' }}>{title}</div>
+      {children}
+    </div>
+  );
+  return (
+    <div style={{ padding: '16px 20px', maxHeight: '70vh', overflowY: 'auto' }}>
+      <Section title="General">
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Auto-save</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={autoSave} onChange={e => setAutoSave(e.target.checked)} style={{ accentColor: '#4a8acc' }} />
+            <span style={{ color: '#888', fontSize: 11 }}>{autoSave ? 'On' : 'Off'}</span>
+          </label>
+        </div>
+        {autoSave && <div style={settingsRow}>
+          <span style={settingsLbl}>Auto-save every</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="number" value={autoSaveInterval} min={1} max={60} onChange={e => setAutoSaveInterval(+e.target.value)} style={{ ...inp, width: 48 }} />
+            <span style={{ color: '#666' }}>min</span>
+          </div>
+        </div>}
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Grid size</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <input type="number" value={gridSize} min={8} max={200} onChange={e => setGridSize(+e.target.value)} style={{ ...inp, width: 56 }} />
+            <span style={{ color: '#666' }}>px</span>
+          </div>
+        </div>
+      </Section>
+      <Section title="Default Canvas">
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Size</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: '#666', fontSize: 11 }}>W</span>
+            <input type="number" value={defaultW} onChange={e => setDefaultW(+e.target.value)} style={{ ...inp, width: 64 }} />
+            <span style={{ color: '#666', fontSize: 11 }}>H</span>
+            <input type="number" value={defaultH} onChange={e => setDefaultH(+e.target.value)} style={{ ...inp, width: 64 }} />
+          </div>
+        </div>
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Render quality</span>
+          <select value={renderQuality} onChange={e => setRenderQuality(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+            <option value="low">Low (faster)</option>
+            <option value="medium">Medium</option>
+            <option value="high">High (default)</option>
+          </select>
+        </div>
+      </Section>
+      <Section title="Export">
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Default format</span>
+          <select value={exportFormat} onChange={e => setExportFormat(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+            <option value="html">Playable HTML</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Minify output</span>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
+            <input type="checkbox" checked={minify} onChange={e => setMinify(e.target.checked)} style={{ accentColor: '#4a8acc' }} />
+            <span style={{ color: '#888', fontSize: 11 }}>{minify ? 'On' : 'Off'}</span>
+          </label>
+        </div>
+      </Section>
+      <Section title="Game Defaults">
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Difficulty</span>
+          <select value={defaultDiff} onChange={e => setDefaultDiff(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+            <option value="easy">Easy</option>
+            <option value="medium">Medium</option>
+            <option value="hard">Hard</option>
+          </select>
+        </div>
+        <div style={settingsRow}>
+          <span style={settingsLbl}>Default font</span>
+          <select value={defaultFont} onChange={e => setDefaultFont(e.target.value)} style={{ ...inp, cursor: 'pointer' }}>
+            <option>Caveat (handwriting)</option>
+            <option>Patrick Hand</option>
+            <option>Roboto</option>
+            <option>Georgia</option>
+          </select>
+        </div>
+      </Section>
+      <Section title="Panels">
+        <div style={{ color: '#888', fontSize: 11, marginBottom: 8, lineHeight: 1.5 }}>Uncheck to hide from Window menu.</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px' }}>
+          {Object.entries(panelDefs).map(([id, def]) => (
+            <label key={id} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', color: '#c0c0c0' }}>
+              <input type="checkbox" checked={!!enabledPanels[id]}
+                onChange={e => setEnabledPanels(p => ({ ...p, [id]: e.target.checked }))}
+                style={{ accentColor: '#4a8acc', width: 12, height: 12 }} />
+              {def.label}
+            </label>
+          ))}
+        </div>
+      </Section>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, paddingTop: 8, borderTop: '1px solid #3a3a3a' }}>
+        <button onClick={onClose} style={{ background: '#3a3a3a', border: '1px solid #555', color: '#d0d0d0', padding: '5px 20px', borderRadius: 12, cursor: 'pointer', fontSize: 12 }}>Cancel</button>
+        <button onClick={onClose} style={{ background: '#1e6ebf', border: '1px solid #2a7adf', color: '#fff', padding: '5px 20px', borderRadius: 12, cursor: 'pointer', fontSize: 12 }}>Save</button>
+      </div>
+    </div>
+  );
+};
+
+// ─── Viewport hook ────────────────────────────────────────────────────────────
+const useViewport = () => {
+  const [vp, setVp] = React.useState(() => {
+    const w = window.innerWidth;
+    return w < 600 ? 'phone' : w < 1024 ? 'tablet' : 'desktop';
+  });
+  React.useEffect(() => {
+    const fn = () => {
+      const w = window.innerWidth;
+      setVp(w < 600 ? 'phone' : w < 1024 ? 'tablet' : 'desktop');
+    };
+    window.addEventListener('resize', fn);
+    return () => window.removeEventListener('resize', fn);
+  }, []);
+  return vp;
+};
+
+// ─── App ──────────────────────────────────────────────────────────────────────
+const App = () => {
+  const vp = useViewport(); // 'phone' | 'tablet' | 'desktop'
+  const isPhone = vp === 'phone';
+  const isTablet = vp === 'tablet';
+  const isMobile = isPhone || isTablet;
+
+  const [groups, setGroups] = React.useState(INITIAL_GROUPS);
+  const [closedPanels, setClosedPanels] = React.useState([]);
+  const [snapToGrid, setSnapToGrid] = React.useState(false);
+  const [showRulers, setShowRulers] = React.useState(true);
+  const [hitZonePreview, setHitZonePreview] = React.useState(false);
+  const [showShortcuts, setShowShortcuts] = React.useState(false);
+  const [showDocs, setShowDocs] = React.useState(false);
+  const [showSettings, setShowSettings] = React.useState(false);
+  const [enabledPanels, setEnabledPanels] = React.useState({
+    layers: true, transform: true, properties: true, hitzone: true,
+    surprise: true, swatches: true, navigator: true, history: true,
+    difficulty: true, project: true,
+  });
+  const [foundCount, setFoundCount] = React.useState(0);
+  const [totalCount, setTotalCount] = React.useState(10);
+
+  // Mobile-specific state
+  const [activeBottomSheet, setActiveBottomSheet] = React.useState(null); // panel id or null
+  const [showToolPicker, setShowToolPicker] = React.useState(false);
+  const [showMobileMenu, setShowMobileMenu] = React.useState(false);
+  const [tabletOpenPanel, setTabletOpenPanel] = React.useState(null);
+  const [tabDrag, setTabDrag] = React.useState(null);
+  const [nearDock, setNearDock] = React.useState(false);
+  const [winMenu, setWinMenu] = React.useState(false);
+  const [themeKey, setThemeKey] = React.useState('illustrator');
+  const [activeTool, setActiveTool] = React.useState('Select');
+  const [mode, setMode] = React.useState('edit'); // 'edit' | 'play'
+  const [projectName, setProjectName] = React.useState('New Project');
+  const [showGrid, setShowGrid] = React.useState(true);
+  const [zoom, setZoom] = React.useState(1);
+  const [outlineMode, setOutlineMode] = React.useState(false);
+  const [pan, setPan] = React.useState({ x: 0, y: 0 });
+
+  const handleWheel = React.useCallback(e => {
+    e.preventDefault();
+    if (e.ctrlKey || e.metaKey) {
+      // Pinch-to-zoom or ctrl+scroll
+      setZoom(z => Math.min(32, Math.max(0.05, z * (e.deltaY < 0 ? 1.1 : 0.9))));
+    } else {
+      setZoom(z => Math.min(32, Math.max(0.05, z * (e.deltaY < 0 ? 1.1 : 0.9))));
+    }
+  }, []);
+
+  // H key → Hand tool; V/Escape → Select
+  React.useEffect(() => {
+    const onKey = e => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.isContentEditable) return;
+      if (e.key === 'h' || e.key === 'H') setActiveTool('Hand');
+      if (e.key === 'Escape' || e.key === 'v' || e.key === 'V') setActiveTool('Select');
+      if ((e.metaKey || e.ctrlKey) && e.key === 'r') { e.preventDefault(); setShowRulers(r => !r); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "'") { e.preventDefault(); setShowGrid(g => !g); }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y') { e.preventDefault(); setOutlineMode(m => !m); }
+      if ((e.metaKey || e.ctrlKey) && e.key === '/') { e.preventDefault(); setShowShortcuts(s => !s); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  // Canvas pan drag
+  const isPanning = React.useRef(false);
+  const panStart = React.useRef({ x: 0, y: 0, px: 0, py: 0 });
+  const handleCanvasMouseDown = React.useCallback(e => {
+    if (activeTool !== 'Hand') return;
+    e.preventDefault();
+    isPanning.current = true;
+    panStart.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
+    const onMove = ev => {
+      if (!isPanning.current) return;
+      setPan({ x: panStart.current.px + ev.clientX - panStart.current.x, y: panStart.current.py + ev.clientY - panStart.current.y });
+    };
+    const onUp = () => { isPanning.current = false; window.removeEventListener('mousemove', onMove); window.removeEventListener('mouseup', onUp); };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, [activeTool, pan]);
+
+  const canvasRef = React.useRef(null);
+  React.useEffect(() => {
+    const el = canvasRef.current;
+    if (!el) return;
+    el.addEventListener('wheel', handleWheel, { passive: false });
+    return () => el.removeEventListener('wheel', handleWheel);
+  }, [handleWheel]);
+
+  const PANEL_DEFS = {
+    layers:     { label: 'Layers',     render: () => <LayersPanel /> },
+    transform:  { label: 'Transform',  render: () => <TransformPanel /> },
+    properties: { label: 'Properties', render: () => <PropertiesPanel /> },
+    hitzone:    { label: 'Hit Zone',   render: () => <HitZonePanel /> },
+    surprise:   { label: 'Surprise',   render: () => <SurprisePanel /> },
+    swatches:   { label: 'Swatches',   render: () => <SwatchesPanel /> },
+    navigator:  { label: 'Navigator',  render: () => <NavigatorPanel /> },
+    history:    { label: 'History',    render: () => <HistoryPanel /> },
+    difficulty: { label: 'Difficulty', render: () => <DifficultyPanel /> },
+    project:    { label: 'Project',    render: () => <ProjectPanel name={projectName} onNameChange={setProjectName} /> },
+  };
+  const zRef = React.useRef(10);
+  const groupsRef = React.useRef(groups);
+  React.useEffect(() => { groupsRef.current = groups; }, [groups]);
+
+  const T = THEMES[themeKey];
+
+  // ── Group drag ──────────────────────────────────────────────────────────────
+  const startGroupDrag = React.useCallback((groupId, e) => {
+    e.preventDefault();
+    const startX = e.clientX, startY = e.clientY;
+    const g = groupsRef.current.find(x => x.id === groupId);
+    if (!g) return;
+    const initX = g.floating ? g.x : startX - 132;
+    const initY = g.floating ? g.y : startY - 14;
+    const offX = startX - initX, offY = startY - initY;
+    let moved = false;
+
+    const onMove = e => {
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved && dx * dx + dy * dy < 16) return;
+      moved = true;
+      const nx = e.clientX - offX, ny = e.clientY - offY;
+      setNearDock(e.clientX > window.innerWidth - 290);
+      setGroups(prev => prev.map(x => x.id === groupId
+        ? { ...x, floating: true, x: nx, y: ny, zIndex: ++zRef.current }
+        : x));
+    };
+    const onUp = e => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      setNearDock(false);
+      if (moved && e.clientX > window.innerWidth - 280)
+        setGroups(prev => prev.map(x => x.id === groupId ? { ...x, floating: false } : x));
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
+
+  // ── Tab drag (split / merge) ────────────────────────────────────────────────
+  const startTabDrag = React.useCallback((groupId, tabId, e) => {
+    e.stopPropagation();
+    const startX = e.clientX, startY = e.clientY;
+    let moved = false;
+
+    const onMove = e => {
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      if (!moved && dx * dx + dy * dy < 25) return;
+      moved = true;
+      setTabDrag({ groupId, tabId, x: e.clientX, y: e.clientY });
+    };
+    const onUp = e => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      if (!moved) { setTabDrag(null); return; }
+
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const header = el && el.closest('[data-group-header]');
+      const targetId = header && header.dataset.groupHeader;
+      setTabDrag(null);
+
+      if (targetId && targetId !== groupId) {
+        // Merge tab into target group
+        setGroups(prev => {
+          const src = prev.find(x => x.id === groupId);
+          if (!src) return prev;
+          const newSrcTabs = src.tabs.filter(t => t !== tabId);
+          return prev
+            .filter(x => !(x.id === groupId && newSrcTabs.length === 0))
+            .map(x => {
+              if (x.id === groupId) return { ...x, tabs: newSrcTabs, activeTab: 0 };
+              if (x.id === targetId) return { ...x, tabs: [...x.tabs, tabId], activeTab: x.tabs.length };
+              return x;
+            });
+        });
+      } else {
+        // Detach tab into new floating group (or just float single-tab group)
+        setGroups(prev => {
+          const src = prev.find(x => x.id === groupId);
+          if (!src) return prev;
+          if (src.tabs.length === 1) {
+            return prev.map(x => x.id === groupId
+              ? { ...x, floating: true, x: e.clientX - 132, y: e.clientY - 14, zIndex: ++zRef.current }
+              : x);
+          }
+          const newSrcTabs = src.tabs.filter(t => t !== tabId);
+          return [
+            ...prev.map(x => x.id === groupId ? { ...x, tabs: newSrcTabs, activeTab: 0 } : x),
+            { id: `g${Date.now()}`, tabs: [tabId], activeTab: 0, minimized: false, floating: true,
+              x: e.clientX - 132, y: e.clientY - 14, width: 264, height: 420, zIndex: ++zRef.current },
+          ];
+        });
+      }
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  }, []);
+
+  const updateGroup  = React.useCallback(u => setGroups(p => p.map(g => g.id === u.id ? { ...g, ...u } : g)), []);
+  const removeGroup  = React.useCallback(id => {
+    setGroups(p => {
+      const g = p.find(x => x.id === id);
+      if (g) setClosedPanels(cp => [...new Set([...cp, ...g.tabs])]);
+      return p.filter(x => x.id !== id);
+    });
+  }, []);
+  const reopenPanel  = tabId => {
+    setClosedPanels(p => p.filter(t => t !== tabId));
+    setGroups(p => [...p, {
+      id: `g${Date.now()}`, tabs: [tabId], activeTab: 0, minimized: false,
+      floating: true, x: 300, y: 160, width: 264, height: 420, zIndex: ++zRef.current,
+    }]);
+    setWinMenu(false);
+  };
+
+  const dockedGroups   = groups.filter(g => !g.floating);
+  const floatingGroups = groups.filter(g => g.floating).sort((a, b) => a.zIndex - b.zIndex);
+  const pgProps = { onUpdate: updateGroup, onRemove: removeGroup, panelDefs: PANEL_DEFS, onStartDrag: startGroupDrag, onTabDrag: startTabDrag, tabDrag, theme: T };
+
+  // ── Menu bar ───────────────────────────────────────────────────────────────
+  const MenuBtn = ({ label, children }) => {
+    const [open, setOpen] = React.useState(false);
+    return (
+      <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'stretch' }}
+        onMouseLeave={() => setOpen(false)}>
+        <button onClick={() => setOpen(o => !o)}
+          style={{ background: open ? '#444' : 'none', border: 'none', color: '#ccc', padding: '0 9px', cursor: 'pointer', fontSize: 12, height: '100%' }}
+          onMouseEnter={e => e.currentTarget.style.background = '#444'}
+          onMouseLeave={e => e.currentTarget.style.background = open ? '#444' : 'none'}
+        >{label}</button>
+        {open && (
+          <div style={{ position: 'absolute', top: '100%', left: 0, background: '#2a2a2a', border: '1px solid #484848', borderRadius: 2, zIndex: 9998, minWidth: 180, padding: '4px 0', boxShadow: '0 4px 14px rgba(0,0,0,0.55)' }}>
+            {children}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const MenuItem = ({ label, shortcut, onClick, divider }) => divider
+    ? <div style={{ borderTop: '1px solid #404040', margin: '4px 0' }} />
+    : (
+      <button onClick={onClick}
+        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#d0d0d0', padding: '5px 14px', cursor: 'pointer', fontSize: 12, gap: 24 }}
+        onMouseEnter={e => e.currentTarget.style.background = '#3a3a3a'}
+        onMouseLeave={e => e.currentTarget.style.background = 'none'}
+      >
+        <span>{label}</span>
+        {shortcut && <span style={{ color: '#777', fontSize: 11 }}>{shortcut}</span>}
+      </button>
+    );
+
+  return (
+    <div style={{ width: '100vw', height: '100vh', background: T.appBg, display: 'flex', flexDirection: 'column', overflow: 'hidden', userSelect: 'none', color: T.text, fontSize: 12 }}
+      onClick={() => { setWinMenu(false); setShowMobileMenu(false); setShowToolPicker(false); }}>
+
+      {/* ── Menu bar — Desktop ─────────────────────────────────── */}
+      {!isMobile && <div style={{ height: 24, background: T.menuBg, borderBottom: '1px solid #1a1a1a', display: 'flex', alignItems: 'stretch', flexShrink: 0, zIndex: 200 }}>
+        <MenuBtn label="File">
+          <MenuItem label="New Project" shortcut="⌘N" />
+          <MenuItem label="Open…" shortcut="⌘O" />
+          <MenuItem label="Save" shortcut="⌘S" />
+          <MenuItem divider />
+          <MenuItem label="Export JSON" />
+          <MenuItem label="Export as playable HTML" />
+        </MenuBtn>
+        <MenuBtn label="Edit">
+          <MenuItem label="Undo" shortcut="⌘Z" />
+          <MenuItem label="Redo" shortcut="⌘⇧Z" />
+          <MenuItem divider />
+          <MenuItem label="Cut" shortcut="⌘X" />
+          <MenuItem label="Copy" shortcut="⌘C" />
+          <MenuItem label="Paste" shortcut="⌘V" />
+        </MenuBtn>
+        <MenuBtn label="View">
+          <MenuItem label="Zoom In" shortcut="⌘+" onClick={() => setZoom(z => Math.min(32, z * 1.2))} />
+          <MenuItem label="Zoom Out" shortcut="⌘-" onClick={() => setZoom(z => Math.max(0.05, z * 0.8))} />
+          <MenuItem label="Fit Page" shortcut="⌘0" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} />
+          <MenuItem divider />
+          <MenuItem label={`${showGrid ? '✓ ' : ''}Show Grid`} shortcut="⌘'" onClick={() => setShowGrid(g => !g)} />
+          <MenuItem label={`${showRulers ? '✓ ' : ''}Show Rulers`} shortcut="⌘R" onClick={() => setShowRulers(r => !r)} />
+          <MenuItem label={`${outlineMode ? '✓ ' : ''}Outline Mode`} shortcut="⌘Y" onClick={() => setOutlineMode(m => !m)} />
+          <MenuItem label={`${snapToGrid ? '✓ ' : ''}Snap to Grid`} shortcut="⌘⇧'" onClick={() => setSnapToGrid(s => !s)} />
+          <MenuItem divider />
+          <MenuItem label={`${hitZonePreview ? '✓ ' : ''}Hit Zone Preview`} shortcut="⌘⇧H" onClick={() => setHitZonePreview(h => !h)} />
+        </MenuBtn>
+
+        {/* Window menu */}
+        <div style={{ position: 'relative', height: '100%', display: 'flex', alignItems: 'stretch' }} onClick={e => e.stopPropagation()}>
+          <button onClick={() => setWinMenu(o => !o)}
+            style={{ background: winMenu ? '#444' : 'none', border: 'none', color: '#ccc', padding: '0 9px', cursor: 'pointer', fontSize: 12, height: '100%' }}
+            onMouseEnter={e => e.currentTarget.style.background = '#444'}
+            onMouseLeave={e => e.currentTarget.style.background = winMenu ? '#444' : 'none'}
+          >Window</button>
+          {winMenu && (
+            <div style={{ position: 'absolute', top: '100%', left: 0, background: '#2a2a2a', border: '1px solid #484848', borderRadius: 2, zIndex: 9999, minWidth: 210, padding: '4px 0', boxShadow: '0 4px 14px rgba(0,0,0,0.55)' }}>
+              <div style={{ padding: '3px 14px 2px', color: '#777', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Panels</div>
+              {Object.entries(PANEL_DEFS).filter(([id]) => enabledPanels[id]).map(([id, def]) => {
+                const isOpen = groups.some(g => g.tabs.includes(id));
+                const togglePanel = () => {
+                  if (isOpen) {
+                    // Close: remove tab from its group
+                    setGroups(prev => {
+                      return prev.map(g => {
+                        if (!g.tabs.includes(id)) return g;
+                        const newTabs = g.tabs.filter(t => t !== id);
+                        return newTabs.length === 0 ? null : { ...g, tabs: newTabs, activeTab: Math.max(0, g.activeTab - 1) };
+                      }).filter(Boolean);
+                    });
+                    setClosedPanels(cp => [...new Set([...cp, id])]);
+                  } else {
+                    reopenPanel(id);
+                  }
+                };
+                return (
+                  <button key={id} onClick={togglePanel}
+                    style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#d0d0d0', padding: '5px 14px', cursor: 'pointer', fontSize: 12 }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#3a3a3a'}
+                    onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                  >
+                    <span style={{ color: isOpen ? '#5aaa5a' : 'transparent', fontSize: 10 }}>✓</span>
+                    {def.label}
+                  </button>
+                );
+              })}
+              <div style={{ borderTop: '1px solid #404040', margin: '4px 0' }} />
+              <div style={{ padding: '3px 14px 2px', color: '#777', fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Theme</div>
+              {Object.entries(THEMES).map(([k, th]) => (
+                <button key={k} onClick={() => { setThemeKey(k); setWinMenu(false); }}
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', color: '#d0d0d0', padding: '5px 14px', cursor: 'pointer', fontSize: 12 }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#3a3a3a'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'none'}
+                >
+                  <span style={{ color: themeKey === k ? '#5aaa5a' : 'transparent', fontSize: 10 }}>✓</span>
+                  {th.name}
+                </button>
+              ))}
+              <div style={{ borderTop: '1px solid #404040', margin: '4px 0' }} />
+              <button onClick={() => { setGroups(INITIAL_GROUPS); setClosedPanels([]); setZoom(1); setPan({ x: 0, y: 0 }); setWinMenu(false); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', color: '#d0d0d0', padding: '5px 14px', cursor: 'pointer', fontSize: 12 }}
+                onMouseEnter={e => e.currentTarget.style.background = '#3a3a3a'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >
+                <span style={{ color: 'transparent', fontSize: 10 }}>✓</span>
+                Reset Panel Layout
+              </button>
+            </div>
+          )}
+        </div>
+
+        <MenuBtn label="Help">
+          <MenuItem label="Documentation" onClick={() => setShowDocs(true)} />
+          <MenuItem label="Keyboard Shortcuts" shortcut="⌘/" onClick={() => setShowShortcuts(true)} />
+          <MenuItem divider />
+          <MenuItem label="Settings…" onClick={() => setShowSettings(true)} />
+        </MenuBtn>
+
+        {/* Center: project name */}
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+          <span style={{ color: '#888', cursor: 'pointer', fontSize: 11 }}>←</span>
+          <span style={{ color: '#ccc', fontSize: 12 }}>{projectName}</span>
+        </div>
+
+        {/* Right: play/edit + controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '0 10px', borderLeft: '1px solid #333' }}>
+          <button onClick={() => setMode('play')}
+            style={{ background: mode === 'play' ? '#1e6ebf' : 'none', border: mode === 'play' ? '1px solid #2a7adf' : '1px solid #555', color: mode === 'play' ? '#fff' : '#ccc', padding: '1px 11px', borderRadius: 3, cursor: 'pointer', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+            <svg width="8" height="9" viewBox="0 0 8 9" fill="currentColor"><polygon points="0,0 8,4.5 0,9"/></svg> Play
+          </button>
+          <button onClick={() => setMode('edit')}
+            style={{ background: mode === 'edit' ? '#1e6ebf' : 'none', border: mode === 'edit' ? '1px solid #2a7adf' : '1px solid #555', color: mode === 'edit' ? '#fff' : '#ccc', padding: '1px 11px', borderRadius: 3, cursor: 'pointer', fontSize: 11 }}>Edit</button>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 12px', borderLeft: '1px solid #333', color: '#888', fontSize: 11 }}>
+          <span style={{ cursor: 'pointer' }}>?</span>
+          <span style={{ cursor: 'pointer' }} onClick={() => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }} title="Toggle fullscreen">⤢</span>
+          {mode === 'play' && <>
+            <span style={{ cursor: 'pointer' }}>🔊 sound</span>
+            <span style={{ color: foundCount > 0 ? '#5aaa5a' : '#777' }}>found {foundCount} / {totalCount}</span>
+          </>}
+        </div>
+      </div>}
+
+      {/* ── Top bar — Mobile (phone + tablet) ────────────────── */}
+      {isMobile && (
+        <div style={{ height: 48, background: T.menuBg, borderBottom: `1px solid ${T.border}`, display: 'flex', alignItems: 'center', padding: '0 12px', gap: 10, flexShrink: 0, zIndex: 200 }}>
+          {/* Hamburger */}
+          <button onClick={e => { e.stopPropagation(); setShowMobileMenu(m => !m); }}
+            style={{ background: 'none', border: 'none', color: '#ccc', cursor: 'pointer', padding: 6, display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {[0,1,2].map(i => <div key={i} style={{ width: 20, height: 2, background: '#ccc', borderRadius: 1 }} />)}
+          </button>
+          {/* Project name */}
+          <span style={{ flex: 1, color: '#d0d0d0', fontSize: 14, fontWeight: 500, textAlign: 'center' }}>{projectName}</span>
+          {/* Play/Edit */}
+          <button onClick={() => setMode(mode === 'play' ? 'edit' : 'play')}
+            style={{ background: mode === 'play' ? '#1e6ebf' : '#3a3a3a', border: `1px solid ${mode === 'play' ? '#2a7adf' : '#555'}`, color: '#fff', padding: '6px 16px', borderRadius: 4, cursor: 'pointer', fontSize: 13, fontWeight: 500 }}>
+            {mode === 'play' ? 'Edit' : '▶ Play'}
+          </button>
+          {/* Fullscreen */}
+          <button onClick={() => { if (!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }}
+            title="Toggle fullscreen"
+            style={{ background: 'none', border: '1px solid #555', color: '#ccc', padding: '6px 10px', borderRadius: 4, cursor: 'pointer', fontSize: 14 }}>
+            ⤢
+          </button>
+        </div>
+      )}
+
+      {/* Mobile hamburger menu */}
+      {isMobile && showMobileMenu && (
+        <div onClick={e => e.stopPropagation()} style={{ position: 'fixed', top: 48, left: 0, width: 220, background: T.menuBg, border: `1px solid ${T.border}`, borderRadius: '0 0 6px 0', zIndex: 9000, boxShadow: '4px 4px 20px rgba(0,0,0,0.5)', padding: '6px 0' }}>
+          {[['New Project',''], ['Open…',''], ['Save',''], ['—',''], ['Export JSON',''], ['Export as playable HTML',''], ['—',''], ['Settings…',''], ['Documentation',''], ['Keyboard Shortcuts','']].map(([label], i) =>
+            label === '—'
+              ? <div key={i} style={{ borderTop: `1px solid ${T.border}`, margin: '4px 0' }} />
+              : <button key={label} onClick={() => {
+                  if (label === 'Settings…') setShowSettings(true);
+                  if (label === 'Documentation') setShowDocs(true);
+                  if (label === 'Keyboard Shortcuts') setShowShortcuts(true);
+                  setShowMobileMenu(false);
+                }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', background: 'none', border: 'none', color: '#d0d0d0', padding: '10px 16px', cursor: 'pointer', fontSize: 14 }}
+                onMouseEnter={e => e.currentTarget.style.background = '#3a3a3a'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
+              >{label}</button>
+          )}
+          <div style={{ borderTop: `1px solid ${T.border}`, margin: '4px 0' }} />
+          <div style={{ padding: '6px 16px 4px', color: '#666', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Panels</div>
+          {Object.entries(PANEL_DEFS).map(([id, def]) => (
+            <button key={id} onClick={() => { setActiveBottomSheet(id); setShowMobileMenu(false); }}
+              style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', background: 'none', border: 'none', color: '#d0d0d0', padding: '10px 16px', cursor: 'pointer', fontSize: 14 }}
+              onMouseEnter={e => e.currentTarget.style.background = '#3a3a3a'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}
+            >
+              <span style={{ fontSize: 10, color: activeBottomSheet === id ? '#5aaa5a' : 'transparent' }}>✓</span>
+              {def.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Workspace ─────────────────────────────────────────── */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden', position: 'relative' }}>
+
+        {/* Left toolbar — desktop + tablet only */}
+        {!isPhone && <div style={{ width: isTablet ? 44 : 36, background: '#262626', borderRight: '1px solid #1a1a1a', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '5px 0', gap: 1, flexShrink: 0 }}>
+          {TOOLS.map((tool, i) => tool === null
+            ? <div key={i} style={{ width: 22, borderTop: '1px solid #3a3a3a', margin: '3px 0' }} />
+            : (
+              <button key={tool.title} title={tool.title}
+                onClick={() => setActiveTool(tool.title)}
+                style={{ width: 28, height: 28, background: activeTool === tool.title ? '#4a4a4a' : 'none', border: activeTool === tool.title ? '1px solid #5a5a5a' : '1px solid transparent', color: activeTool === tool.title ? '#fff' : '#aaa', cursor: 'pointer', borderRadius: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, transition: 'all 0.08s' }}
+                onMouseEnter={e => { if (activeTool !== tool.title) e.currentTarget.style.background = '#3a3a3a'; }}
+                onMouseLeave={e => { if (activeTool !== tool.title) e.currentTarget.style.background = 'none'; }}
+              >
+                {tool.label || tool.icon}
+              </button>
+            )
+          )}
+        </div>}
+
+        {/* Canvas + Rulers wrapper */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+          {/* Top ruler */}
+          {showRulers && !isPhone && <div style={{ height: 18, background: '#2a2a2a', borderBottom: '1px solid #1a1a1a', display: 'flex', flexShrink: 0, overflow: 'hidden', position: 'relative' }}>
+            <div style={{ width: 18, flexShrink: 0, borderRight: '1px solid #1a1a1a' }} />
+            {Array.from({ length: 40 }).map((_, i) => (
+              <div key={i} style={{ position: 'absolute', left: 18 + i * 40 + pan.x % 40, bottom: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', pointerEvents: 'none' }}>
+                <span style={{ fontSize: 7, color: '#666', marginBottom: 2, userSelect: 'none' }}>{(i * 40 - (pan.x % 40)) | 0}</span>
+                <div style={{ width: 1, height: 4, background: '#555' }} />
+              </div>
+            ))}
+          </div>}
+          <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
+            {/* Left ruler */}
+            {showRulers && !isPhone && <div style={{ width: 18, background: '#2a2a2a', borderRight: '1px solid #1a1a1a', overflow: 'hidden', flexShrink: 0, position: 'relative' }}>
+              {Array.from({ length: 30 }).map((_, i) => (
+                <div key={i} style={{ position: 'absolute', top: i * 40 + pan.y % 40, right: 0, display: 'flex', alignItems: 'center', gap: 1, pointerEvents: 'none' }}>
+                  <span style={{ fontSize: 7, color: '#666', writingMode: 'vertical-lr', transform: 'rotate(180deg)', userSelect: 'none' }}>{(i * 40 - (pan.y % 40)) | 0}</span>
+                  <div style={{ width: 4, height: 1, background: '#555' }} />
+                </div>
+              ))}
+            </div>}
+        {/* Canvas */}
+        <div ref={canvasRef} onMouseDown={handleCanvasMouseDown}
+          onDoubleClick={e => { if (activeTool !== 'Hand') { setZoom(1); setPan({ x: 0, y: 0 }); } }}
+          style={{ flex: 1, background: outlineMode ? '#ffffff' : T.canvasBg, position: 'relative', overflow: 'hidden', cursor: activeTool === 'Hand' ? 'grab' : 'default' }}>
+          {/* Grid — moves with pan+zoom */}
+          {showGrid && (
+            <div style={{ position: 'absolute', inset: 0, transformOrigin: '50% 50%' }}>
+            <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0.07 }}>
+              <defs>
+                <pattern id="grid" width={40 * zoom} height={40 * zoom} patternUnits="userSpaceOnUse"
+                  x={pan.x % (40 * zoom)} y={pan.y % (40 * zoom)}>
+                  <path d={`M ${40 * zoom} 0 L 0 0 0 ${40 * zoom}`} fill="none" stroke="#888" strokeWidth="0.5"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)"/>
+            </svg>
+          </div>
+          )}
+          {/* Canvas content, scaled */}
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`, transformOrigin: '50% 50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8, color: '#444', fontSize: 12 }}>
+              <svg width="64" height="64" viewBox="0 0 64 64" fill="none" opacity="0.18">
+                <circle cx="32" cy="32" r="28" stroke="#888" strokeWidth="2"/>
+                <circle cx="32" cy="32" r="12" stroke="#888" strokeWidth="1.5"/>
+                <line x1="32" y1="4" x2="32" y2="60" stroke="#888" strokeWidth="1"/>
+                <line x1="4" y1="32" x2="60" y2="32" stroke="#888" strokeWidth="1"/>
+              </svg>
+              <span style={{ color: '#555' }}>Canvas</span>
+            </div>
+          </div>
+          {/* Zoom level badge */}
+          <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.4)', color: '#888', fontSize: 10, padding: '2px 7px', borderRadius: 3, pointerEvents: 'none' }}>
+            {Math.round(zoom * 100)}%{snapToGrid ? ' · snap' : ''}
+          </div>
+          {/* Hit Zone preview overlay */}
+          {hitZonePreview && (
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}>
+              <div style={{ position: 'absolute', left: '30%', top: '25%', width: 80, height: 60, border: '2px solid #ddaa22', background: 'rgba(221,170,34,0.15)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#ddaa22', fontWeight: 700, letterSpacing: '0.1em' }}>HIT ZONE</div>
+              <div style={{ position: 'absolute', left: '55%', top: '45%', width: 70, height: 50, border: '2px solid #cc4444', background: 'rgba(204,68,68,0.15)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#cc4444', fontWeight: 700, letterSpacing: '0.1em' }}>MISS TAP</div>
+              <div style={{ position: 'absolute', left: '20%', top: '55%', width: 70, height: 55, border: '2px dashed #aa44cc', background: 'rgba(170,68,204,0.12)', borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: '#aa44cc', fontWeight: 700, letterSpacing: '0.1em' }}>SURPRISE</div>
+            </div>
+          )}
+          {/* Play mode overlay */}
+          {mode === 'play' && (
+            <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,10,20,0.82)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 20 }}>
+              <div style={{ textAlign: 'center', color: '#fff', padding: 32 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#888', marginBottom: 16 }}>Play Mode</div>
+                <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap', maxWidth: 400, marginBottom: 20 }}>
+                  {Array.from({ length: Math.min(totalCount, 8) }).map((_, n) => (
+                    <div key={n} onClick={() => setFoundCount(c => n < c ? c : n + 1)}
+                      style={{ width: 44, height: 44, borderRadius: '50%', border: `2px solid ${n < foundCount ? '#5aaa5a' : '#444'}`, background: n < foundCount ? '#5aaa5a33' : '#1a1a1a', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', color: n < foundCount ? '#5aaa5a' : '#555', fontSize: 18, transition: 'all 0.15s' }}>
+                      {n < foundCount ? '✓' : '?'}
+                    </div>
+                  ))}
+                </div>
+                <div style={{ color: '#5aaa5a', fontSize: 14, marginBottom: 6 }}>Found {foundCount} / {totalCount}</div>
+                <div style={{ color: '#555', fontSize: 11 }}>Click circles to simulate · Press Edit to return</div>
+              </div>
+            </div>
+          )}
+        </div>
+          </div>
+        </div>
+        {/* End canvas + rulers */}
+
+        {/* Right dock — desktop only */}
+        {!isMobile && <div style={{ width: 266, background: T.dockBg, borderLeft: `1px solid ${T.border}`, overflowY: 'auto', overflowX: 'hidden', display: 'flex', flexDirection: 'column', flexShrink: 0, position: 'relative' }}>
+          {dockedGroups.map(g => <PanelGroup key={g.id} group={g} {...pgProps} />)}
+          {nearDock && (
+            <div style={{ margin: 5, padding: 14, background: `${T.accent}12`, border: `1px dashed ${T.accent}55`, borderRadius: 3, color: `${T.accent}aa`, fontSize: 11, textAlign: 'center' }}>
+              Drop to dock
+            </div>
+          )}
+          {dockedGroups.length === 0 && !nearDock && (
+            <div style={{ padding: 16, color: '#555', fontSize: 11, textAlign: 'center', lineHeight: 1.6 }}>
+              All panels are floating.<br/>
+              <span style={{ color: '#666' }}>Drag a panel here to dock it,<br/>or use Window menu to reopen.</span>
+            </div>
+          )}
+        </div>}
+
+        {/* Tablet: icon strip on right */}
+        {isTablet && (
+          <div style={{ width: 52, background: T.dockBg, borderLeft: `1px solid ${T.border}`, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '6px 0', gap: 4, flexShrink: 0, zIndex: 100 }}>
+            {Object.entries(PANEL_DEFS).map(([id, def]) => {
+              const icons = { layers: '≡', transform: '⊞', properties: '⊡', hitzone: '◎', surprise: '✦', swatches: '▣', navigator: '⊕', history: '↺', difficulty: '⚙', project: '📁' };
+              const isActive = tabletOpenPanel === id;
+              return (
+                <button key={id} title={def.label}
+                  onClick={e => { e.stopPropagation(); setTabletOpenPanel(isActive ? null : id); }}
+                  style={{ width: 40, height: 40, background: isActive ? T.accent + '33' : 'none', border: `1px solid ${isActive ? T.accent : 'transparent'}`, borderRadius: 4, color: isActive ? T.accent : '#888', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 1 }}>
+                  <span style={{ fontSize: 14 }}>{icons[id] || '▪'}</span>
+                  <span style={{ fontSize: 7, color: isActive ? T.accent : '#666', letterSpacing: '-0.02em', lineHeight: 1 }}>{def.label.slice(0,4)}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tablet: panel overlay */}
+        {isTablet && tabletOpenPanel && (
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', right: 52, top: 0, bottom: 0, width: 280, background: T.dockBg, borderLeft: `1px solid ${T.border}`, boxShadow: '-4px 0 20px rgba(0,0,0,0.5)', zIndex: 99, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{ background: T.headerBg, borderBottom: `1px solid ${T.border}`, padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
+              <span style={{ fontWeight: 600, fontSize: 13, color: '#d0d0d0' }}>{PANEL_DEFS[tabletOpenPanel]?.label}</span>
+              <button onClick={() => setTabletOpenPanel(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ flex: 1, overflowY: 'auto' }}>
+              {PANEL_DEFS[tabletOpenPanel]?.render()}
+            </div>
+          </div>
+        )}
+
+        {/* Dock drop overlay — desktop only */}
+        {!isMobile && nearDock && <DockDropOverlay active />}
+
+        {/* Floating panels — desktop only */}
+        {!isMobile && floatingGroups.map(g => <PanelGroup key={g.id} group={g} {...pgProps} />)}
+
+        {/* Phone: floating tool picker button — edit mode only */}
+        {isPhone && mode === 'edit' && (
+          <div style={{ position: 'absolute', bottom: 80, left: 16, zIndex: 200 }}>
+            <button onClick={e => { e.stopPropagation(); setShowToolPicker(t => !t); }}
+              style={{ width: 52, height: 52, borderRadius: '50%', background: T.accent, border: 'none', color: '#fff', fontSize: 20, cursor: 'pointer', boxShadow: '0 4px 16px rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {TOOLS.find(t => t && t.title.startsWith(activeTool))?.icon || '◈'}
+            </button>
+            {showToolPicker && (
+              <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 60, left: 0, background: T.panelBg, border: `1px solid ${T.border}`, borderRadius: 8, padding: 8, boxShadow: '0 4px 20px rgba(0,0,0,0.6)', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6, width: 168 }}>
+                {TOOLS.filter(Boolean).map(tool => (
+                  <button key={tool.title} title={tool.title}
+                    onClick={() => { setActiveTool(tool.title.split(' ')[0]); setShowToolPicker(false); }}
+                    style={{ width: 48, height: 48, background: activeTool === tool.title.split(' ')[0] ? T.accent + '33' : T.headerBg, border: `1px solid ${activeTool === tool.title.split(' ')[0] ? T.accent : T.border}`, borderRadius: 6, color: activeTool === tool.title.split(' ')[0] ? T.accent : '#aaa', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, fontSize: 13 }}>
+                    {tool.icon}
+                    <span style={{ fontSize: 7, color: '#666' }}>{tool.title.split(' ')[0]}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Phone: bottom sheet */}
+        {isPhone && activeBottomSheet && (
+          <div onClick={e => e.stopPropagation()} style={{ position: 'absolute', bottom: 0, left: 0, right: 0, background: T.panelBg, borderTop: `2px solid ${T.accent}`, borderRadius: '12px 12px 0 0', zIndex: 300, maxHeight: '70vh', display: 'flex', flexDirection: 'column', boxShadow: '0 -4px 24px rgba(0,0,0,0.6)' }}>
+            {/* Handle + title */}
+            <div style={{ display: 'flex', alignItems: 'center', padding: '10px 16px 6px', flexShrink: 0, borderBottom: `1px solid ${T.border}` }}>
+              <div style={{ width: 36, height: 4, background: '#555', borderRadius: 2, margin: '0 auto 8px', position: 'absolute', left: '50%', transform: 'translateX(-50%)', top: 8 }} />
+              <span style={{ fontWeight: 600, fontSize: 14, color: '#d0d0d0', flex: 1, marginTop: 4 }}>{PANEL_DEFS[activeBottomSheet]?.label}</span>
+              <button onClick={() => setActiveBottomSheet(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 20, lineHeight: 1, padding: 4 }}>×</button>
+            </div>
+            {/* Panel content */}
+            <div style={{ overflowY: 'auto', flex: 1 }}>
+              {PANEL_DEFS[activeBottomSheet]?.render()}
+            </div>
+            {/* Quick panel switcher */}
+            <div style={{ display: 'flex', borderTop: `1px solid ${T.border}`, background: T.headerBg, flexShrink: 0, overflowX: 'auto' }}>
+              {Object.entries(PANEL_DEFS).map(([id, def]) => (
+                <button key={id} onClick={() => setActiveBottomSheet(id)}
+                  style={{ flex: '0 0 auto', padding: '8px 14px', background: activeBottomSheet === id ? T.accent + '22' : 'none', border: 'none', color: activeBottomSheet === id ? T.accent : '#777', cursor: 'pointer', fontSize: 11, borderBottom: activeBottomSheet === id ? `2px solid ${T.accent}` : '2px solid transparent', whiteSpace: 'nowrap' }}>
+                  {def.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Tab drag ghost — desktop only */}
+        {!isMobile && tabDrag && (
+          <div style={{ position: 'fixed', left: tabDrag.x - 52, top: tabDrag.y - 13, background: '#2d4a6d', border: '1px solid #4a8acc', color: '#ccc', padding: '3px 12px', fontSize: 12, borderRadius: 3, pointerEvents: 'none', zIndex: 9999, boxShadow: '0 2px 10px rgba(0,0,0,0.55)' }}>
+            {PANEL_DEFS[tabDrag.tabId]?.label}
+          </div>
+        )}
+      </div>
+
+      {/* Keyboard Shortcuts Modal */}
+      {showShortcuts && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowShortcuts(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#2e2e2e', border: '1px solid #484848', borderRadius: 4, width: 520, maxHeight: '80vh', overflow: 'auto', boxShadow: '0 12px 40px rgba(0,0,0,0.7)', color: '#d0d0d0', fontSize: 12 }}>
+            <div style={{ background: '#252525', borderBottom: '1px solid #484848', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>Keyboard Shortcuts</span>
+              <button onClick={() => setShowShortcuts(false)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0 }}>
+              {[
+                ['Tools', [['V', 'Select'], ['H', 'Hand / Pan'], ['P', 'Draw'], ['E', 'Erase'], ['R', 'Rectangle'], ['O', 'Ellipse'], ['S', 'Star'], ['A', 'Add object'], ['U', 'Surprise']]],
+                ['View', [['⌘+ | Ctrl+', 'Zoom in'], ['⌘- | Ctrl-', 'Zoom out'], ['⌘0 | Ctrl+0', 'Fit page'], ["⌘' | Ctrl+'", 'Show/hide grid'], ['⌘R | Ctrl+R', 'Show/hide rulers'], ['⌘Y | Ctrl+Y', 'Outline mode'], ['⌘⇧H | Ctrl+⇧H', 'Hit zone preview'], ["⌘⇧' | Ctrl+⇧'", 'Snap to grid']]],
+                ['Edit', [['⌘Z | Ctrl+Z', 'Undo'], ['⌘⇧Z | Ctrl+Y', 'Redo'], ['⌘X | Ctrl+X', 'Cut'], ['⌘C | Ctrl+C', 'Copy'], ['⌘V | Ctrl+V', 'Paste'], ['⌘D | Ctrl+D', 'Duplicate'], ['⌫ | Del', 'Delete']]],
+                ['Panels', [['⌘/ | Ctrl+/', 'Shortcuts'], ['⌘⇧L | Ctrl+⇧L', 'Layers'], ['⌘⇧P | Ctrl+⇧P', 'Properties'], ['⌘⇧T | Ctrl+⇧T', 'Transform'], ['⌘⇧W | Ctrl+⇧W', 'Swatches']]],
+              ].map(([section, items]) => (
+                <div key={section} style={{ padding: '12px 16px', borderRight: '1px solid #3a3a3a', borderBottom: '1px solid #3a3a3a' }}>
+                  <div style={{ color: '#8a8a8a', fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>{section}</div>
+                  {items.map(([key, label]) => (
+                    <div key={key} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                      <span style={{ color: '#aaa' }}>{label}</span>
+                      <kbd style={{ background: '#1a1a1a', border: '1px solid #484848', borderRadius: 3, padding: '1px 6px', fontSize: 11, color: '#d0d0d0', fontFamily: 'inherit' }}>{key}</kbd>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+            {showDocs && <DocsModal onClose={() => setShowDocs(false)} />}
+
+      {/* Settings Modal */}
+      {showSettings && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          onClick={() => setShowSettings(false)}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#2e2e2e', border: '1px solid #484848', borderRadius: 4, width: 480, boxShadow: '0 12px 40px rgba(0,0,0,0.7)', color: '#d0d0d0', fontSize: 12 }}>
+            <div style={{ background: '#252525', borderBottom: '1px solid #484848', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontWeight: 700, fontSize: 13 }}>Settings</span>
+              <button onClick={() => setShowSettings(false)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: 18, lineHeight: 1 }}>×</button>
+            </div>
+            <SettingsModalBody onClose={() => setShowSettings(false)} enabledPanels={enabledPanels} setEnabledPanels={setEnabledPanels} panelDefs={PANEL_DEFS} />
+          </div>
+        </div>
+      )}
+
+      {/* Status bar — desktop + tablet only */}
+      {!isPhone && <div style={{ height: 20, background: T.menuBg, borderTop: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', padding: '0 12px', gap: 20, flexShrink: 0, color: '#666', fontSize: 10 }}>
+        <span>{projectName}</span>
+      </div>}
+    </div>
+  );
+};
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
