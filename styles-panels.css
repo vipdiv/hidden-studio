@@ -81,6 +81,40 @@ body[data-theme] {
   --space:        var(--ps-canvas-bg);
 }
 
+/* ── Paper/Light theme: override rgba-white hover states that
+   become invisible on a light background ─────────────── */
+body[data-theme="paper"] .menu-item:hover,
+body[data-theme="paper"] .menu-item.open {
+  background: rgba(0,0,0,0.08);
+}
+body[data-theme="paper"] .menu-item.open {
+  background: var(--ps-accent);
+  color: #fff;
+}
+body[data-theme="paper"] .menu-dropdown li:hover {
+  background: var(--ps-accent);
+  color: #fff;
+}
+body[data-theme="paper"] .edit-panel-collapse-btn:hover,
+body[data-theme="paper"] .list-panel-close:hover {
+  background: rgba(0,0,0,0.08) !important;
+}
+body[data-theme="paper"] .panel-section-header,
+body[data-theme="paper"] .edit-panel-section-header {
+  background: rgba(0,0,0,0.04);
+}
+body[data-theme="paper"] .icon-btn:hover {
+  background: rgba(0,0,0,0.07);
+}
+body[data-theme="paper"] .tool-strip .tool-btn:hover {
+  background: rgba(0,0,0,0.08) !important;
+}
+body[data-theme="paper"] .tool-strip .tool-btn.active {
+  background: rgba(196,63,46,0.15) !important;
+  border-color: rgba(196,63,46,0.5) !important;
+  color: #c43f2e !important;
+}
+
 /* ── Panel root overlay ─────────────────────────── */
 #panel-root {
   position: fixed;
