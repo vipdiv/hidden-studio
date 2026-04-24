@@ -323,6 +323,18 @@ input, textarea { font: inherit; }
   overflow: hidden;
   text-overflow: ellipsis;
   color: var(--ui-text);
+  cursor: default;
+  transition: border-color 0.15s;
+}
+.project-name:hover { border-color: var(--accent); cursor: text; }
+.project-name[contenteditable="true"] {
+  outline: none;
+  border-color: var(--accent);
+  background: var(--panel-bg);
+  overflow: visible;
+  white-space: nowrap;
+  min-width: 80px;
+  cursor: text;
 }
 
 .mode-toggle {

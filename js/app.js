@@ -98,6 +98,11 @@
       showStartScreen();
     });
 
+    // Project name — click to rename inline (works in both modes)
+    document.getElementById('projectName').addEventListener('click', () => {
+      window.Editor.renameProject();
+    });
+
     // Mode toggle
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.addEventListener('click', () => setMode(b.dataset.mode));

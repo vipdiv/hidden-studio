@@ -74,6 +74,7 @@ window.Editor = (function() {
     });
     document.getElementById('addFolderBtn')?.addEventListener('click', _createGroup);
     document.getElementById('docSizeBtn')?.addEventListener('click', openDocSizeModal);
+    document.getElementById('statsBtn')?.addEventListener('click', openStatsModal);
     document.getElementById('clearDrawingsBtn').addEventListener('click', () => {
       if (confirm('Clear all pen drawings? (Cannot be undone.)')) {
         window.Draw.clearAll();
@@ -1862,15 +1863,103 @@ window.Editor = (function() {
   }
 
   /* ————————————————————————————————————————
+     PROJECT STATS
+  ———————————————————————————————————————— */
+  function openStatsModal() {
+    if (!project) return;
+
+    // Measure each category by JSON character count (chars ≈ bytes for ASCII)
+    const categories = [
+      { label: 'Hit zones / items', value: JSON.stringify(project.items || []) },
+      { label: 'Pen drawings',      value: JSON.stringify(project.drawings || []) },
+      { label: 'Sprites',           value: JSON.stringify(project.sprites || []) },
+      { label: 'Text objects',      value: JSON.stringify((project.items || []).filter(i => i.kind === 'text')) },
+      { label: 'Base image',        value: project.baseImage || '' },
+      { label: 'Custom sounds',     value: JSON.stringify(project.customSounds || {}) },
+    ];
+
+    const totalJson = JSON.stringify(project);
+    const totalBytes = totalJson.length;
+
+    // Only show categories that have actual content
+    const rows = categories
+      .map(c => ({ label: c.label, bytes: c.value.length }))
+      .filter(r => r.bytes > 2); // '[]' or '{}' = empty
+
+    const fmt = (b) => b >= 1024 ? (b / 1024).toFixed(1) + ' KB' : b + ' B';
+
+    const barColor = 'var(--accent)';
+    const rowsHtml = rows.length === 0
+      ? '<p style="color:var(--ui-text-dim);font-size:13px">No content yet.</p>'
+      : rows.map(r => {
+          const pct = Math.round(r.bytes / totalBytes * 100);
+          return `
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px">
+              <span>${escapeHtmlInner(r.label)}</span>
+              <span style="color:var(--ui-text-dim)">${fmt(r.bytes)} &nbsp; ${pct}%</span>
+            </div>
+            <div style="background:var(--panel-bg-2);border-radius:3px;height:8px;overflow:hidden">
+              <div style="width:${pct}%;height:100%;background:${barColor};border-radius:3px;transition:width 0.3s"></div>
+            </div>
+          </div>`;
+        }).join('');
+
+    const body = `
+      <div style="padding:4px 0 8px">
+        <p style="font-size:12px;color:var(--ui-text-dim);margin-bottom:16px">
+          Stored locally in your browser. No AI tokens used — this is a fully offline tool.
+        </p>
+        ${rowsHtml}
+        <hr style="border:none;border-top:1px solid var(--panel-border);margin:12px 0">
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:600">
+          <span>Total project JSON</span>
+          <span>${fmt(totalBytes)}</span>
+        </div>
+      </div>`;
+
+    openModal('Project stats', body);
+  }
+
+  /* ————————————————————————————————————————
      PROJECT RENAME + DRAWINGS LOAD
   ———————————————————————————————————————— */
   function renameProject() {
-    const name = prompt('Project name:', project.name);
-    if (name && name.trim()) {
-      project.name = name.trim();
-      document.getElementById('projectName').textContent = project.name;
+    const el = document.getElementById('projectName');
+    if (!el || !project) return;
+    el.contentEditable = 'true';
+    el.focus();
+    // Select all text
+    const range = document.createRange();
+    range.selectNodeContents(el);
+    const sel = window.getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+
+    function commit() {
+      el.contentEditable = 'false';
+      const name = el.textContent.trim();
+      if (name) {
+        project.name = name;
+        el.textContent = name;
+      } else {
+        el.textContent = project.name;
+      }
       schedSave();
+      el.removeEventListener('blur', commit);
+      el.removeEventListener('keydown', onKey);
     }
+    function onKey(e) {
+      if (e.key === 'Enter') { e.preventDefault(); commit(); }
+      if (e.key === 'Escape') {
+        el.contentEditable = 'false';
+        el.textContent = project.name;
+        el.removeEventListener('blur', commit);
+        el.removeEventListener('keydown', onKey);
+      }
+    }
+    el.addEventListener('blur', commit);
+    el.addEventListener('keydown', onKey);
   }
 
   async function loadProjectAssets(p) {
@@ -1958,5 +2047,6 @@ window.Editor = (function() {
     loadProjectAssets,
     deselect,
     openModal, closeModal,
+    renameProject,
   };
 })();
