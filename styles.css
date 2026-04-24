@@ -1163,6 +1163,72 @@ body.edit-mode .properties-panel { display: flex; }
   pointer-events: none;
 }
 
+/* Layers header — title + "new folder" button on same row */
+.layers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px 5px;
+  border-bottom: 1px solid var(--panel-border);
+}
+.layers-header-title {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+}
+.layers-add-folder-btn {
+  font-size: 10px;
+  font-family: inherit;
+  padding: 2px 7px;
+  border-radius: 2px;
+  background: transparent;
+  border: 1px solid var(--panel-border);
+  color: var(--ui-text-dim);
+  cursor: pointer;
+  line-height: 1.5;
+  letter-spacing: 0.04em;
+}
+.layers-add-folder-btn:hover { color: var(--ui-text); border-color: var(--ui-text-dim); }
+
+/* Folder rows */
+.layer-folder-row {
+  background: rgba(255,255,255,0.03);
+  border-color: rgba(212,212,212,0.08) !important;
+}
+.layer-folder-row.drag-over {
+  border: 1.5px solid var(--ui-blue) !important;
+  background: rgba(20,115,230,0.12);
+}
+.folder-toggle {
+  font-size: 8px;
+  width: 14px; height: 14px;
+  border: none; background: transparent;
+  color: var(--ui-text-dim);
+  cursor: pointer;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+  padding: 0;
+  border-radius: 2px;
+}
+.folder-toggle:hover { background: rgba(212,212,212,0.1); }
+.layer-folder-name { font-style: italic; cursor: default; }
+.layer-folder-empty {
+  font-size: 10px;
+  color: var(--ui-text-dim);
+  font-style: italic;
+  padding: 3px 4px 3px 36px;
+}
+
+/* Member layers indented under their folder */
+.layer-member {
+  padding-left: 20px;
+  background: rgba(0,0,0,0.12);
+  border-left: 2px solid rgba(212,212,212,0.08);
+  margin-left: 4px;
+}
+
 /* Inline layer rename input */
 .layer-rename-input {
   font: inherit;

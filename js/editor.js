@@ -72,6 +72,7 @@ window.Editor = (function() {
     document.getElementById('exportHtmlBtn').addEventListener('click', () => {
       if (project) window.Projects.exportHtml(project);
     });
+    document.getElementById('addFolderBtn')?.addEventListener('click', _createGroup);
     document.getElementById('clearDrawingsBtn').addEventListener('click', () => {
       if (confirm('Clear all pen drawings? (Cannot be undone.)')) {
         window.Draw.clearAll();
@@ -928,103 +929,111 @@ window.Editor = (function() {
     const listEl = document.getElementById('layersList');
     if (!listEl || !project) return;
 
-    const rows = [];
-    const sprites = project.sprites || [];
-    const strokes = window.Draw.getStrokes();
+    const sprites   = project.sprites   || [];
+    const strokes   = window.Draw.getStrokes();
     const items     = project.items     || [];
     const surprises = project.surprises || [];
+    const texts     = project.texts     || [];
+    const groups    = project.groups    || [];
 
-    // Helper: build eye + lock HTML for any object
+    // Flat list of all layers in display order (top = frontmost)
+    const allLayers = [];
+    for (let i = items.length - 1;     i >= 0; i--) allLayers.push({ type:'item',     obj:items[i],     arrIdx:i });
+    for (let i = surprises.length - 1; i >= 0; i--) allLayers.push({ type:'surprise', obj:surprises[i], arrIdx:i });
+    for (let i = sprites.length - 1;   i >= 0; i--) allLayers.push({ type:'sprite',   obj:sprites[i],   arrIdx:i });
+    for (let i = strokes.length - 1;   i >= 0; i--) allLayers.push({ type:'stroke',   obj:strokes[i],   arrIdx:i });
+    for (let i = texts.length - 1;     i >= 0; i--) allLayers.push({ type:'text',     obj:texts[i],     arrIdx:i });
+
+    function getMembersOf(group) {
+      return group.memberIds.map(k => {
+        const sep = k.indexOf(':'); const t = k.slice(0,sep), id = k.slice(sep+1);
+        return allLayers.find(l => l.type === t && l.obj.id === id);
+      }).filter(Boolean);
+    }
+
+    const groupedKeys = new Set();
+    groups.forEach(g => g.memberIds.forEach(k => groupedKeys.add(k)));
+
+    // ── helpers ──────────────────────────────────────────────
+    function isActive(type, id) {
+      if (type === 'item')     return selected?.id === id && selected?.kind === 'item';
+      if (type === 'surprise') return selected?.id === id && selected?.kind === 'surprise';
+      if (type === 'sprite')   return selectedSprite === id;
+      if (type === 'stroke')   return selectedStroke === id;
+      if (type === 'text')     return selected?.id === id && selected?.kind === 'text';
+      return false;
+    }
+
     function visBtns(obj, type) {
       const eyeClass  = obj.hidden ? 'layer-vis is-hidden' : 'layer-vis';
       const lockClass = obj.locked ? 'layer-lock is-locked' : 'layer-lock';
+      const lockIcon  = obj.locked ? '🔒' : '🔓';
       return `<button class="${eyeClass}" data-vis-type="${type}" data-vis-id="${obj.id}" title="Show/hide">👁</button>` +
-             `<button class="${lockClass}" data-lock-type="${type}" data-lock-id="${obj.id}" title="Lock/unlock">🔒</button>`;
+             `<button class="${lockClass}" data-lock-type="${type}" data-lock-id="${obj.id}" title="Lock/unlock">${lockIcon}</button>`;
     }
 
-    // Items (findable hit zones) — not reorderable between types
-    for (let i = items.length - 1; i >= 0; i--) {
-      const it = items[i];
-      const active = selected?.id === it.id && selected?.kind === 'item';
-      rows.push(`<li class="layer-row${active ? ' active' : ''}${it.hidden ? ' layer-hidden' : ''}"
-          data-layer-type="item" data-layer-id="${it.id}" data-arr-idx="${i}">
-        ${visBtns(it, 'item')}
-        <span class="layer-icon">⊙</span>
-        <span class="layer-name" title="${escapeAttr(it.name)}">${escapeHtmlInner(it.name)}</span>
-        <span class="layer-actions">
-          <button class="layer-del" data-del-type="item" data-del-id="${it.id}" title="Delete">×</button>
-        </span>
+    function buildRow(type, obj, arrIdx, isMember) {
+      const active = isActive(type, obj.id);
+      const memberCls = isMember ? ' layer-member' : '';
+      const hasHandle = type === 'sprite' || type === 'stroke' || type === 'text';
+      let iconHtml = '', nameHtml = '';
+      if (type === 'item') {
+        iconHtml = `<span class="layer-icon">⊙</span>`;
+        nameHtml = escapeHtmlInner(obj.name);
+      } else if (type === 'surprise') {
+        iconHtml = `<span class="layer-icon">✨</span>`;
+        nameHtml = escapeHtmlInner(obj.name);
+      } else if (type === 'sprite') {
+        iconHtml = `<span class="layer-icon">🖼</span>`;
+        nameHtml = obj.name ? escapeHtmlInner(obj.name) : `Sprite ${arrIdx + 1}`;
+      } else if (type === 'stroke') {
+        iconHtml = `<span class="layer-icon" style="display:inline-block;width:10px;height:10px;background:${obj.color};border-radius:50%;flex-shrink:0"></span>`;
+        nameHtml = `Stroke ${arrIdx + 1}`;
+      } else if (type === 'text') {
+        iconHtml = `<span class="layer-icon" style="font-family:'Caveat',cursive;font-size:13px;font-weight:700;color:${obj.color}">A</span>`;
+        nameHtml = escapeHtmlInner(obj.text.length > 20 ? obj.text.slice(0,20)+'…' : obj.text);
+      }
+      const handleHtml = hasHandle ? `<span class="layer-drag-handle" title="Drag to reorder">⠿</span>` : '';
+      return `<li class="layer-row${active?' active':''}${obj.hidden?' layer-hidden':''}${memberCls}" data-layer-type="${type}" data-layer-id="${obj.id}" data-arr-idx="${arrIdx}">
+        ${visBtns(obj, type)}${handleHtml}${iconHtml}
+        <span class="layer-name" title="${escapeAttr(obj.name||obj.text||'')}">${nameHtml}</span>
+        <span class="layer-actions"><button class="layer-del" data-del-type="${type}" data-del-id="${obj.id}" title="Delete">×</button></span>
+      </li>`;
+    }
+
+    const rows = [];
+
+    // ── Folder rows ───────────────────────────────────────────
+    groups.forEach(group => {
+      const members = getMembersOf(group);
+      const allHidden = members.length > 0 && members.every(l => l.obj.hidden);
+      const allLocked = members.length > 0 && members.every(l => l.obj.locked);
+      rows.push(`<li class="layer-row layer-folder-row" data-layer-type="group" data-layer-id="${group.id}">
+        <button class="${allHidden?'layer-vis is-hidden':'layer-vis'}" data-folder-vis="${group.id}" title="Show/hide all">👁</button>
+        <button class="${allLocked?'layer-lock is-locked':'layer-lock'}" data-folder-lock="${group.id}" title="Lock/unlock all">${allLocked?'🔒':'🔓'}</button>
+        <button class="folder-toggle" data-group-id="${group.id}">${group.collapsed?'▶':'▼'}</button>
+        <span class="layer-icon">📁</span>
+        <span class="layer-name layer-folder-name">${escapeHtmlInner(group.name)}</span>
+        <span class="layer-actions"><button class="layer-del" data-del-type="group" data-del-id="${group.id}" title="Remove folder (keeps layers)">×</button></span>
       </li>`);
-    }
+      if (!group.collapsed) {
+        if (members.length === 0) {
+          rows.push(`<li class="layer-folder-empty">— empty —</li>`);
+        } else {
+          members.forEach(l => rows.push(buildRow(l.type, l.obj, l.arrIdx, true)));
+        }
+      }
+    });
 
-    // Surprises
-    for (let i = surprises.length - 1; i >= 0; i--) {
-      const su = surprises[i];
-      const active = selected?.id === su.id && selected?.kind === 'surprise';
-      rows.push(`<li class="layer-row${active ? ' active' : ''}${su.hidden ? ' layer-hidden' : ''}"
-          data-layer-type="surprise" data-layer-id="${su.id}" data-arr-idx="${i}">
-        ${visBtns(su, 'surprise')}
-        <span class="layer-icon">✨</span>
-        <span class="layer-name" title="${escapeAttr(su.name)}">${escapeHtmlInner(su.name)}</span>
-        <span class="layer-actions">
-          <button class="layer-del" data-del-type="surprise" data-del-id="${su.id}" title="Delete">×</button>
-        </span>
-      </li>`);
-    }
+    // ── Ungrouped layers ──────────────────────────────────────
+    allLayers.forEach(({ type, obj, arrIdx }) => {
+      if (!groupedKeys.has(type + ':' + obj.id)) rows.push(buildRow(type, obj, arrIdx, false));
+    });
 
-    // Sprites — last in array = frontmost; shown first in panel; draggable
-    for (let i = sprites.length - 1; i >= 0; i--) {
-      const s = sprites[i];
-      const active = selectedSprite === s.id;
-      rows.push(`<li class="layer-row${active ? ' active' : ''}${s.hidden ? ' layer-hidden' : ''}"
-          data-layer-type="sprite" data-layer-id="${s.id}" data-arr-idx="${i}">
-        ${visBtns(s, 'sprite')}
-        <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
-        <span class="layer-icon">🖼</span>
-        <span class="layer-name">Sprite ${i + 1}</span>
-        <span class="layer-actions">
-          <button class="layer-del" data-del-type="sprite" data-del-id="${s.id}" title="Delete">×</button>
-        </span>
-      </li>`);
-    }
-
-    // Strokes — last in array = frontmost; draggable
-    for (let i = strokes.length - 1; i >= 0; i--) {
-      const s = strokes[i];
-      const active = selectedStroke === s.id;
-      rows.push(`<li class="layer-row${active ? ' active' : ''}${s.hidden ? ' layer-hidden' : ''}"
-          data-layer-type="stroke" data-layer-id="${s.id}" data-arr-idx="${i}">
-        ${visBtns(s, 'stroke')}
-        <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
-        <span class="layer-icon" style="display:inline-block;width:10px;height:10px;background:${s.color};border-radius:50%;flex-shrink:0"></span>
-        <span class="layer-name">Stroke ${i + 1}</span>
-        <span class="layer-actions">
-          <button class="layer-del" data-del-type="stroke" data-del-id="${s.id}" title="Delete">×</button>
-        </span>
-      </li>`);
-    }
-
-    // Texts
-    const texts = project.texts || [];
-    for (let i = texts.length - 1; i >= 0; i--) {
-      const t = texts[i];
-      const active = selected?.id === t.id && selected?.kind === 'text';
-      rows.push(`<li class="layer-row${active ? ' active' : ''}${t.hidden ? ' layer-hidden' : ''}"
-          data-layer-type="text" data-layer-id="${t.id}" data-arr-idx="${i}">
-        ${visBtns(t, 'text')}
-        <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
-        <span class="layer-icon" style="font-family:'Caveat',cursive;font-size:13px;font-weight:700;color:${t.color}">A</span>
-        <span class="layer-name" title="${escapeAttr(t.text)}">${escapeHtmlInner(t.text.length > 20 ? t.text.slice(0,20)+'…' : t.text)}</span>
-        <span class="layer-actions">
-          <button class="layer-del" data-del-type="text" data-del-id="${t.id}" title="Delete">×</button>
-        </span>
-      </li>`);
-    }
-
-    // Base layer — fixed at bottom
+    // ── Base layer (always at bottom, ungroupable) ────────────
     if (project.baseType) {
       const label = project.baseType === 'svg' ? 'Planet SVG' : 'Base image';
-      rows.push(`<li class="layer-row${selectedBase ? ' active' : ''} layer-base" data-layer-type="base">
+      rows.push(`<li class="layer-row${selectedBase?' active':''} layer-base" data-layer-type="base">
         <span class="layer-vis" style="opacity:.3;cursor:default">👁</span>
         <span class="layer-lock" style="opacity:.3;cursor:default">🔒</span>
         <span class="layer-icon">🌐</span>
@@ -1032,53 +1041,87 @@ window.Editor = (function() {
       </li>`);
     }
 
-    listEl.innerHTML = rows.length
-      ? rows.join('')
-      : `<li class="layer-empty">nothing yet</li>`;
+    listEl.innerHTML = rows.length ? rows.join('') : `<li class="layer-empty">nothing yet</li>`;
 
-    // Pointer → select or drag
-    listEl.querySelectorAll('.layer-row').forEach(row => {
+    // ── Event wiring ──────────────────────────────────────────
+
+    // Folder collapse/expand
+    listEl.querySelectorAll('.folder-toggle').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const g = (project.groups||[]).find(x => x.id === btn.dataset.groupId);
+        if (g) { g.collapsed = !g.collapsed; schedSave(); renderLayersPanel(); }
+      });
+    });
+
+    // Folder: show/hide all members
+    listEl.querySelectorAll('[data-folder-vis]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const g = (project.groups||[]).find(x => x.id === btn.dataset.folderVis);
+        if (!g) return;
+        const members = getMembersOf(g);
+        const allHid = members.length > 0 && members.every(l => l.obj.hidden);
+        members.forEach(l => { l.obj.hidden = !allHid; _applyVisibility(l.type, l.obj.id, l.obj.hidden); });
+        renderLayersPanel(); schedSave();
+      });
+    });
+
+    // Folder: lock/unlock all members
+    listEl.querySelectorAll('[data-folder-lock]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const g = (project.groups||[]).find(x => x.id === btn.dataset.folderLock);
+        if (!g) return;
+        const members = getMembersOf(g);
+        const allLkd = members.length > 0 && members.every(l => l.obj.locked);
+        members.forEach(l => { l.obj.locked = !allLkd; });
+        renderLayersPanel(); schedSave();
+      });
+    });
+
+    // Folder name dblclick → inline rename
+    listEl.querySelectorAll('.layer-folder-name').forEach(nameEl => {
+      nameEl.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        _inlineRenameGroup(nameEl, nameEl.closest('.layer-folder-row').dataset.layerId);
+      });
+    });
+
+    // Layer rows: pointer (drag/select) + dblclick rename
+    listEl.querySelectorAll('.layer-row:not(.layer-folder-row)').forEach(row => {
       row.addEventListener('pointerdown', (e) => {
         if (e.target.classList.contains('layer-del') ||
             e.target.classList.contains('layer-vis') ||
             e.target.classList.contains('layer-lock')) return;
         _startLayerDragOrClick(e, row);
       });
-      // Double-click on the name → inline rename
       row.querySelector('.layer-name')?.addEventListener('dblclick', (e) => {
         e.stopPropagation();
-        const type = row.dataset.layerType;
-        const id   = row.dataset.layerId;
-        _inlineRenameLayer(e.target, type, id);
+        _inlineRenameLayer(e.target, row.dataset.layerType, row.dataset.layerId);
       });
     });
 
-    // Visibility toggles
-    listEl.querySelectorAll('.layer-vis').forEach(btn => {
+    // Individual layer vis toggles
+    listEl.querySelectorAll('.layer-vis[data-vis-type]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const type = btn.dataset.visType;
-        const id   = btn.dataset.visId;
-        const obj  = _findObject(type, id);
+        const obj = _findObject(btn.dataset.visType, btn.dataset.visId);
         if (!obj) return;
         obj.hidden = !obj.hidden;
-        _applyVisibility(type, id, obj.hidden);
-        renderLayersPanel();
-        schedSave();
+        _applyVisibility(btn.dataset.visType, btn.dataset.visId, obj.hidden);
+        renderLayersPanel(); schedSave();
       });
     });
 
-    // Lock toggles
-    listEl.querySelectorAll('.layer-lock').forEach(btn => {
+    // Individual layer lock toggles
+    listEl.querySelectorAll('.layer-lock[data-lock-type]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const type = btn.dataset.lockType;
-        const id   = btn.dataset.lockId;
-        const obj  = _findObject(type, id);
+        const obj = _findObject(btn.dataset.lockType, btn.dataset.lockId);
         if (!obj) return;
         obj.locked = !obj.locked;
-        renderLayersPanel();
-        schedSave();
+        renderLayersPanel(); schedSave();
       });
     });
 
@@ -1086,26 +1129,33 @@ window.Editor = (function() {
     listEl.querySelectorAll('.layer-del').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const type = btn.dataset.delType;
-        const id   = btn.dataset.delId;
+        const type = btn.dataset.delType, id = btn.dataset.delId;
+        if (type === 'group') {
+          project.groups = (project.groups||[]).filter(g => g.id !== id);
+          schedSave(); renderLayersPanel(); return;
+        }
         if (type === 'sprite') {
           if (!confirm('Delete this sprite?')) return;
-          project.sprites = (project.sprites || []).filter(s => s.id !== id);
+          project.sprites = (project.sprites||[]).filter(s => s.id !== id);
+          _removeFromAnyGroup('sprite', id);
           if (selectedSprite === id) { selectedSprite = null; selectedPanel.classList.add('hidden'); }
           renderSprites(); renderLayersPanel(); schedSave();
         } else if (type === 'stroke') {
           window.Draw.deleteStroke(id);
           project.drawings = window.Draw.getStrokes();
+          _removeFromAnyGroup('stroke', id);
           if (selectedStroke === id) { selectedStroke = null; selectedPanel.classList.add('hidden'); }
           renderLayersPanel(); schedSave();
         } else if (type === 'text') {
-          project.texts = (project.texts || []).filter(t => t.id !== id);
+          project.texts = (project.texts||[]).filter(t => t.id !== id);
+          _removeFromAnyGroup('text', id);
           if (selected?.id === id && selected?.kind === 'text') deselect();
           renderTexts(); renderLayersPanel(); schedSave();
         } else if (type === 'item' || type === 'surprise') {
           const arr = type === 'item' ? project.items : project.surprises;
           const idx = arr.findIndex(x => x.id === id);
           if (idx >= 0) arr.splice(idx, 1);
+          _removeFromAnyGroup(type, id);
           if (selected?.id === id) deselect();
           window.Game.renderHits();
           window.Game.renderList();
@@ -1154,13 +1204,13 @@ window.Editor = (function() {
     const id   = row.dataset.layerId;
     if (type === 'base') { _selectLayerRow(type, id); return; }
 
-    // Capture pointer so move/up fire reliably even outside the element
     row.setPointerCapture(e.pointerId);
 
     const startX = e.clientX, startY = e.clientY;
     let dragging = false;
     let ghost = null;
     let currentTarget = null;
+    let targetIsFolder = false;
 
     function onMove(ev) {
       const dx = ev.clientX - startX, dy = ev.clientY - startY;
@@ -1177,18 +1227,32 @@ window.Editor = (function() {
       ghost.style.left = (ev.clientX + 14) + 'px';
       ghost.style.top  = (ev.clientY - 8)  + 'px';
 
-      // Use bounding-rect hit detection (reliable even with pointer capture)
       document.querySelectorAll('.layer-row').forEach(r => r.classList.remove('drag-over'));
       currentTarget = null;
-      document.querySelectorAll('#layersList .layer-row').forEach(r => {
-        if (r === row) return;
-        if (r.dataset.layerType !== type) return;
+      targetIsFolder = false;
+
+      // Folder rows take priority — any layer type can drop into any folder
+      document.querySelectorAll('#layersList .layer-folder-row').forEach(r => {
         const rect = r.getBoundingClientRect();
         if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
           r.classList.add('drag-over');
           currentTarget = r;
+          targetIsFolder = true;
         }
       });
+
+      // If not over a folder, allow same-type reorder
+      if (!targetIsFolder) {
+        document.querySelectorAll('#layersList .layer-row').forEach(r => {
+          if (r === row || r.classList.contains('layer-folder-row')) return;
+          if (r.dataset.layerType !== type) return;
+          const rect = r.getBoundingClientRect();
+          if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
+            r.classList.add('drag-over');
+            currentTarget = r;
+          }
+        });
+      }
     }
 
     function onUp() {
@@ -1201,6 +1265,11 @@ window.Editor = (function() {
 
       if (!dragging) { _selectLayerRow(type, id); return; }
       if (!currentTarget) return;
+
+      if (targetIsFolder) {
+        _addToGroup(currentTarget.dataset.layerId, type, id);
+        return;
+      }
 
       const fromIdx = parseInt(row.dataset.arrIdx);
       const toIdx   = parseInt(currentTarget.dataset.arrIdx);
@@ -1258,6 +1327,60 @@ window.Editor = (function() {
     input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
       if (e.key === 'Escape') { input.value = current; input.blur(); }
+    });
+  }
+
+  /* ————————————————————————————————————————
+     LAYER GROUP HELPERS
+  ———————————————————————————————————————— */
+  function _createGroup() {
+    project.groups = project.groups || [];
+    const id = 'grp_' + Date.now().toString(36);
+    project.groups.push({ id, name: 'New folder', collapsed: false, memberIds: [] });
+    schedSave();
+    renderLayersPanel();
+  }
+
+  function _addToGroup(groupId, type, id) {
+    const key = type + ':' + id;
+    // Remove from any existing group first
+    (project.groups || []).forEach(g => {
+      const idx = g.memberIds.indexOf(key);
+      if (idx >= 0) g.memberIds.splice(idx, 1);
+    });
+    const group = (project.groups || []).find(g => g.id === groupId);
+    if (group) group.memberIds.push(key);
+    schedSave();
+    renderLayersPanel();
+  }
+
+  function _removeFromAnyGroup(type, id) {
+    const key = type + ':' + id;
+    (project.groups || []).forEach(g => {
+      const idx = g.memberIds.indexOf(key);
+      if (idx >= 0) g.memberIds.splice(idx, 1);
+    });
+  }
+
+  function _inlineRenameGroup(nameEl, groupId) {
+    const g = (project.groups || []).find(x => x.id === groupId);
+    if (!g) return;
+    const current = g.name;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = current;
+    input.className = 'layer-rename-input';
+    nameEl.replaceWith(input);
+    input.focus(); input.select();
+    const commit = () => {
+      g.name = input.value.trim() || current;
+      schedSave();
+      renderLayersPanel();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (ev) => {
+      if (ev.key === 'Enter') { ev.preventDefault(); input.blur(); }
+      if (ev.key === 'Escape') { input.value = current; input.blur(); }
     });
   }
 
