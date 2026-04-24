@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Hidden Studio — make & play your own hidden object games</title>
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=33">
+<link rel="stylesheet" href="styles.css?v=34">
 </head>
 <body>
 
@@ -151,6 +152,7 @@
     </div>
 
     <div class="hud-right">
+      <span class="offline-dot" id="offlineDot" title="Offline — working from local cache"></span>
       <button class="icon-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)">?</button>
       <button class="icon-btn" id="fullscreenBtn" title="Fullscreen (F11)">⛶</button>
       <button class="chip" id="soundToggle">🔊 sound</button>
@@ -367,21 +369,35 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=33"></script>
-<script src="js/data/presets.js?v=33"></script>
-<script src="js/data/easter-eggs.js?v=33"></script>
-<script src="js/transforms.js?v=33"></script>
-<script src="js/audio.js?v=33"></script>
-<script src="js/animations.js?v=33"></script>
-<script src="js/sprites.js?v=33"></script>
-<script src="js/easter-eggs.js?v=33"></script>
-<script src="js/draw.js?v=33"></script>
-<script src="js/projects.js?v=33"></script>
-<script src="js/game.js?v=33"></script>
-<script src="js/editor.js?v=33"></script>
-<script src="js/shortcuts.js?v=33"></script>
-<script src="js/menu.js?v=33"></script>
-<script src="js/app.js?v=33"></script>
+<script src="js/data/scene.svg.js?v=34"></script>
+<script src="js/data/presets.js?v=34"></script>
+<script src="js/data/easter-eggs.js?v=34"></script>
+<script src="js/transforms.js?v=34"></script>
+<script src="js/audio.js?v=34"></script>
+<script src="js/animations.js?v=34"></script>
+<script src="js/sprites.js?v=34"></script>
+<script src="js/easter-eggs.js?v=34"></script>
+<script src="js/draw.js?v=34"></script>
+<script src="js/projects.js?v=34"></script>
+<script src="js/game.js?v=34"></script>
+<script src="js/editor.js?v=34"></script>
+<script src="js/shortcuts.js?v=34"></script>
+<script src="js/menu.js?v=34"></script>
+<script src="js/app.js?v=34"></script>
 
+<script>
+  // Register Service Worker for offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+  // Offline indicator — dot in the HUD turns red when connection drops
+  function updateOnlineStatus() {
+    const dot = document.getElementById('offlineDot');
+    if (dot) dot.classList.toggle('is-offline', !navigator.onLine);
+  }
+  window.addEventListener('online',  updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+</script>
 </body>
 </html>

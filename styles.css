@@ -457,6 +457,18 @@ button.chip:hover { background: rgba(212,212,212,0.1); }
 button.chip:hover b { color: var(--ui-text); }
 button.chip.off { opacity: 0.45; }
 
+/* ── Offline indicator dot ── */
+.offline-dot {
+  display: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #e53e3e;
+  box-shadow: 0 0 0 2px rgba(229,62,62,0.25);
+  flex-shrink: 0;
+}
+.offline-dot.is-offline { display: block; }
+
 /* 4. STAGE + WORLD LAYERS ─────────────────────────── */
 .stage {
   position: fixed; inset: 0;
