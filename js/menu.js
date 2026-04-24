@@ -176,6 +176,7 @@ window.Menu = (function() {
       case 'panels-show-all': {
         savePanelState({});
         applyPanelState({});
+        window.Shortcuts?.resetPanels?.(); // also clear Tab hide-all state
         break;
       }
 
