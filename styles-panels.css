@@ -151,3 +151,43 @@ body[data-theme="paper"] {
   cursor: default;
 }
 .win-menu-label:hover { background: transparent !important; }
+
+/* ── M5: 36px SVG tool strip ────────────────────── */
+
+/* Narrow strip to 36px, shift top to 24px menu bar + 50px hud-top */
+.tool-strip {
+  width: 36px !important;
+  top: 74px !important;
+  height: calc(100vh - 74px) !important;
+  background: var(--ps-panel-header) !important;
+  border-right: 1px solid var(--ps-border) !important;
+  padding: 6px 0 !important;
+}
+
+/* SVG buttons: neutral dim, active uses accent */
+.tool-strip .tool-btn {
+  width: 30px !important;
+  height: 30px !important;
+  color: var(--ui-text-dim);
+  border-radius: 3px !important;
+}
+.tool-strip .tool-btn:hover {
+  background: rgba(255,255,255,0.08) !important;
+  color: var(--ui-text) !important;
+}
+.tool-strip .tool-btn.active {
+  background: rgba(74,138,204,0.2) !important;
+  border-color: rgba(74,138,204,0.5) !important;
+  color: #6aaee8 !important;
+}
+
+/* Divider: full width of strip */
+.tool-strip .tool-divider {
+  width: 24px !important;
+}
+
+/* Ensure SVG inside tool-btn doesn't block pointer */
+.tool-strip .tool-btn svg {
+  pointer-events: none;
+  flex-shrink: 0;
+}
