@@ -18,6 +18,17 @@ body[data-theme="classic"] {
   --ps-dim-text:      #888888;
   --ps-accent:        #4a8acc;
   --ps-accent-dim:    rgba(74,138,204,0.18);
+
+  /* Bridge to legacy vars so the whole UI themes */
+  --ui-bg:        #535353;
+  --panel-bg:     #383838;
+  --panel-bg-2:   #2e2e2e;
+  --panel-border: #484848;
+  --ui-text:      #d0d0d0;
+  --ui-text-dim:  #888888;
+  --ui-blue:      #4a8acc;
+  --ui-blue-dim:  rgba(74,138,204,0.25);
+  --space:        #404040;
 }
 
 /* ── Night (dark navy / purple) ─────────────────── */
@@ -33,6 +44,16 @@ body[data-theme="night"] {
   --ps-dim-text:      #7070a0;
   --ps-accent:        #6a8aee;
   --ps-accent-dim:    rgba(106,138,238,0.18);
+
+  --ui-bg:        #1e1e2e;
+  --panel-bg:     #262638;
+  --panel-bg-2:   #1e1e2e;
+  --panel-border: #3a3a5a;
+  --ui-text:      #d0d0e8;
+  --ui-text-dim:  #7070a0;
+  --ui-blue:      #6a8aee;
+  --ui-blue-dim:  rgba(106,138,238,0.25);
+  --space:        #161622;
 }
 
 /* ── Warm (dark amber / brown) ──────────────────── */
@@ -48,6 +69,16 @@ body[data-theme="warm"] {
   --ps-dim-text:      #9a8870;
   --ps-accent:        #e8931a;
   --ps-accent-dim:    rgba(232,147,26,0.18);
+
+  --ui-bg:        #3a3028;
+  --panel-bg:     #3e342a;
+  --panel-bg-2:   #302820;
+  --panel-border: #5a4a38;
+  --ui-text:      #e0d4c0;
+  --ui-text-dim:  #9a8870;
+  --ui-blue:      #e8931a;
+  --ui-blue-dim:  rgba(232,147,26,0.25);
+  --space:        #2e2620;
 }
 
 /* ── Paper (light / white) ──────────────────────── */
@@ -63,6 +94,16 @@ body[data-theme="paper"] {
   --ps-dim-text:      #888070;
   --ps-accent:        #c43f2e;
   --ps-accent-dim:    rgba(196,63,46,0.12);
+
+  --ui-bg:        #e8e4dc;
+  --panel-bg:     #ffffff;
+  --panel-bg-2:   #f0ece4;
+  --panel-border: #ccc8c0;
+  --ui-text:      #2a2420;
+  --ui-text-dim:  #888070;
+  --ui-blue:      #c43f2e;
+  --ui-blue-dim:  rgba(196,63,46,0.15);
+  --space:        #ddd8ce;
 }
 
 /* ── Panel root overlay ─────────────────────────── */
