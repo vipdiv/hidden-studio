@@ -258,6 +258,7 @@ window.Editor = (function() {
       return;
     }
     selectedPanel.classList.remove('hidden');
+    document.getElementById('selectedPanelTitle').textContent = selected.kind === 'item' ? 'Item' : 'Surprise';
     renderSelectedEditor(data, selected.kind);
   }
 
@@ -562,6 +563,7 @@ window.Editor = (function() {
     if (bl) bl.classList.add('base-selected');
 
     selectedPanel.classList.remove('hidden');
+    document.getElementById('selectedPanelTitle').textContent = 'Base Layer';
     const t = project.baseTransform;
     selectedContent.innerHTML = `
       <div style="font-family:'Caveat',cursive;font-size:15px;color:rgba(245,239,226,.75);margin-bottom:8px">Base Layer</div>
@@ -641,6 +643,7 @@ window.Editor = (function() {
     const stroke = window.Draw.getStroke(selectedStroke);
     if (!stroke) { selectedPanel.classList.add('hidden'); return; }
     selectedPanel.classList.remove('hidden');
+    document.getElementById('selectedPanelTitle').textContent = 'Stroke';
 
     const colors = ['#1a1613','#c43f2e','#5a7a3a','#e6a030','#3860a8','#ffffff'];
     const swatches = colors.map(c =>
@@ -1280,6 +1283,7 @@ window.Editor = (function() {
     const sprite = (project?.sprites || []).find(s => s.id === selectedSprite);
     if (!sprite) { selectedPanel.classList.add('hidden'); return; }
     selectedPanel.classList.remove('hidden');
+    document.getElementById('selectedPanelTitle').textContent = 'Sprite';
     if (!sprite.transform) sprite.transform = window.Transforms.defaults();
 
     // Size sliders (width + height, maintain aspect if shift held)

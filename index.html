@@ -164,12 +164,6 @@
       <ul class="layers-list" id="layersList"></ul>
     </div>
 
-    <!-- Selected item properties (dynamic) -->
-    <div class="tool-section hidden" id="selectedPanel">
-      <h3>Selected</h3>
-      <div id="selectedContent"></div>
-    </div>
-
     <!-- Project actions -->
     <div class="tool-section actions-section">
       <h3>Project</h3>
@@ -178,6 +172,19 @@
       <button class="ghost-btn" id="exportHtmlBtn">⬇ Export as playable HTML</button>
       <button class="ghost-btn danger" id="clearDrawingsBtn">Clear drawings</button>
       <div class="save-status" id="saveStatus">saved</div>
+    </div>
+  </aside>
+
+  <!-- ═══ PROPERTIES PANEL — right side, edit mode only ═══ -->
+  <aside class="properties-panel" id="propertiesPanel">
+    <!-- Selected item properties (dynamic) -->
+    <div class="tool-section hidden" id="selectedPanel">
+      <h3 id="selectedPanelTitle">Properties</h3>
+      <div id="selectedContent"></div>
+    </div>
+    <!-- Empty state — hidden by CSS when selectedPanel is visible -->
+    <div class="props-empty">
+      <span>Select an object<br>to view its properties</span>
     </div>
   </aside>
 
@@ -210,18 +217,18 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=9"></script>
-<script src="js/data/presets.js?v=9"></script>
-<script src="js/transforms.js?v=9"></script>
-<script src="js/audio.js?v=9"></script>
-<script src="js/animations.js?v=9"></script>
-<script src="js/sprites.js?v=9"></script>
-<script src="js/draw.js?v=9"></script>
-<script src="js/projects.js?v=9"></script>
-<script src="js/game.js?v=9"></script>
-<script src="js/editor.js?v=9"></script>
-<script src="js/shortcuts.js?v=9"></script>
-<script src="js/app.js?v=9"></script>
+<script src="js/data/scene.svg.js?v=10"></script>
+<script src="js/data/presets.js?v=10"></script>
+<script src="js/transforms.js?v=10"></script>
+<script src="js/audio.js?v=10"></script>
+<script src="js/animations.js?v=10"></script>
+<script src="js/sprites.js?v=10"></script>
+<script src="js/draw.js?v=10"></script>
+<script src="js/projects.js?v=10"></script>
+<script src="js/game.js?v=10"></script>
+<script src="js/editor.js?v=10"></script>
+<script src="js/shortcuts.js?v=10"></script>
+<script src="js/app.js?v=10"></script>
 
 </body>
 </html>
