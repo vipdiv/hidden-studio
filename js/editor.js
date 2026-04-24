@@ -175,12 +175,6 @@ window.Editor = (function() {
     if (!p.docWidth)  p.docWidth  = 1600;
     if (!p.docHeight) p.docHeight = 1600;
     if (!p.docDpi)    p.docDpi    = 150;
-    // Ensure versions exist — auto-create Version 1.0 for legacy projects
-    if (!p.versions || p.versions.length === 0) {
-      p.versions = [{ id: 'v1', name: 'Version 1.0' }];
-      p.activeVersionId = 'v1';
-    }
-    window.Menu?.refreshVersionMenu?.(p);
     selected = null;
     selectedSprite = null;
     selectedBase = false;
