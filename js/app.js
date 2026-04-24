@@ -388,6 +388,7 @@
        SVG content) so those can never swallow the event.  Only intercepts
        when a draw tool is active and the click is inside the stage area. */
     function onDrawCapture(e) {
+      if (e.button === 1) return; // middle mouse → let onDown handle as pan
       if (!document.body.classList.contains('edit-mode')) return;
       if (isPanMode()) return;
       const _tool = window.Editor.getTool();
@@ -411,6 +412,19 @@
     }
 
     function onDown(e) {
+      // Middle mouse button → always pan, regardless of active tool
+      if (e.button === 1) {
+        e.preventDefault();
+        pointerDown  = true;
+        startScreenX = e.clientX; startScreenY = e.clientY;
+        lastScreenX  = e.clientX; lastScreenY  = e.clientY;
+        startCamX = window.Game.camX; startCamY = window.Game.camY;
+        totalDelta = 0;
+        stage.classList.add('grabbing');
+        try { stage.setPointerCapture(e.pointerId); } catch (_) {}
+        return;
+      }
+
       // Draw tools already handled by the capture listener above
       if (isDrawing) return;
 
@@ -487,27 +501,32 @@
     document.addEventListener('pointermove', (e) => { if (pointerDown) onMove(e); });
     document.addEventListener('pointerup',   (e) => { if (pointerDown) onUp(e); });
 
-    // ── Mouse-wheel / trackpad zoom ────────────────────────────────────────
-    // Works for: mouse wheel, trackpad two-finger pinch (registers as Ctrl+wheel),
-    // and Ctrl+wheel on laptops.  Plain scroll also zooms (no modifier required)
-    // so mouse-wheel users don't need to hold Ctrl.
+    // ── Mouse-wheel / trackpad scroll & zoom ───────────────────────────────
+    // Ctrl+wheel (or trackpad pinch, which browsers send as Ctrl+wheel) = zoom.
+    // Plain scroll (two-finger trackpad swipe, or mouse wheel) = pan.
     stage.addEventListener('wheel', (e) => {
       e.preventDefault();
 
-      // Smooth factor: trackpad sends many small deltaY; mouse sends larger steps
-      const factor = Math.pow(1.001, -e.deltaY);
-      const newScale = Math.max(0.1, Math.min(8, window.Game.scale * factor));
-      if (newScale === window.Game.scale) return;
-
-      // World point currently under the cursor — must stay fixed after zoom
-      const wx = (e.clientX - window.Game.camX) / window.Game.scale;
-      const wy = (e.clientY - window.Game.camY) / window.Game.scale;
-
-      window.Game.scale = newScale;
-      window.Game.camX  = e.clientX - wx * newScale;
-      window.Game.camY  = e.clientY - wy * newScale;
+      if (e.ctrlKey) {
+        // Zoom — keep the world point under the cursor fixed
+        const factor   = Math.pow(1.001, -e.deltaY);
+        const newScale = Math.max(0.1, Math.min(8, window.Game.scale * factor));
+        if (newScale === window.Game.scale) return;
+        const wx = (e.clientX - window.Game.camX) / window.Game.scale;
+        const wy = (e.clientY - window.Game.camY) / window.Game.scale;
+        window.Game.scale = newScale;
+        window.Game.camX  = e.clientX - wx * newScale;
+        window.Game.camY  = e.clientY - wy * newScale;
+      } else {
+        // Pan — plain scroll or two-finger trackpad swipe
+        window.Game.camX -= e.deltaX;
+        window.Game.camY -= e.deltaY;
+      }
       window.Game.applyCamera();
     }, { passive: false });
+
+    // Suppress browser's default middle-click scroll/autoscroll behaviour
+    stage.addEventListener('auxclick', (e) => { if (e.button === 1) e.preventDefault(); });
   }
 
   /* ————————————————————————————————————————

@@ -222,7 +222,9 @@ window.Shortcuts = (function() {
       ${row('Add hit zone', 'T')}
       ${row('Add surprise', 'S')}
       ${row('Text', 'X')}
-      ${row('Temporary pan', 'Spacebar (hold)')}
+      ${row('Temporary pan', 'Spacebar (hold) or Middle-drag')}
+      ${row('Scroll to pan', 'Two-finger swipe / scroll wheel')}
+      ${row('Zoom', 'Ctrl + scroll / pinch')}
       ${row('Constrain shape (square / circle)', 'Shift while drawing')}
       ${section('Object')}
       ${row('Deselect', 'Esc')}
