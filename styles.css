@@ -757,7 +757,15 @@ button.chip.off { opacity: 0.45; }
   backdrop-filter: blur(6px);
   display: none;
 }
-.edit-panel-toggle { top: 122px; }
+.edit-panel-toggle {
+  top: 80px;
+  left: 46px;
+  width: 22px;
+  height: 36px;
+  border-radius: 0 6px 6px 0;
+  font-size: 12px;
+  border-left: none;
+}
 .list-panel.collapsed ~ .panel-toggle { display: block; }
 .edit-panel.collapsed ~ .edit-panel-toggle { display: block; }
 
@@ -1030,10 +1038,35 @@ body.edit-mode .tool-strip { display: flex; }
   flex-shrink: 0;
 }
 
-/* Panel collapse button at the bottom of tool strip */
-.tool-strip-spacer { flex: 1; min-height: 4px; }
-#editPanelCollapseBtn { font-size: 12px; opacity: 0.55; }
-#editPanelCollapseBtn:hover { opacity: 1; }
+/* ─── Edit-panel header bar (collapse control) ─── */
+.edit-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px 4px 12px;
+  border-bottom: 1px solid var(--panel-border);
+  background: var(--panel-bg-2);
+  flex-shrink: 0;
+}
+.edit-panel-title {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ui-text-dim);
+}
+.edit-panel-collapse-btn {
+  background: none;
+  border: none;
+  color: var(--ui-text-dim);
+  font-size: 14px;
+  cursor: pointer;
+  padding: 2px 4px;
+  line-height: 1;
+  opacity: 0.55;
+  border-radius: 3px;
+}
+.edit-panel-collapse-btn:hover { opacity: 1; background: rgba(255,255,255,0.07); }
 
 /* ─── Collapsible edit-panel sections ─── */
 #editPanel .tool-section > h3 {
@@ -1101,7 +1134,7 @@ body.edit-mode .tool-strip { display: flex; }
   display: none;
   flex-direction: column;
 }
-body.edit-mode .properties-panel { display: flex; }
+body.has-selection .properties-panel { display: flex; }
 body.edit-mode #soundToggle,
 body.edit-mode #counter { display: none; }
 

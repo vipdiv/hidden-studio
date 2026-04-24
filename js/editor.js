@@ -422,6 +422,7 @@ window.Editor = (function() {
     selectedSprite = null;
     selectedBase = false;
     selectedStroke = null;
+    document.body.classList.add('has-selection');
     window.Draw.setSelected(null);
     const bl = document.getElementById('baseLayer');
     if (bl) bl.classList.remove('base-selected');
@@ -440,6 +441,7 @@ window.Editor = (function() {
     selectedSprite = null;
     selectedBase = false;
     selectedStroke = null;
+    document.body.classList.remove('has-selection');
     window.Draw.setSelected(null);
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
@@ -984,6 +986,7 @@ window.Editor = (function() {
     selectedSprite = null;
     selectedBase = true;
     selectedStroke = null;
+    document.body.classList.add('has-selection');
     window.Draw.setSelected(null);
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
@@ -1058,6 +1061,7 @@ window.Editor = (function() {
     selectedSprite = null;
     selectedBase = false;
     selectedStroke = id;
+    document.body.classList.add('has-selection');
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite').forEach(el => el.classList.remove('selected'));
     spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
@@ -2022,6 +2026,7 @@ window.Editor = (function() {
     selectedSprite = id;
     selectedBase = false;
     selectedStroke = null;
+    document.body.classList.add('has-selection');
     window.Draw.setSelected(null);
     const bl = document.getElementById('baseLayer');
     if (bl) bl.classList.remove('base-selected');
@@ -2257,25 +2262,27 @@ window.Editor = (function() {
       });
     }
 
-    // Panel-level collapse button (bottom of tool strip)
+    // Panel-level collapse/expand
     const collapseBtn = document.getElementById('editPanelCollapseBtn');
+    const expandBtn   = document.getElementById('editPanelToggle');
     const editPanelEl = document.getElementById('editPanel');
-    function syncCollapseBtn() {
-      if (!collapseBtn || !editPanelEl) return;
-      const collapsed = editPanelEl.classList.contains('collapsed');
-      collapseBtn.textContent = collapsed ? '▷' : '◁';
-      collapseBtn.title = collapsed ? 'Show panel' : 'Hide panel';
+
+    function collapsePanel() {
+      if (!editPanelEl) return;
+      editPanelEl.classList.add('collapsed');
+      state.panelCollapsed = true;
+      localStorage.setItem(KEY, JSON.stringify(state));
     }
-    if (collapseBtn && editPanelEl) {
-      if (state.panelCollapsed) editPanelEl.classList.add('collapsed');
-      syncCollapseBtn();
-      collapseBtn.addEventListener('click', () => {
-        editPanelEl.classList.toggle('collapsed');
-        state.panelCollapsed = editPanelEl.classList.contains('collapsed');
-        localStorage.setItem(KEY, JSON.stringify(state));
-        syncCollapseBtn();
-      });
+    function expandPanel() {
+      if (!editPanelEl) return;
+      editPanelEl.classList.remove('collapsed');
+      state.panelCollapsed = false;
+      localStorage.setItem(KEY, JSON.stringify(state));
     }
+
+    if (editPanelEl && state.panelCollapsed) editPanelEl.classList.add('collapsed');
+    if (collapseBtn) collapseBtn.addEventListener('click', collapsePanel);
+    if (expandBtn)   expandBtn.addEventListener('click', expandPanel);
   }
 
   /* Draw stroke handling — called from app.js with world coordinates */

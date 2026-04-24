@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=19">
+<link rel="stylesheet" href="styles.css?v=20">
 </head>
 <body>
 
@@ -185,13 +185,14 @@
     <button class="tool-btn"        data-tool="addSurprise" title="Add surprise (S)">✨</button>
     <button class="tool-btn"        data-tool="text"        title="Text (X)">T</button>
     <button class="tool-btn"        data-tool="import"      title="Import image (I)">🖼</button>
-    <div class="tool-strip-spacer"></div>
-    <div class="tool-divider"></div>
-    <button class="tool-btn" id="editPanelCollapseBtn" title="Hide panel">◁</button>
   </div>
 
   <!-- ═══ EDIT MODE UI ═══ -->
   <aside class="edit-panel hidden" id="editPanel">
+    <div class="edit-panel-header">
+      <span class="edit-panel-title">Editor</span>
+      <button class="edit-panel-collapse-btn" id="editPanelCollapseBtn" title="Collapse panel">«</button>
+    </div>
     <!-- Pen options (shown when pen tool active) -->
     <div class="tool-options hidden" id="penOptions">
       <h3>Pen</h3>
@@ -288,7 +289,7 @@
   </aside>
 
   <!-- Floating toolbar for when pen is on mobile (collapsed panel) -->
-  <button class="edit-panel-toggle hidden" id="editPanelToggle">🛠</button>
+  <button class="edit-panel-toggle" id="editPanelToggle" title="Show editor panel">»</button>
 
   <!-- Win overlay -->
   <div class="win" id="win">
@@ -316,21 +317,21 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=19"></script>
-<script src="js/data/presets.js?v=19"></script>
-<script src="js/data/easter-eggs.js?v=19"></script>
-<script src="js/transforms.js?v=19"></script>
-<script src="js/audio.js?v=19"></script>
-<script src="js/animations.js?v=19"></script>
-<script src="js/sprites.js?v=19"></script>
-<script src="js/easter-eggs.js?v=19"></script>
-<script src="js/draw.js?v=19"></script>
-<script src="js/projects.js?v=19"></script>
-<script src="js/game.js?v=19"></script>
-<script src="js/editor.js?v=19"></script>
-<script src="js/shortcuts.js?v=19"></script>
-<script src="js/menu.js?v=19"></script>
-<script src="js/app.js?v=19"></script>
+<script src="js/data/scene.svg.js?v=20"></script>
+<script src="js/data/presets.js?v=20"></script>
+<script src="js/data/easter-eggs.js?v=20"></script>
+<script src="js/transforms.js?v=20"></script>
+<script src="js/audio.js?v=20"></script>
+<script src="js/animations.js?v=20"></script>
+<script src="js/sprites.js?v=20"></script>
+<script src="js/easter-eggs.js?v=20"></script>
+<script src="js/draw.js?v=20"></script>
+<script src="js/projects.js?v=20"></script>
+<script src="js/game.js?v=20"></script>
+<script src="js/editor.js?v=20"></script>
+<script src="js/shortcuts.js?v=20"></script>
+<script src="js/menu.js?v=20"></script>
+<script src="js/app.js?v=20"></script>
 
 </body>
 </html>
