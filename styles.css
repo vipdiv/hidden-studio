@@ -658,21 +658,40 @@ button.chip.off { opacity: 0.45; }
 
 .list-panel {
   position: fixed;
-  top: 82px;
-  left: 14px;
+  top: 72px;
+  left: 0;
   width: 220px;
-  max-height: calc(100vh - 162px);
+  height: calc(100vh - 72px);
   overflow-y: auto;
   background: var(--panel-bg);
-  border: 1.5px solid var(--panel-border);
-  border-radius: 3px;
+  border-right: 1.5px solid var(--panel-border);
+  border-radius: 0;
   padding: 14px 16px;
   color: var(--paper);
   z-index: 20;
-  backdrop-filter: blur(6px);
   transition: transform 0.3s ease;
 }
-.list-panel.collapsed { transform: translateX(calc(-100% - 20px)); }
+.list-panel.collapsed { transform: translateX(-100%); }
+
+/* List panel header row with close button */
+.list-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+.list-panel-header h2 { margin-bottom: 0; }
+.list-panel-close {
+  background: none;
+  border: none;
+  color: var(--ui-text-dim);
+  font-size: 13px;
+  cursor: pointer;
+  padding: 2px 4px;
+  opacity: 0.55;
+  border-radius: 3px;
+}
+.list-panel-close:hover { opacity: 1; background: rgba(255,255,255,0.07); }
 .list-panel h2 {
   font-family: 'Caveat', cursive;
   font-weight: 700;
@@ -746,15 +765,15 @@ button.chip.off { opacity: 0.45; }
 .panel-toggle, .edit-panel-toggle {
   position: fixed;
   top: 80px;
-  left: 14px;
+  left: 0;
   z-index: 21;
-  width: 34px; height: 34px;
-  font-size: 16px;
+  width: 28px; height: 40px;
+  font-size: 14px;
   border: 1.5px solid var(--panel-border);
+  border-left: none;
   background: var(--panel-bg);
   color: var(--paper);
-  border-radius: 50%;
-  backdrop-filter: blur(6px);
+  border-radius: 0 6px 6px 0;
   display: none;
 }
 .edit-panel-toggle {
@@ -982,8 +1001,11 @@ body.edit-mode .edit-panel.collapsed ~ .edit-panel-toggle { display: block; }
   gap: 2px;
   padding: 8px 4px;
   z-index: 26;
-  overflow: visible;
+  overflow-y: auto;
+  overflow-x: visible;
+  scrollbar-width: none;
 }
+.tool-strip::-webkit-scrollbar { display: none; }
 body.edit-mode .tool-strip { display: flex; }
 
 .tool-strip .tool-btn {

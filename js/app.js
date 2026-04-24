@@ -549,9 +549,17 @@
     // Remove .hidden from edit-panel-toggle so CSS can show it on mobile
     editPanelToggleBtn.classList.remove('hidden');
 
+    // 📋 button — expand list panel (desktop + mobile)
     panelToggleBtn.addEventListener('click', () => {
-      if (!isMobile()) return;
-      listPanelEl.classList.toggle('mobile-open');
+      if (isMobile()) { listPanelEl.classList.toggle('mobile-open'); return; }
+      listPanelEl.classList.remove('collapsed');
+      window.Game.centerOnPlanet();
+    });
+
+    // ◁ close button inside the list panel
+    document.getElementById('listPanelClose')?.addEventListener('click', () => {
+      listPanelEl.classList.add('collapsed');
+      window.Game.centerOnPlanet();
     });
     editPanelToggleBtn.addEventListener('click', () => {
       if (!isMobile()) return;

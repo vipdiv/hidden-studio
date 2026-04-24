@@ -62,19 +62,28 @@ window.Game = (function() {
   /* ————————————————————————————————————————
      CAMERA
   ———————————————————————————————————————— */
-  const HUD_H = 72; // menu bar (22px) + hud-top (50px)
+  const HUD_H    = 72;  // menu bar (22px) + hud-top (50px)
+  const LIST_W   = 220; // list panel width in play mode
+
+  function listPanelOpen() {
+    const lp = document.getElementById('listPanel');
+    return lp && !lp.classList.contains('hidden') && !lp.classList.contains('collapsed');
+  }
 
   function computeBaseScale() {
+    const panelW = listPanelOpen() ? LIST_W : 0;
     const vw = window.innerWidth, vh = window.innerHeight;
-    return Math.min(vw / worldW(), (vh - HUD_H) / worldH()) * 0.97;
+    return Math.min((vw - panelW) / worldW(), (vh - HUD_H) / worldH()) * 0.97;
   }
   function clampCamera() {
+    const panelW = listPanelOpen() ? LIST_W : 0;
     const vw = window.innerWidth, vh = window.innerHeight;
     const sW = worldW() * scale, sH = worldH() * scale;
-    const minX = vw / 2 - sW + vw * 0.3;
-    const maxX = vw / 2 - vw * 0.3;
-    const minY = HUD_H + (vh - HUD_H) / 2 - sH + (vh - HUD_H) * 0.3;
-    const maxY = HUD_H + (vh - HUD_H) / 2 - (vh - HUD_H) * 0.3;
+    const availW = vw - panelW, availH = vh - HUD_H;
+    const minX = panelW + availW / 2 - sW + availW * 0.3;
+    const maxX = panelW + availW / 2 - availW * 0.3;
+    const minY = HUD_H + availH / 2 - sH + availH * 0.3;
+    const maxY = HUD_H + availH / 2 - availH * 0.3;
     camX = Math.min(maxX, Math.max(minX, camX));
     camY = Math.min(maxY, Math.max(minY, camY));
   }
@@ -84,10 +93,12 @@ window.Game = (function() {
     updateMinimap();
   }
   function centerOnPlanet() {
+    const panelW = listPanelOpen() ? LIST_W : 0;
     const vw = window.innerWidth, vh = window.innerHeight;
+    const availW = vw - panelW, availH = vh - HUD_H;
     scale = computeBaseScale();
-    camX = vw / 2 - (worldW() / 2) * scale;
-    camY = HUD_H + (vh - HUD_H) / 2 - (worldH() / 2) * scale;
+    camX = panelW + availW / 2 - (worldW() / 2) * scale;
+    camY = HUD_H  + availH / 2 - (worldH() / 2) * scale;
     applyCamera();
   }
   function updateMinimap() {

@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=22">
+<link rel="stylesheet" href="styles.css?v=23">
 </head>
 <body>
 
@@ -183,7 +183,10 @@
 
   <!-- ═══ PLAY MODE UI ═══ -->
   <aside class="list-panel" id="listPanel">
-    <h2>Find These</h2>
+    <div class="list-panel-header">
+      <h2>Find These</h2>
+      <button class="list-panel-close" id="listPanelClose" title="Hide panel">◁</button>
+    </div>
     <p class="hint">Drag to pan. Tap what you find.</p>
     <ul class="find-list" id="list"></ul>
     <p class="secret-line"><em>secrets:</em> <b id="secretCount">0</b> / <span id="secretTotal">0</span></p>
@@ -350,21 +353,21 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=22"></script>
-<script src="js/data/presets.js?v=22"></script>
-<script src="js/data/easter-eggs.js?v=22"></script>
-<script src="js/transforms.js?v=22"></script>
-<script src="js/audio.js?v=22"></script>
-<script src="js/animations.js?v=22"></script>
-<script src="js/sprites.js?v=22"></script>
-<script src="js/easter-eggs.js?v=22"></script>
-<script src="js/draw.js?v=22"></script>
-<script src="js/projects.js?v=22"></script>
-<script src="js/game.js?v=22"></script>
-<script src="js/editor.js?v=22"></script>
-<script src="js/shortcuts.js?v=22"></script>
-<script src="js/menu.js?v=22"></script>
-<script src="js/app.js?v=22"></script>
+<script src="js/data/scene.svg.js?v=23"></script>
+<script src="js/data/presets.js?v=23"></script>
+<script src="js/data/easter-eggs.js?v=23"></script>
+<script src="js/transforms.js?v=23"></script>
+<script src="js/audio.js?v=23"></script>
+<script src="js/animations.js?v=23"></script>
+<script src="js/sprites.js?v=23"></script>
+<script src="js/easter-eggs.js?v=23"></script>
+<script src="js/draw.js?v=23"></script>
+<script src="js/projects.js?v=23"></script>
+<script src="js/game.js?v=23"></script>
+<script src="js/editor.js?v=23"></script>
+<script src="js/shortcuts.js?v=23"></script>
+<script src="js/menu.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
 
 </body>
 </html>
