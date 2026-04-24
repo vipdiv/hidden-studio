@@ -1061,17 +1061,17 @@ body.edit-mode .tool-strip { display: flex; }
   flex-direction: column;
 }
 body.edit-mode .properties-panel { display: flex; }
+body.edit-mode #soundToggle,
+body.edit-mode #counter { display: none; }
 
 .props-empty {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: var(--ui-text-dim);
-  font-size: 12px;
-  padding: 24px 16px;
-  line-height: 1.7;
+  padding: 10px 14px;
+  color: rgba(212,212,212,0.3);
+  font-size: 11px;
+  font-style: italic;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 /* Hide empty state when something is selected (CSS sibling trick) */
 #selectedPanel:not(.hidden) ~ .props-empty { display: none; }
