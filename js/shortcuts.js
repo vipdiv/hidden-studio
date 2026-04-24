@@ -148,6 +148,7 @@ window.Shortcuts = (function() {
       case 'i': case 'I': window.Editor.setTool('import');      e.preventDefault(); break;
       case 't': case 'T': window.Editor.setTool('addItem');     e.preventDefault(); break;
       case 's': case 'S': window.Editor.setTool('addSurprise'); e.preventDefault(); break;
+      case 'x': case 'X': window.Editor.setTool('text');       e.preventDefault(); break;
 
       // Zoom: Z = in, Alt+Z = out
       case 'z': case 'Z':
@@ -214,7 +215,9 @@ window.Shortcuts = (function() {
       ${row('Import image', 'I')}
       ${row('Add hit zone', 'T')}
       ${row('Add surprise', 'S')}
+      ${row('Text', 'X')}
       ${row('Temporary pan', 'Spacebar (hold)')}
+      ${row('Constrain shape (square / circle)', 'Shift while drawing')}
       ${section('Object')}
       ${row('Deselect', 'Esc')}
       ${row('Delete', 'Delete / Backspace')}
@@ -258,6 +261,11 @@ window.Shortcuts = (function() {
     document.body.classList.toggle('panels-hidden', panelsHidden);
   }
 
-  return { init, showShortcutsModal, zoomAt, togglePanels };
+  function resetPanels() {
+    panelsHidden = false;
+    document.body.classList.remove('panels-hidden');
+  }
+
+  return { init, showShortcutsModal, zoomAt, togglePanels, resetPanels };
 
 })();

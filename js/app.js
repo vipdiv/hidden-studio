@@ -202,6 +202,7 @@
   ———————————————————————————————————————— */
   function setMode(m) {
     mode = m;
+    window.Shortcuts?.resetPanels?.(); // clear distraction-free mode on any switch
     document.body.classList.toggle('play-mode', m === 'play');
     document.body.classList.toggle('edit-mode', m === 'edit');
     // Close any open mobile bottom sheets on mode switch
@@ -303,7 +304,7 @@
 
       if (isDrawing) {
         const w = window.Game.screenToWorld(p.x, p.y);
-        window.Editor.onDrawMoveRecord(w.x, w.y);
+        window.Editor.onDrawMoveRecord(w.x, w.y, e.shiftKey);
         return;
       }
 
@@ -321,7 +322,7 @@
       if (isDrawing) {
         const p = getPoint(e);
         const w = window.Game.screenToWorld(p.x, p.y);
-        window.Editor.onDrawMoveRecord(w.x, w.y);
+        window.Editor.onDrawMoveRecord(w.x, w.y, e.shiftKey);
         window.Editor.onDrawEnd();
         isDrawing = false;
         return;

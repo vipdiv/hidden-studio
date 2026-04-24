@@ -329,9 +329,9 @@ window.Draw = (function() {
     cursorLayer.innerHTML = '';
   }
 
-  function previewShape(wx, wy) {
+  function previewShape(wx, wy, constrain = false) {
     if (!shapeOrigin) return;
-    const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy);
+    const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy, constrain);
     if (!d) return;
     cursorLayer.innerHTML = '';
     const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
@@ -344,28 +344,35 @@ window.Draw = (function() {
     cursorLayer.appendChild(p);
   }
 
-  function _shapePath(type, x1, y1, x2, y2) {
+  function _shapePath(type, x1, y1, x2, y2, constrain = false) {
     if (type === 'rect') {
+      if (constrain) {
+        const dx = x2 - x1, dy = y2 - y1;
+        const side = Math.min(Math.abs(dx), Math.abs(dy));
+        x2 = x1 + Math.sign(dx) * side;
+        y2 = y1 + Math.sign(dy) * side;
+      }
       return _rectPath(x1, y1, x2, y2);
     }
     if (type === 'ellipse') {
       const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
-      const rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+      let rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
+      if (constrain) rx = ry = Math.min(rx, ry);
       if (rx < 1 || ry < 1) return null;
       return _ellipsePath(cx, cy, rx, ry);
     }
     if (type === 'star') {
-      const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
-      const r  = Math.max(Math.abs(x2 - x1), Math.abs(y2 - y1)) / 2;
+      // Click sets centre; drag radius determines size
+      const r = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
       if (r < 2) return null;
-      return _starPath(cx, cy, r);
+      return _starPath(x1, y1, r);
     }
     return null;
   }
 
-  function commitShape(wx, wy) {
+  function commitShape(wx, wy, constrain = false) {
     if (!shapeOrigin) return null;
-    const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy);
+    const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy, constrain);
     shapeOrigin = null;
     shapeType   = null;
     cursorLayer.innerHTML = '';

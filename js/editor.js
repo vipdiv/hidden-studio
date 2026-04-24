@@ -117,6 +117,14 @@ window.Editor = (function() {
     if (!p.baseTransform) p.baseTransform = window.Transforms.defaults();
     if (p.baseX === undefined) p.baseX = 0;
     if (p.baseY === undefined) p.baseY = 0;
+    // Ensure texts array exists and migrate hidden/locked
+    if (!p.texts) p.texts = [];
+    p.texts.forEach(t => {
+      if (t.hidden === undefined) t.hidden = false;
+      if (t.locked === undefined) t.locked = false;
+    });
+    // Ensure groups array exists
+    if (!p.groups) p.groups = [];
     selected = null;
     selectedSprite = null;
     selectedBase = false;
@@ -134,7 +142,7 @@ window.Editor = (function() {
     stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor', 'crosshair-cursor');
     if (t === 'pen')                              stage.classList.add('pen-cursor');
     else if (t === 'eraser')                      stage.classList.add('erase-cursor');
-    else if (t === 'addItem' || t === 'addSurprise') stage.classList.add('add-cursor');
+    else if (t === 'addItem' || t === 'addSurprise' || t === 'text') stage.classList.add('add-cursor');
     else if (t === 'rect' || t === 'ellipse' || t === 'star') stage.classList.add('crosshair-cursor');
     // Pen options panel visibility — also show for shape tools
     const isPenLike = ['pen','eraser','rect','ellipse','star'].includes(t);
@@ -144,9 +152,10 @@ window.Editor = (function() {
     else if (t === 'addSurprise') showHint('Tap the scene to place a surprise');
     else if (t === 'pen')     showHint('Drag to draw');
     else if (t === 'eraser')  showHint('Drag over strokes to erase');
-    else if (t === 'rect')    showHint('Drag to draw a rectangle');
-    else if (t === 'ellipse') showHint('Drag to draw an ellipse');
-    else if (t === 'star')    showHint('Drag to draw a star');
+    else if (t === 'rect')    showHint('Drag to draw a rectangle · Shift = square');
+    else if (t === 'ellipse') showHint('Drag to draw an ellipse · Shift = circle');
+    else if (t === 'star')    showHint('Click to set centre, drag for size');
+    else if (t === 'text')    showHint('Click to place text');
     else if (t === 'import')  { fileImportDialog(); setTool('select'); }
     else hideHint();
   }
@@ -162,9 +171,10 @@ window.Editor = (function() {
 
   /* Called by app.js when user clicks on the stage (in edit mode) */
   function onStageTap(worldX, worldY) {
-    if (tool === 'addItem')      { addItem(worldX, worldY);      setTool('select'); }
+    if (tool === 'addItem')          { addItem(worldX, worldY);    setTool('select'); }
     else if (tool === 'addSurprise') { addSurprise(worldX, worldY); setTool('select'); }
-    else if (tool === 'select')  { selectAtPoint(worldX, worldY); }
+    else if (tool === 'text')        { addText(worldX, worldY); }
+    else if (tool === 'select')      { selectAtPoint(worldX, worldY); }
   }
 
   function addItem(x, y) {
@@ -190,6 +200,135 @@ window.Editor = (function() {
     window.Game.renderSparkles();
     window.Game.updateCounter();
     select('surprise', id);
+  }
+
+  /* ——— TEXT TOOL ——————————————————————————— */
+  function addText(x, y) {
+    openModal('Add Text', `
+      <label style="display:block;margin-bottom:8px">Text content
+        <textarea id="text-input" rows="3" style="width:100%;margin-top:6px;background:var(--ui-bg);color:var(--ui-text);border:1px solid var(--panel-border);border-radius:3px;padding:6px;font-size:16px;resize:vertical"></textarea>
+      </label>
+      <label style="display:block;margin-bottom:8px">Font size
+        <input type="range" id="text-size" min="8" max="120" value="32" style="width:100%;margin-top:4px">
+        <span id="text-size-val" style="font-size:11px;color:var(--ui-text-dim)">32px</span>
+      </label>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="text-confirm" class="ghost-btn" style="flex:1">Place text</button>
+        <button id="text-cancel" class="ghost-btn danger" style="flex:1">Cancel</button>
+      </div>
+    `);
+    const sizeEl = document.getElementById('text-size');
+    const sizeVal = document.getElementById('text-size-val');
+    sizeEl.addEventListener('input', () => sizeVal.textContent = sizeEl.value + 'px');
+    document.getElementById('text-cancel').addEventListener('click', closeModal);
+    document.getElementById('text-confirm').addEventListener('click', () => {
+      const text = document.getElementById('text-input').value.trim();
+      if (!text) return;
+      const id = 'txt_' + Date.now().toString(36);
+      const txt = { id, text, x, y, size: parseInt(sizeEl.value), color: '#1a1613',
+                    fontFamily: 'Caveat', hidden: false, locked: false };
+      project.texts = project.texts || [];
+      project.texts.push(txt);
+      closeModal();
+      renderTexts();
+      renderLayersPanel();
+      select('text', id);
+      schedSave();
+    });
+    setTimeout(() => document.getElementById('text-input')?.focus(), 50);
+  }
+
+  function renderTexts() {
+    if (!spriteLayer) return;
+    spriteLayer.querySelectorAll('.text-element').forEach(el => el.remove());
+    (project?.texts || []).forEach(txt => {
+      const el = document.createElement('div');
+      el.className = 'text-element' + (selected?.id === txt.id && selected?.kind === 'text' ? ' selected' : '');
+      el.dataset.id = txt.id;
+      el.style.left   = txt.x + 'px';
+      el.style.top    = txt.y + 'px';
+      el.style.color  = txt.color || '#1a1613';
+      el.style.fontSize = (txt.size || 32) + 'px';
+      el.style.fontFamily = txt.fontFamily || 'Caveat, cursive';
+      if (txt.hidden) el.style.opacity = '0.2';
+      el.textContent = txt.text;
+      el.addEventListener('pointerdown', (e) => onTextPointerDown(e, txt));
+      spriteLayer.appendChild(el);
+    });
+  }
+
+  function onTextPointerDown(e, txt) {
+    if (!document.body.classList.contains('edit-mode')) return;
+    if (txt.locked) return;
+    if (tool !== 'select') return;
+    e.stopPropagation();
+    const startPt = getScreenPoint(e);
+    const startW  = window.Game.screenToWorld(startPt.x, startPt.y);
+    const tx0 = txt.x, ty0 = txt.y;
+    let moved = false;
+    const onMove = (ev) => {
+      const p = getScreenPoint(ev);
+      if (Math.abs(p.x - startPt.x) + Math.abs(p.y - startPt.y) > 3) moved = true;
+      if (!moved) return;
+      const w = window.Game.screenToWorld(p.x, p.y);
+      txt.x = tx0 + (w.x - startW.x);
+      txt.y = ty0 + (w.y - startW.y);
+      renderTexts();
+    };
+    const onUp = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onUp);
+      if (!moved) select('text', txt.id);
+      else schedSave();
+    };
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onUp);
+  }
+
+  function renderTextEditor(txt) {
+    if (!txt) return;
+    const colors = ['#1a1613','#c43f2e','#ffffff','#5a7a3a','#e6a030','#3860a8'];
+    const swatches = colors.map(c =>
+      `<button class="color-swatch${txt.color === c ? ' active' : ''}" style="background:${c}" data-color="${c}"></button>`
+    ).join('');
+    const families = ['Caveat','Fraunces','Source Sans 3'];
+    const familyOpts = families.map(f =>
+      `<option value="${f}"${txt.fontFamily === f ? ' selected' : ''}>${f}</option>`
+    ).join('');
+    selectedContent.innerHTML = `
+      <label style="display:block;margin-bottom:8px">Content
+        <textarea id="txt-content" rows="2" style="width:100%;margin-top:4px;background:var(--ui-bg);color:var(--ui-text);border:1px solid var(--panel-border);border-radius:3px;padding:4px 6px;font-size:14px;resize:vertical">${escapeAttr(txt.text)}</textarea>
+      </label>
+      <label style="display:block;margin-bottom:8px;font-size:12px">Size
+        <input type="range" id="txt-size" min="8" max="200" value="${txt.size || 32}" style="width:100%">
+      </label>
+      <div class="color-row" id="txt-colors" style="margin-bottom:10px">${swatches}</div>
+      <label style="display:block;margin-bottom:8px;font-size:12px">Font
+        <select id="txt-family" style="width:100%;margin-top:4px">${familyOpts}</select>
+      </label>
+      <button class="delete-btn" id="txt-delete">🗑 Delete text</button>
+    `;
+    document.getElementById('txt-content').addEventListener('input', (e) => {
+      txt.text = e.target.value; renderTexts(); schedSave();
+    });
+    document.getElementById('txt-size').addEventListener('input', (e) => {
+      txt.size = parseInt(e.target.value); renderTexts(); schedSave();
+    });
+    document.querySelectorAll('#txt-colors .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        document.querySelectorAll('#txt-colors .color-swatch').forEach(x => x.classList.remove('active'));
+        sw.classList.add('active');
+        txt.color = sw.dataset.color;
+        renderTexts(); schedSave();
+      });
+    });
+    document.getElementById('txt-family').addEventListener('change', (e) => {
+      txt.fontFamily = e.target.value; renderTexts(); schedSave();
+    });
+    document.getElementById('txt-delete').addEventListener('click', () => {
+      if (!confirm('Delete this text?')) return;
+      deleteSelected();
+    });
   }
 
   function selectAtPoint(x, y) {
@@ -227,6 +366,7 @@ window.Editor = (function() {
       el.classList.toggle('selected',
         el.dataset.id === id && el.dataset.kind === kind);
     });
+    renderTexts(); // update selected highlight on text elements
     updateSelectedPanel();
   }
 
@@ -241,12 +381,14 @@ window.Editor = (function() {
     spriteLayer.querySelectorAll('.sprite-rotate-handle, .sprite-rotate-line').forEach(el => el.remove());
     const bl = document.getElementById('baseLayer');
     if (bl) bl.classList.remove('base-selected');
+    renderTexts(); // clear selected highlight on text elements
     updateSelectedPanel();
     renderLayersPanel();
   }
 
   function getSelected() {
     if (!selected || !project) return null;
+    if (selected.kind === 'text') return (project.texts || []).find(x => x.id === selected.id) || null;
     const arr = selected.kind === 'item' ? project.items : project.surprises;
     return (arr || []).find(x => x.id === selected.id) || null;
   }
@@ -258,6 +400,11 @@ window.Editor = (function() {
       return;
     }
     selectedPanel.classList.remove('hidden');
+    if (selected.kind === 'text') {
+      document.getElementById('selectedPanelTitle').textContent = 'Text';
+      renderTextEditor(data);
+      return;
+    }
     document.getElementById('selectedPanelTitle').textContent = selected.kind === 'item' ? 'Item' : 'Surprise';
     renderSelectedEditor(data, selected.kind);
   }
@@ -368,6 +515,15 @@ window.Editor = (function() {
   }
 
   function deleteSelected() {
+    // Handle text deletion
+    if (selected?.kind === 'text') {
+      project.texts = (project.texts || []).filter(t => t.id !== selected.id);
+      deselect();
+      renderTexts();
+      renderLayersPanel();
+      schedSave();
+      return;
+    }
     // Handle stroke deletion
     if (selectedStroke) {
       window.Draw.deleteStroke(selectedStroke);
@@ -401,6 +557,18 @@ window.Editor = (function() {
   }
 
   function duplicateSelected() {
+    if (selected?.kind === 'text') {
+      const txt = (project.texts || []).find(t => t.id === selected.id);
+      if (!txt) return;
+      const copy = JSON.parse(JSON.stringify(txt));
+      copy.id = 'txt_' + Date.now().toString(36);
+      copy.x += 20; copy.y += 20;
+      project.texts.push(copy);
+      renderTexts();
+      select('text', copy.id);
+      schedSave();
+      return;
+    }
     if (selectedSprite) {
       const sprite = (project.sprites || []).find(s => s.id === selectedSprite);
       if (!sprite) return;
@@ -429,6 +597,11 @@ window.Editor = (function() {
   }
 
   function nudgeSelected(dx, dy) {
+    if (selected?.kind === 'text') {
+      const txt = (project.texts || []).find(t => t.id === selected.id);
+      if (txt) { txt.x += dx; txt.y += dy; renderTexts(); schedSave(); }
+      return;
+    }
     if (selectedStroke) {
       const s = window.Draw.getStroke(selectedStroke);
       if (s) {
@@ -831,6 +1004,23 @@ window.Editor = (function() {
       </li>`);
     }
 
+    // Texts
+    const texts = project.texts || [];
+    for (let i = texts.length - 1; i >= 0; i--) {
+      const t = texts[i];
+      const active = selected?.id === t.id && selected?.kind === 'text';
+      rows.push(`<li class="layer-row${active ? ' active' : ''}${t.hidden ? ' layer-hidden' : ''}"
+          data-layer-type="text" data-layer-id="${t.id}" data-arr-idx="${i}">
+        ${visBtns(t, 'text')}
+        <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
+        <span class="layer-icon" style="font-family:'Caveat',cursive;font-size:13px;font-weight:700;color:${t.color}">A</span>
+        <span class="layer-name" title="${escapeAttr(t.text)}">${escapeHtmlInner(t.text.length > 20 ? t.text.slice(0,20)+'…' : t.text)}</span>
+        <span class="layer-actions">
+          <button class="layer-del" data-del-type="text" data-del-id="${t.id}" title="Delete">×</button>
+        </span>
+      </li>`);
+    }
+
     // Base layer — fixed at bottom
     if (project.baseType) {
       const label = project.baseType === 'svg' ? 'Planet SVG' : 'Base image';
@@ -853,6 +1043,13 @@ window.Editor = (function() {
             e.target.classList.contains('layer-vis') ||
             e.target.classList.contains('layer-lock')) return;
         _startLayerDragOrClick(e, row);
+      });
+      // Double-click on the name → inline rename
+      row.querySelector('.layer-name')?.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const type = row.dataset.layerType;
+        const id   = row.dataset.layerId;
+        _inlineRenameLayer(e.target, type, id);
       });
     });
 
@@ -901,6 +1098,10 @@ window.Editor = (function() {
           project.drawings = window.Draw.getStrokes();
           if (selectedStroke === id) { selectedStroke = null; selectedPanel.classList.add('hidden'); }
           renderLayersPanel(); schedSave();
+        } else if (type === 'text') {
+          project.texts = (project.texts || []).filter(t => t.id !== id);
+          if (selected?.id === id && selected?.kind === 'text') deselect();
+          renderTexts(); renderLayersPanel(); schedSave();
         } else if (type === 'item' || type === 'surprise') {
           const arr = type === 'item' ? project.items : project.surprises;
           const idx = arr.findIndex(x => x.id === id);
@@ -922,6 +1123,7 @@ window.Editor = (function() {
     if (type === 'item')     return (project.items     || []).find(x => x.id === id) || null;
     if (type === 'surprise') return (project.surprises || []).find(x => x.id === id) || null;
     if (type === 'stroke')   return window.Draw.getStroke(id);
+    if (type === 'text')     return (project.texts     || []).find(x => x.id === id) || null;
     return null;
   }
 
@@ -936,6 +1138,9 @@ window.Editor = (function() {
     } else if (type === 'stroke') {
       const g = document.querySelector(`[data-stroke-id="${id}"]`);
       if (g) g.style.opacity = hidden ? '0.2' : '';
+    } else if (type === 'text') {
+      const el = document.querySelector(`.text-element[data-id="${id}"]`);
+      if (el) el.style.opacity = hidden ? '0.2' : '';
     }
   }
 
@@ -1025,6 +1230,35 @@ window.Editor = (function() {
     else if (type === 'base')     selectBase();
     else if (type === 'item')     select('item',     id);
     else if (type === 'surprise') select('surprise', id);
+    else if (type === 'text')     select('text',     id);
+  }
+
+  function _inlineRenameLayer(nameSpan, type, id) {
+    const obj = _findObject(type, id);
+    if (!obj || type === 'base' || type === 'stroke') return;
+    const current = obj.name || obj.text || '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = current;
+    input.className = 'layer-rename-input';
+    nameSpan.replaceWith(input);
+    input.focus();
+    input.select();
+    const commit = () => {
+      const val = input.value.trim() || current;
+      if (type === 'text') obj.text = val;
+      else obj.name = val;
+      schedSave();
+      if (type === 'item' || type === 'surprise') {
+        window.Game.renderList();
+      }
+      renderLayersPanel();
+    };
+    input.addEventListener('blur', commit);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+      if (e.key === 'Escape') { input.value = current; input.blur(); }
+    });
   }
 
   function onBaseLayerPointerDown(e) {
@@ -1200,6 +1434,7 @@ window.Editor = (function() {
       el.addEventListener('pointerdown', (e) => onSpritePointerDown(e, s));
       spriteLayer.appendChild(el);
     });
+    renderTexts(); // re-render text elements above sprites
   }
 
   function onSpritePointerDown(e, sprite) {
@@ -1397,16 +1632,16 @@ window.Editor = (function() {
     window.Draw.beginStroke(wx, wy, tool === 'eraser');
     return true;
   }
-  function onDrawMove(wx, wy) {
+  function onDrawMove(wx, wy, shift = false) {
     if (SHAPE_TOOLS.includes(tool)) {
-      window.Draw.previewShape(wx, wy);
+      window.Draw.previewShape(wx, wy, shift);
     } else {
       window.Draw.moveStroke(wx, wy);
     }
   }
   function onDrawEnd() {
     if (SHAPE_TOOLS.includes(tool)) {
-      const stroke = window.Draw.commitShape(..._lastWorldPoint());
+      const stroke = window.Draw.commitShape(_lastWX, _lastWY, _lastShift);
       if (stroke) {
         project.drawings = project.drawings || [];
         project.drawings.push(stroke);
@@ -1427,9 +1662,8 @@ window.Editor = (function() {
     renderLayersPanel();
   }
 
-  let _lastWX = 0, _lastWY = 0;
-  function _lastWorldPoint() { return [_lastWX, _lastWY]; }
-  function onDrawMoveRecord(wx, wy) { _lastWX = wx; _lastWY = wy; onDrawMove(wx, wy); }
+  let _lastWX = 0, _lastWY = 0, _lastShift = false;
+  function onDrawMoveRecord(wx, wy, shift = false) { _lastWX = wx; _lastWY = wy; _lastShift = shift; onDrawMove(wx, wy, shift); }
 
   function openModal(title, bodyHtml) {
     modalTitle.textContent = title;

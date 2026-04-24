@@ -1144,6 +1144,40 @@ body.edit-mode .properties-panel { display: flex; }
   opacity: 0.92;
 }
 
+/* Text elements on canvas */
+.text-element {
+  position: absolute;
+  cursor: default;
+  white-space: pre-wrap;
+  pointer-events: all;
+  user-select: none;
+  -webkit-user-select: none;
+  line-height: 1.2;
+}
+.text-element.selected::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 1.5px dashed var(--ui-blue);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* Inline layer rename input */
+.layer-rename-input {
+  font: inherit;
+  font-size: 12px;
+  background: var(--ui-bg);
+  color: var(--ui-text);
+  border: 1px solid var(--ui-blue);
+  border-radius: 2px;
+  padding: 1px 4px;
+  width: 100%;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+}
+
 /* Hint tip (for "click somewhere to place a hit zone") */
 .hint-tip {
   position: fixed;
