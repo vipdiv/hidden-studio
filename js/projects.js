@@ -1,0 +1,421 @@
+/* ═══════════════════════════════════════════════════
+   PROJECTS — storage, listing, save/load, import/export
+═══════════════════════════════════════════════════ */
+
+window.Projects = (function() {
+
+  const STORAGE_KEY     = 'hidden-studio:projects';
+  const ACTIVE_ID_KEY   = 'hidden-studio:active';
+  const AUTOSAVE_DELAY  = 800; // ms after last edit
+
+  /* Storage shape: { "uuid1": {...projectData, meta: {id, createdAt, updatedAt}}, ... } */
+
+  function load() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
+    } catch(e) { return {}; }
+  }
+  function save(all) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+      return true;
+    } catch(e) {
+      console.warn('Save failed:', e);
+      return false;
+    }
+  }
+
+  function uid() {
+    return 'p_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
+  }
+
+  function list() {
+    const all = load();
+    return Object.values(all).sort((a, b) => {
+      return (b.meta?.updatedAt || 0) - (a.meta?.updatedAt || 0);
+    });
+  }
+
+  function get(id) {
+    const all = load();
+    return all[id] || null;
+  }
+
+  function create(preset) {
+    const all = load();
+    const id = uid();
+    const now = Date.now();
+    // Deep clone the preset so we don't mutate it
+    const data = JSON.parse(JSON.stringify(preset));
+    data.meta = { id, createdAt: now, updatedAt: now };
+    all[id] = data;
+    save(all);
+    return data;
+  }
+
+  function update(id, data) {
+    const all = load();
+    // Upsert: if the project isn't in storage yet (e.g. initial save failed),
+    // save it now rather than silently dropping the update.
+    const existing = all[id];
+    data.meta = { ...(existing?.meta || {}), id, updatedAt: Date.now() };
+    if (!data.meta.createdAt) data.meta.createdAt = Date.now();
+    all[id] = data;
+    return save(all) ? data : null;
+  }
+
+  function remove(id) {
+    const all = load();
+    delete all[id];
+    save(all);
+  }
+
+  function rename(id, newName) {
+    const all = load();
+    if (all[id]) {
+      all[id].name = newName;
+      all[id].meta.updatedAt = Date.now();
+      save(all);
+    }
+  }
+
+  function setActive(id) { localStorage.setItem(ACTIVE_ID_KEY, id); }
+  function getActive()   { return localStorage.getItem(ACTIVE_ID_KEY); }
+  function clearActive() { localStorage.removeItem(ACTIVE_ID_KEY); }
+
+  /* Autosave — debounced save of current project */
+  let saveTimer = null;
+  let statusEl  = null;
+  function setStatusEl(el) { statusEl = el; }
+
+  function markDirty() {
+    if (statusEl) {
+      statusEl.textContent = 'saving…';
+      statusEl.classList.add('unsaved');
+    }
+  }
+  function markClean() {
+    if (statusEl) {
+      statusEl.textContent = 'saved';
+      statusEl.classList.remove('unsaved');
+    }
+  }
+
+  function markSaveFailed() {
+    if (statusEl) {
+      statusEl.textContent = 'save failed — storage full?';
+      statusEl.classList.add('unsaved');
+    }
+  }
+
+  function scheduleAutosave(data) {
+    markDirty();
+    if (saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(() => {
+      if (data?.meta?.id) {
+        const ok = update(data.meta.id, data);
+        if (ok) markClean(); else markSaveFailed();
+      }
+    }, AUTOSAVE_DELAY);
+  }
+
+  /* Force-save now */
+  function saveNow(data) {
+    if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
+    if (data?.meta?.id) {
+      const ok = update(data.meta.id, data);
+      if (ok) markClean(); else markSaveFailed();
+    }
+  }
+
+  /* ————————————————————————————————————————
+     JSON export / import
+  ———————————————————————————————————————— */
+  function exportJson(data) {
+    const exportable = JSON.parse(JSON.stringify(data));
+    // Keep meta but reset on import
+    const str = JSON.stringify(exportable, null, 2);
+    const blob = new Blob([str], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safe = (data.name || 'project').replace(/[^a-z0-9_-]+/gi, '_');
+    a.href = url;
+    a.download = `${safe}.hiddenstudio.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function importJson(fileOrText) {
+    return new Promise((resolve, reject) => {
+      const handle = (text) => {
+        try {
+          const data = JSON.parse(text);
+          if (!data.name || !Array.isArray(data.items)) {
+            return reject(new Error('That does not look like a Hidden Studio project file.'));
+          }
+          // Treat as new project
+          const imported = create(data);
+          resolve(imported);
+        } catch(e) { reject(e); }
+      };
+      if (typeof fileOrText === 'string') {
+        handle(fileOrText);
+      } else {
+        const reader = new FileReader();
+        reader.onload = (e) => handle(e.target.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsText(fileOrText);
+      }
+    });
+  }
+
+  /* ————————————————————————————————————————
+     Export as standalone playable HTML
+     Creates a single-file game from the project, no editor.
+  ———————————————————————————————————————— */
+  function exportHtml(data) {
+    const sceneInline = getInlineBaseLayer(data);
+    const html = buildStandaloneHtml(data, sceneInline);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const safe = (data.name || 'project').replace(/[^a-z0-9_-]+/gi, '_');
+    a.href = url;
+    a.download = `${safe}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function getInlineBaseLayer(data) {
+    if (data.baseType === 'svg' && data.baseContent === 'PLANET_SVG') {
+      return { type: 'svg', content: window.PLANET_SVG };
+    }
+    if (data.baseType === 'image' && data.baseContent) {
+      return { type: 'image', content: data.baseContent };
+    }
+    return { type: 'empty', content: '' };
+  }
+
+  /* Build a minimal standalone HTML file that contains everything needed to play. */
+  function buildStandaloneHtml(data, baseInline) {
+    const dataJson = JSON.stringify(data).replace(/</g, '\\u003c');
+    const baseJson = JSON.stringify(baseInline).replace(/</g, '\\u003c');
+    return STANDALONE_TEMPLATE
+      .replace('__PROJECT_DATA__', dataJson)
+      .replace('__BASE_LAYER__', baseJson);
+  }
+
+  /* ————————————————————————————————————————
+     Standalone export template (self-contained)
+     Ultra-minimal: just the game, no editor.
+  ———————————————————————————————————————— */
+  const STANDALONE_TEMPLATE = `<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hidden Game</title>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;700&family=Fraunces:ital,wght@0,300;1,400&display=swap" rel="stylesheet">
+<style>
+:root { --paper:#f5efe2; --ink:#1a1613; --accent:#c43f2e; --space:#0b0d1f; --found:#5a7a3a; --miss:#ff8c6b; }
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fraunces',serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+.hud{position:fixed;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:20;pointer-events:none}
+.hud > * {pointer-events:auto}
+.title{font-style:italic;font-weight:300;font-size:clamp(20px,3vw,28px)}
+.title em{font-family:'Caveat',cursive;font-style:normal;font-weight:700;color:var(--accent);padding:0 .1em}
+.chip{font-family:'Caveat',cursive;font-size:17px;padding:5px 14px;border:1.5px solid rgba(245,239,226,.25);border-radius:20px;background:rgba(11,13,31,.8);color:var(--paper);backdrop-filter:blur(6px);cursor:pointer}
+.chip b{color:var(--accent)}
+.stage{position:fixed;inset:0;overflow:hidden;cursor:grab;touch-action:none}
+.stage.grabbing{cursor:grabbing}
+.world{position:absolute;top:0;left:0;transform-origin:0 0;width:1600px;height:1600px}
+.base{position:absolute;inset:0;pointer-events:none}
+.base img,.base svg{width:100%;height:100%;display:block;object-fit:contain}
+.hit{position:absolute;border-radius:50%;cursor:pointer}
+.mark{position:absolute;pointer-events:none;z-index:6;opacity:0;animation:di .6s ease-out forwards}
+.mark svg{width:100%;height:100%;overflow:visible}
+.mark circle{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-dasharray:300;stroke-dashoffset:300;animation:dc .6s ease-out forwards}
+@keyframes di{0%{opacity:0;transform:scale(.6)}60%{opacity:1;transform:scale(1.1)}100%{opacity:1;transform:scale(1)}}
+@keyframes dc{to{stroke-dashoffset:0}}
+.pop{position:absolute;font-family:'Caveat',cursive;font-size:28px;font-weight:700;color:var(--accent);pointer-events:none;z-index:7;text-shadow:0 0 8px var(--paper);animation:p 1.4s ease-out forwards}
+.miss{position:absolute;font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--miss);pointer-events:none;z-index:7;text-shadow:0 0 6px var(--space);animation:m .5s ease-out forwards}
+@keyframes p{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-14px) scale(1.1)}80%{opacity:1;transform:translate(-50%,-36px) scale(1)}100%{opacity:0;transform:translate(-50%,-58px) scale(1)}}
+@keyframes m{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%)}}
+.panel{position:fixed;top:58px;left:14px;width:220px;max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(11,13,31,.9);border:1.5px solid rgba(245,239,226,.25);border-radius:4px 6px 3px 5px;padding:14px 16px;z-index:20;backdrop-filter:blur(6px)}
+.panel h2{font-family:'Caveat',cursive;font-weight:700;font-size:22px;margin-bottom:4px}
+.panel .hint{font-style:italic;font-size:12px;color:rgba(245,239,226,.7);margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed rgba(245,239,226,.3)}
+.panel ul{list-style:none}
+.panel li{font-family:'Caveat',cursive;font-size:17px;padding:3px 0;display:flex;align-items:center;gap:8px}
+.panel li .box{width:14px;height:14px;border:1.2px solid var(--paper);border-radius:2px;display:grid;place-items:center}
+.panel li.found{color:var(--found)}
+.panel li.found .label{text-decoration:line-through;text-decoration-color:var(--accent)}
+.panel li.found .box::after{content:"✓";color:var(--accent);font-size:16px;line-height:.5}
+.win{position:fixed;inset:0;background:rgba(11,13,31,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .5s}
+.win.show{opacity:1;pointer-events:auto}
+.win-card{background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:6px;padding:28px 40px;text-align:center;box-shadow:4px 6px 0 var(--accent);max-width:380px}
+.win-card h2{font-family:'Caveat',cursive;font-size:38px;color:var(--accent);margin-bottom:8px}
+.win-card button{font-family:'Caveat',cursive;font-size:17px;padding:6px 18px;border:1.5px solid var(--ink);background:transparent;border-radius:20px;cursor:pointer;margin-top:12px}
+.drawings{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.sprite{position:absolute;pointer-events:none}
+.sprite img{width:100%;height:auto}
+@keyframes egBob{0%,100%{transform:translate(-50%,-50%) rotate(-2deg)}50%{transform:translate(-50%,-54%) rotate(2deg)}}
+@keyframes egFade{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes egShk{0%{transform:translateX(0)}10%{transform:translateX(-8px) rotate(-1deg)}20%{transform:translateX(8px) rotate(1deg)}30%{transform:translateX(-10px)}40%{transform:translateX(10px)}50%{transform:translateX(-7px)}65%{transform:translateX(7px)}80%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+@keyframes egTxt{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%)}}
+.egg-fl{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;max-width:min(380px,85vw);animation:egBob 2s ease-in-out infinite;filter:drop-shadow(0 8px 32px rgba(0,0,0,.7))}
+.egg-fl img{max-width:100%;display:block;border-radius:6px}
+.egg-fl .eg-txt{margin-top:8px;font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--paper);text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.egg-fs{position:fixed;inset:0;background:rgba(11,13,31,.88);backdrop-filter:blur(8px);z-index:800;display:grid;place-items:center}
+.egg-in{position:relative;max-width:min(500px,90vw);text-align:center;animation:egFade .3s ease-out}
+.egg-in img{max-width:100%;max-height:70vh;border-radius:6px;display:block;margin:0 auto}
+.egg-in .eg-txt{margin-top:16px;font-family:'Caveat',cursive;font-size:26px;font-weight:700;color:var(--paper)}
+.egg-x{position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:rgba(11,13,31,.9);border:1.5px solid rgba(245,239,226,.25);color:var(--paper);font-size:14px;cursor:pointer;display:grid;place-items:center}
+.egg-fl .egg-x{top:-12px;right:-12px}
+.egg-st{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;font-family:'Caveat',cursive;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:var(--paper);text-align:center;max-width:min(500px,85vw);text-shadow:0 2px 12px rgba(0,0,0,.9);pointer-events:none;animation:egTxt 2.2s ease-out forwards}
+.egg-shake{animation:egShk .85s ease-out}
+</style>
+</head><body>
+<div class="hud">
+  <div class="title">A Little <em>Hidden</em> Scene</div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button class="chip" id="sfx">🔊</button>
+    <div class="chip" id="ctr">found <b>0</b> / <span id="ttl">0</span></div>
+  </div>
+</div>
+<div class="stage" id="stage">
+  <div class="world" id="world">
+    <div class="base" id="base"></div>
+    <svg class="drawings" id="draw" viewBox="0 0 1600 1600" preserveAspectRatio="none"></svg>
+    <div id="sprs"></div>
+    <div id="hits"></div>
+  </div>
+</div>
+<aside class="panel" id="list-p">
+  <h2>Find These</h2>
+  <p class="hint">Drag to pan. Tap to find.</p>
+  <ul id="lst"></ul>
+</aside>
+<div class="win" id="w"><div class="win-card"><h2>You found them all!</h2><button onclick="R()">play again</button></div></div>
+<script>
+const D = __PROJECT_DATA__;
+const B = __BASE_LAYER__;
+// Apply document size
+const W=D.docWidth||1600,H=D.docHeight||1600;
+(function(){const w=document.getElementById('world');if(w){w.style.width=W+'px';w.style.height=H+'px';}
+const d=document.getElementById('draw');if(d)d.setAttribute('viewBox','0 0 '+W+' '+H);})();
+// Render base
+const base = document.getElementById('base');
+if (B.type === 'svg') base.innerHTML = B.content;
+else if (B.type === 'image') base.innerHTML = '<img src="' + B.content + '">';
+(function(){
+  const bi = base.firstElementChild; if (!bi) return;
+  const t = D.baseTransform || {}, x = D.baseX || 0, y = D.baseY || 0;
+  const tp = []; if (x||y) tp.push('translate('+x+'px,'+y+'px)');
+  if (t.rotation) tp.push('rotate('+t.rotation+'deg)');
+  const sx=(t.flipH?-1:1)*(t.scale||1), sy=(t.flipV?-1:1)*(t.scale||1);
+  if (sx!==1||sy!==1) tp.push('scale('+sx+','+sy+')');
+  if (tp.length) bi.style.transform=tp.join(' ');
+  const fp=[];
+  if (t.brightness&&t.brightness!==1) fp.push('brightness('+t.brightness+')');
+  if (t.contrast&&t.contrast!==1) fp.push('contrast('+t.contrast+')');
+  if (t.saturation&&t.saturation!==1) fp.push('saturate('+t.saturation+')');
+  if (t.hue) fp.push('hue-rotate('+t.hue+'deg)');
+  if (t.blur) fp.push('blur('+t.blur+'px)');
+  if (t.grayscale) fp.push('grayscale('+t.grayscale+')');
+  if (t.invert) fp.push('invert('+t.invert+')');
+  if (fp.length) bi.style.filter=fp.join(' ');
+})();
+// Drawings
+const dLayer = document.getElementById('draw');
+(D.drawings || []).forEach(s => {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  if(s.tx||s.ty) g.setAttribute('transform','translate('+(s.tx||0)+','+(s.ty||0)+')');
+  const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  p.setAttribute('d', s.d); p.setAttribute('stroke', s.color); p.setAttribute('stroke-width', s.width);
+  p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round'); p.setAttribute('fill','none');
+  if(s.dash){const w=s.width||3,gap=s.gap||8;p.setAttribute('stroke-dasharray',s.dash==='dot'?w+' '+gap:(w*4)+' '+gap);}
+  g.appendChild(p); dLayer.appendChild(g);
+});
+// Sprites
+const sprLayer = document.getElementById('sprs');
+(D.sprites || []).forEach(s => {
+  const el = document.createElement('div');
+  el.className = 'sprite';
+  const st = s.transform || {};
+  const stp=[]; if(st.rotation) stp.push('rotate('+st.rotation+'deg)');
+  const sfx=(st.flipH?-1:1),sfy=(st.flipV?-1:1); if(sfx!==1||sfy!==1) stp.push('scale('+sfx+','+sfy+')');
+  const sfp=[];
+  if(st.brightness&&st.brightness!==1) sfp.push('brightness('+st.brightness+')');
+  if(st.contrast&&st.contrast!==1) sfp.push('contrast('+st.contrast+')');
+  if(st.saturation&&st.saturation!==1) sfp.push('saturate('+st.saturation+')');
+  if(st.hue) sfp.push('hue-rotate('+st.hue+'deg)');
+  if(st.blur) sfp.push('blur('+st.blur+'px)');
+  if(st.grayscale) sfp.push('grayscale('+st.grayscale+')');
+  if(st.invert) sfp.push('invert('+st.invert+')');
+  el.style.cssText = 'left:'+(s.x-s.w/2)+'px;top:'+(s.y-s.h/2)+'px;width:'+s.w+'px;height:'+s.h+'px;transform-origin:center;'
+    +(stp.length?'transform:'+stp.join(' ')+';':'')
+    +(sfp.length?'filter:'+sfp.join(' ')+';':'')
+    +(st.opacity!=null&&st.opacity!==1?'opacity:'+st.opacity+';':'');
+  if (s.imageData) el.innerHTML = '<img src="' + s.imageData + '">';
+  sprLayer.appendChild(el);
+});
+// Hit zones
+const hitsLayer = document.getElementById('hits');
+D.items.forEach(item => {
+  const h = document.createElement('div');
+  h.className = 'hit'; h.dataset.id = item.id;
+  h.style.cssText = 'left:' + (item.x - item.r) + 'px;top:' + (item.y - item.r) + 'px;width:' + (item.r*2) + 'px;height:' + (item.r*2) + 'px;';
+  hitsLayer.appendChild(h);
+});
+document.getElementById('ttl').textContent = D.items.length;
+// Game state
+let found = new Set(), soundOn = true, audioCtx = null;
+function aud(){ if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume(); return audioCtx }
+function sfxFound(){if(!soundOn)return;const c=aud();if(!c)return;const t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(880,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.3);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.35);}
+function sfxMiss(){if(!soundOn)return;const c=aud();if(!c)return;const t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(180,t);o.frequency.exponentialRampToValueAtTime(90,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.15,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+.18);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.2);}
+function sfxWin(){if(!soundOn)return;const c=aud();if(!c)return;[523,659,784,1047].forEach((f,i)=>{const t=c.currentTime+i*.12,o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.4)})}
+function buildList(){const ul=document.getElementById('lst');ul.innerHTML='';D.items.forEach(it=>{const li=document.createElement('li');li.id='l-'+it.id;li.innerHTML='<span class="box"></span><span class="label">'+it.name+'</span>';if(found.has(it.id))li.classList.add('found');ul.appendChild(li)})}
+function updateCtr(){document.getElementById('ctr').innerHTML='found <b>'+found.size+'</b> / '+D.items.length;if(found.size===D.items.length){setTimeout(()=>{document.getElementById('w').classList.add('show');sfxWin();if(navigator.vibrate)navigator.vibrate([80,50,80,50,180])},500)}}
+function addMark(it){const m=document.createElement('div');m.className='mark';m.style.cssText='left:'+(it.x-it.r*1.3)+'px;top:'+(it.y-it.r*1.3)+'px;width:'+(it.r*2.6)+'px;height:'+(it.r*2.6)+'px;';const r=(Math.random()*20-10).toFixed(1);m.innerHTML='<svg viewBox="0 0 100 100" style="transform:rotate('+r+'deg)"><circle cx="50" cy="50" r="44" transform="rotate('+(Math.random()*360)+' 50 50)"/></svg>';document.getElementById('world').appendChild(m)}
+function pop(t,x,y,cls){const p=document.createElement('div');p.className=cls;p.textContent=t;p.style.left=x+'px';p.style.top=y+'px';document.getElementById('world').appendChild(p);setTimeout(()=>p.remove(),1500)}
+// Camera
+let camX=0,camY=0,scale=1;
+function cScale(){return Math.min(innerWidth*.85/W,innerHeight*.85/H)}
+function clampC(){const sW=W*scale,sH=H*scale;camX=Math.max(innerWidth/2-sW+innerWidth*.3,Math.min(innerWidth/2-innerWidth*.3,camX));camY=Math.max(innerHeight/2-sH+innerHeight*.3,Math.min(innerHeight/2-innerHeight*.3,camY))}
+function applyC(){clampC();document.getElementById('world').style.transform='translate('+camX+'px,'+camY+'px) scale('+scale+')'}
+function center(){scale=cScale();camX=innerWidth/2-W/2*scale;camY=innerHeight/2-H/2*scale;applyC()}
+// Input
+let drg=false,sx=0,sy=0,scX=0,scY=0,dd=0,cx=0,cy=0;
+const stage=document.getElementById('stage');
+function pt(e){if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY};if(e.changedTouches&&e.changedTouches[0])return{x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};return{x:e.clientX,y:e.clientY}}
+function pd(e){const p=pt(e);drg=true;sx=p.x;sy=p.y;scX=camX;scY=camY;dd=0;cx=p.x;cy=p.y;stage.classList.add('grabbing')}
+function pm(e){if(!drg)return;const p=pt(e),dx=p.x-sx,dy=p.y-sy;dd+=Math.abs(dx)+Math.abs(dy);camX=scX+dx;camY=scY+dy;applyC()}
+// Easter egg runtime
+let egAudio=null,egOverlay=null,egEsc=null;
+function egDismiss(){if(egAudio){egAudio.pause();egAudio.currentTime=0;egAudio=null}if(egOverlay){egOverlay.remove();egOverlay=null}if(egEsc){document.removeEventListener('keydown',egEsc);egEsc=null}document.removeEventListener('click',egDismiss)}
+function egTrigger(egg){if(!egg||!egg.enabled)return;egDismiss();if(egg.audio){try{egAudio=new Audio(egg.audio);egAudio.loop=!!egg.loop;egAudio.volume=.85;egAudio.play().catch(()=>{})}catch(_){}}const vt=egg.visualType||'none';if(vt==='floating')egShowFloat(egg);else if(vt==='fullscreen')egShowFull(egg);else if(vt==='shake')egDoShake(egg);if(egg.dismissable&&vt!=='shake'){egEsc=(e)=>{if(e.key==='Escape')egDismiss()};document.addEventListener('keydown',egEsc)}}
+function egClose(e){e.stopPropagation();egDismiss()}
+function egShowFloat(egg){const vc=egg.visualContent||{};const el=document.createElement('div');el.className='egg-fl';let h='';if(egg.dismissable)h+='<button class="egg-x" onclick="egDismiss()">✕</button>';if(vc.image)h+='<img src="'+vc.image+'" draggable="false">';if(vc.text)h+='<div class="eg-txt">'+vc.text.replace(/</g,'&lt;')+'</div>';el.innerHTML=h;const pos=vc.position||'center';if(pos==='bottom-right'){el.style.left='';el.style.top='';el.style.right='24px';el.style.bottom='24px';el.style.transform='none'}else if(pos==='random'){el.style.left=(10+Math.random()*55)+'%';el.style.top=(10+Math.random()*55)+'%'}document.body.appendChild(el);egOverlay=el;if(egg.dismissable)setTimeout(()=>document.addEventListener('click',(e)=>{if(!el.contains(e.target))egDismiss()},{once:true}),200)}
+function egShowFull(egg){const vc=egg.visualContent||{};const el=document.createElement('div');el.className='egg-fs';let h='<div class="egg-in">';if(egg.dismissable)h+='<button class="egg-x" onclick="egDismiss()">✕</button>';if(vc.image)h+='<img src="'+vc.image+'" draggable="false">';if(vc.text)h+='<div class="eg-txt">'+vc.text.replace(/</g,'&lt;')+'</div>';h+='</div>';el.innerHTML=h;el.addEventListener('click',(e)=>{if(e.target===el)egDismiss()});document.body.appendChild(el);egOverlay=el}
+function egDoShake(egg){const vc=egg.visualContent||{};stage.classList.add('egg-shake');setTimeout(()=>stage.classList.remove('egg-shake'),850);if(vc.text){const el=document.createElement('div');el.className='egg-st';el.textContent=vc.text;document.body.appendChild(el);egOverlay=el;setTimeout(()=>{if(egOverlay===el){el.remove();egOverlay=null}},2200)}if(egAudio&&!egg.loop)egAudio.addEventListener('ended',()=>{egAudio=null},{once:true})}
+function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('grabbing');if(tap){const wx=(cx-camX)/scale,wy=(cy-camY)/scale;let h=null;for(const it of D.items){if(found.has(it.id))continue;const dx=wx-it.x,dy=wy-it.y;if(Math.sqrt(dx*dx+dy*dy)<it.r){h=it;break}}if(h){if(h.easterEgg&&h.easterEgg.enabled){egTrigger(h.easterEgg);return}found.add(h.id);addMark(h);pop('found!',h.x,h.y-h.r-8,'pop');sfxFound();if(navigator.vibrate)navigator.vibrate([30,40,60]);document.getElementById('l-'+h.id)?.classList.add('found');updateCtr()}else{const m=['nope!','miss!','hmm'];pop(m[Math.floor(Math.random()*m.length)],wx,wy,'miss');sfxMiss();if(navigator.vibrate)navigator.vibrate(40)}}}
+stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEventListener('mouseup',pu);
+stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
+document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
+addEventListener('resize',()=>{center()});
+function R(){found=new Set();document.querySelectorAll('.mark,.pop,.miss').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr()}
+window.R=R;
+buildList();center();updateCtr();
+</script></body></html>`;
+
+  return {
+    list, get, create, update, remove, rename,
+    setActive, getActive, clearActive,
+    setStatusEl, scheduleAutosave, saveNow,
+    markDirty, markClean,
+    exportJson, importJson, exportHtml,
+  };
+})();

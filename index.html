@@ -4,52 +4,137 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>Hidden Studio — make & play your own hidden object games</title>
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css?v=36">
+<link rel="stylesheet" href="styles-panels.css">
+<!-- React 18 + Babel standalone — panel island only, no build step -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 </head>
-<body>
+<body data-theme="classic">
 
 <!-- ═══════════════════════════════════════════════════
-     START SCREEN — pick or create a project
+     START SCREEN — explorer-style project browser
 ═══════════════════════════════════════════════════ -->
 <div class="start-screen" id="startScreen">
-  <div class="start-card">
-    <h1>Hidden <em>Studio</em></h1>
-    <p class="tagline">— make & play tiny finding games —</p>
 
-    <div class="start-options">
-      <button class="start-option" data-action="new-planet">
-        <div class="start-option-title">Hidden Planet</div>
-        <div class="start-option-sub">Start from the SVG planet game</div>
-      </button>
-      <button class="start-option" data-action="new-scan">
-        <div class="start-option-title">Original Scan</div>
-        <div class="start-option-sub">Start from Vipul's pen-and-ink drawing</div>
-      </button>
-      <button class="start-option" data-action="new-blank">
-        <div class="start-option-title">Blank Canvas</div>
-        <div class="start-option-sub">Empty project, import your own image</div>
-      </button>
+  <!-- Sidebar -->
+  <aside class="explorer-sidebar">
+    <div class="explorer-brand">
+      <h1>Hidden <em>Studio</em></h1>
+      <p class="tagline">make & play tiny finding games</p>
     </div>
-
-    <div class="projects-section" id="projectsSection">
-      <h3 class="projects-title">Your projects</h3>
-      <ul class="projects-list" id="projectsList"></ul>
-    </div>
-
-    <div class="start-footer">
-      <button class="ghost-btn" id="importProjectBtn">⬆ Import Project (JSON)</button>
+    <nav class="explorer-nav">
+      <div class="explorer-nav-label">New project</div>
+      <button class="explorer-nav-btn" data-action="new-planet">
+        <span class="nav-icon">🪐</span>Hidden Planet
+      </button>
+      <button class="explorer-nav-btn" data-action="new-scan">
+        <span class="nav-icon">🖋</span>Original Scan
+      </button>
+      <button class="explorer-nav-btn" data-action="new-blank">
+        <span class="nav-icon">◻</span>Blank Canvas
+      </button>
+    </nav>
+    <div class="explorer-sidebar-footer">
+      <button class="ghost-btn full-width" id="importProjectBtn">⬆ Import JSON</button>
       <input type="file" id="importProjectInput" accept=".json" style="display:none">
     </div>
-  </div>
+  </aside>
+
+  <!-- Main content area -->
+  <main class="explorer-main">
+    <!-- Toolbar -->
+    <div class="explorer-toolbar">
+      <label class="explorer-select-all-wrap" title="Select all">
+        <input type="checkbox" id="selectAllCb">
+      </label>
+      <span class="explorer-toolbar-count" id="selectionCount"></span>
+      <div class="explorer-toolbar-actions" id="bulkActions">
+        <button class="ghost-btn sm" id="exportSelectedBtn" title="Export selected as JSON files">⬇ Export</button>
+        <button class="ghost-btn sm danger" id="deleteSelectedBtn" title="Delete selected">🗑 Delete</button>
+      </div>
+      <div class="explorer-toolbar-spacer"></div>
+    </div>
+
+    <!-- Column headers -->
+    <div class="explorer-header">
+      <span class="col-check"></span>
+      <span class="col-name" data-sort="name">Name <span class="sort-arrow" id="sortArrowName"></span></span>
+      <span class="col-items" data-sort="items">Items <span class="sort-arrow" id="sortArrowItems"></span></span>
+      <span class="col-size" data-sort="size">Size <span class="sort-arrow" id="sortArrowSize"></span></span>
+      <span class="col-date" data-sort="date">Modified <span class="sort-arrow" id="sortArrowDate">↓</span></span>
+      <span class="col-actions"></span>
+    </div>
+
+    <!-- Project rows -->
+    <ul class="explorer-list" id="projectsList">
+      <!-- populated by JS -->
+    </ul>
+
+    <p class="explorer-empty hidden" id="explorerEmpty">No saved projects yet. Create one above.</p>
+  </main>
 </div>
 
 <!-- ═══════════════════════════════════════════════════
      MAIN APP — hidden until a project is chosen
 ═══════════════════════════════════════════════════ -->
 <div class="app hidden" id="app">
+
+  <!-- Slim menu bar -->
+  <nav class="menu-bar" id="menuBar">
+    <div class="menu-item" data-menu="file">File
+      <ul class="menu-dropdown">
+        <li data-action="back">Back to Projects</li>
+        <li class="menu-sep"></li>
+        <li data-action="save">Save <span class="menu-shortcut">Ctrl+S</span></li>
+        <li data-action="export-html">Export HTML <span class="menu-shortcut">Ctrl+E</span></li>
+        <li data-action="export-json">Export JSON</li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="edit">Edit
+      <ul class="menu-dropdown">
+        <li class="menu-disabled" data-action="undo">Undo <span class="menu-shortcut">Ctrl+Z</span></li>
+        <li class="menu-disabled" data-action="redo">Redo <span class="menu-shortcut">Ctrl+Shift+Z</span></li>
+        <li class="menu-sep"></li>
+        <li data-action="duplicate">Duplicate <span class="menu-shortcut">Ctrl+D</span></li>
+        <li data-action="delete">Delete <span class="menu-shortcut">Del</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="view">View
+      <ul class="menu-dropdown">
+        <li data-action="zoom-in">Zoom In <span class="menu-shortcut">Z</span></li>
+        <li data-action="zoom-out">Zoom Out <span class="menu-shortcut">Alt+Z</span></li>
+        <li data-action="zoom-fit">Fit to Screen <span class="menu-shortcut">Ctrl+0</span></li>
+        <li data-action="zoom-100">100% <span class="menu-shortcut">Ctrl+1</span></li>
+        <li class="menu-sep"></li>
+        <li data-action="toggle-panels">Toggle Panels <span class="menu-shortcut">Tab</span></li>
+        <li data-action="toggle-mode">Toggle Play / Edit <span class="menu-shortcut">F</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="panels">Panels
+      <ul class="menu-dropdown" id="panelsMenuDropdown">
+        <li data-action="toggle-panel-editor"     data-panel-id="editor">     <span class="panel-dot">●</span> Editor Panel</li>
+        <li data-action="toggle-panel-toolstrip"  data-panel-id="toolstrip">  <span class="panel-dot">●</span> Tool Strip</li>
+        <li data-action="toggle-panel-properties" data-panel-id="properties"> <span class="panel-dot">●</span> Properties Panel</li>
+        <li data-action="toggle-panel-minimap"    data-panel-id="minimap">    <span class="panel-dot">●</span> Minimap</li>
+        <li class="menu-sep"></li>
+        <li data-action="panels-show-all">Show All</li>
+        <li data-action="panels-hide-all">Hide All <span class="menu-shortcut">Tab</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="help">Help
+      <ul class="menu-dropdown" id="helpMenuDropdown">
+        <li data-action="shortcuts">Keyboard Shortcuts <span class="menu-shortcut">?</span></li>
+        <li class="menu-sep"></li>
+        <li data-action="about">About Hidden Studio</li>
+      </ul>
+    </div>
+  </nav>
 
   <!-- Top bar — shared between play/edit modes -->
   <header class="hud-top">
@@ -66,6 +151,9 @@
     </div>
 
     <div class="hud-right">
+      <span class="offline-dot" id="offlineDot" title="Offline — working from local cache"></span>
+      <button class="icon-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)">?</button>
+      <button class="icon-btn" id="fullscreenBtn" title="Fullscreen (F11)">⛶</button>
       <button class="chip" id="soundToggle">🔊 sound</button>
       <div class="chip" id="counter">found <b>0</b> / <span id="total">0</span></div>
     </div>
@@ -86,12 +174,20 @@
       <div class="play-layer" id="playLayer"></div>
       <!-- Drawing cursor in-progress -->
       <svg class="drawing-cursor" id="drawingCursor" viewBox="0 0 1600 1600" preserveAspectRatio="none"></svg>
+      <!-- Play-mode empty state — inside world so it pans/zooms with the canvas -->
+      <div class="play-empty" id="playEmpty">
+        <p class="play-empty-quote" id="playEmptyQuote"></p>
+        <p class="play-empty-sub">Switch to <strong>Edit</strong> to start building — your game appears here as you add things.</p>
+      </div>
     </div>
   </div>
 
   <!-- ═══ PLAY MODE UI ═══ -->
   <aside class="list-panel" id="listPanel">
-    <h2>Find These</h2>
+    <div class="list-panel-header">
+      <h2>Find These</h2>
+      <button class="list-panel-close" id="listPanelClose" title="Hide panel">◁</button>
+    </div>
     <p class="hint">Drag to pan. Tap what you find.</p>
     <ul class="find-list" id="list"></ul>
     <p class="secret-line"><em>secrets:</em> <b id="secretCount">0</b> / <span id="secretTotal">0</span></p>
@@ -102,21 +198,31 @@
     <div class="viewbox" id="viewbox"></div>
   </div>
 
+  <!-- ═══ VERTICAL TOOL STRIP — edit mode only ═══ -->
+  <div class="tool-strip" id="toolStrip">
+    <button class="tool-btn active" data-tool="select"      title="Select (V)">↖</button>
+    <button class="tool-btn"        data-tool="pan"         title="Hand (H)">✋</button>
+    <div class="tool-divider"></div>
+    <button class="tool-btn"        data-tool="pen"         title="Pen (P)">✎</button>
+    <button class="tool-btn"        data-tool="eraser"      title="Eraser (E)">⌫</button>
+    <button class="tool-btn"        data-tool="rect"        title="Rectangle (R)">▭</button>
+    <button class="tool-btn"        data-tool="ellipse"     title="Ellipse (O)">◯</button>
+    <button class="tool-btn"        data-tool="star"        title="Star">★</button>
+    <div class="tool-divider"></div>
+    <button class="tool-btn"        data-tool="addItem"     title="Add hit zone (T)">⊕</button>
+    <button class="tool-btn"        data-tool="addSurprise" title="Add surprise (S)">✨</button>
+    <button class="tool-btn"        data-tool="text"        title="Text (X)">T</button>
+    <button class="tool-btn"        data-tool="import"      title="Import image (I)">🖼</button>
+    <div class="tool-divider"></div>
+    <button class="tool-btn"        data-tool="crop"        title="Crop document (C)">⊡</button>
+  </div>
+
   <!-- ═══ EDIT MODE UI ═══ -->
   <aside class="edit-panel hidden" id="editPanel">
-    <!-- Tool palette -->
-    <div class="tool-section">
-      <h3>Tools</h3>
-      <div class="tool-grid">
-        <button class="tool-btn active" data-tool="select" title="Select & move">↖</button>
-        <button class="tool-btn" data-tool="addItem" title="Add find-it item">⊕</button>
-        <button class="tool-btn" data-tool="addSurprise" title="Add surprise">✨</button>
-        <button class="tool-btn" data-tool="pen" title="Draw">✎</button>
-        <button class="tool-btn" data-tool="eraser" title="Erase">⌫</button>
-        <button class="tool-btn" data-tool="import" title="Import image as sprite">🖼</button>
-      </div>
+    <div class="edit-panel-header">
+      <span class="edit-panel-title">Editor</span>
+      <button class="edit-panel-collapse-btn" id="editPanelCollapseBtn" title="Collapse panel">«</button>
     </div>
-
     <!-- Pen options (shown when pen tool active) -->
     <div class="tool-options hidden" id="penOptions">
       <h3>Pen</h3>
@@ -131,10 +237,19 @@
         <span>Size</span>
         <input type="range" id="penSize" min="1" max="20" value="3">
       </label>
+      <div class="dash-row">
+        <button class="dash-btn active" data-dash="" title="Solid">— </button>
+        <button class="dash-btn" data-dash="dash" title="Dashed">- -</button>
+        <button class="dash-btn" data-dash="dot"  title="Dotted">· · ·</button>
+      </div>
+      <label class="slider-row hidden" id="dashSpacingRow">
+        <span>Gap</span>
+        <input type="range" id="dashSpacing" min="2" max="40" value="8">
+      </label>
     </div>
 
     <!-- Base layer controls -->
-    <div class="tool-section">
+    <div class="tool-section" id="baseLayerSection">
       <h3>Base layer</h3>
       <div class="base-controls">
         <button class="ghost-btn" id="setBasePlanet">Planet SVG</button>
@@ -142,18 +257,49 @@
         <button class="ghost-btn" id="setBaseUpload">Upload image…</button>
         <input type="file" id="baseUploadInput" accept="image/*" style="display:none">
       </div>
+      <p class="base-hint">Click the background to select, transform, or remove it.</p>
     </div>
 
-    <!-- Selected item properties (dynamic) -->
-    <div class="tool-section hidden" id="selectedPanel">
-      <h3>Selected</h3>
-      <div id="selectedContent"></div>
+    <!-- Layers palette -->
+    <div class="tool-section" id="layersSection">
+      <div class="layers-header">
+        <span class="layers-header-title">Layers</span>
+        <button class="layers-add-folder-btn" id="addFolderBtn" title="New folder group">+ folder</button>
+      </div>
+      <ul class="layers-list" id="layersList"></ul>
+    </div>
+
+    <!-- Miss tap settings -->
+    <div class="tool-section" id="missTapSection">
+      <h3>Miss tap</h3>
+      <label class="prop-label">Sound
+        <select id="missSoundSelect" class="prop-select"></select>
+      </label>
+      <label class="prop-label">Text color
+        <input type="color" id="missColor" value="#e6e0d4" class="prop-color">
+      </label>
+      <label class="prop-label">Stroke color
+        <input type="color" id="missStroke" value="#0b0d1f" class="prop-color">
+      </label>
+      <label class="prop-label">Font size
+        <input type="range" id="missFontSize" min="12" max="72" value="24" class="prop-range">
+        <span id="missFontSizeVal">24</span>px
+      </label>
+      <label class="prop-label">Font
+        <select id="missFontFamily" class="prop-select">
+          <option value="'Caveat', cursive">Caveat (handwriting)</option>
+          <option value="'Fraunces', serif">Fraunces (serif)</option>
+          <option value="'Source Sans 3', sans-serif">Source Sans (clean)</option>
+        </select>
+      </label>
     </div>
 
     <!-- Project actions -->
     <div class="tool-section actions-section">
       <h3>Project</h3>
       <button class="ghost-btn" id="renameBtn">✎ Rename</button>
+      <button class="ghost-btn" id="docSizeBtn">⊞ Document size</button>
+      <button class="ghost-btn" id="statsBtn">⊙ Project stats</button>
       <button class="ghost-btn" id="exportJsonBtn">⬇ Export JSON</button>
       <button class="ghost-btn" id="exportHtmlBtn">⬇ Export as playable HTML</button>
       <button class="ghost-btn danger" id="clearDrawingsBtn">Clear drawings</button>
@@ -161,8 +307,43 @@
     </div>
   </aside>
 
+  <!-- ═══ PROPERTIES PANEL — right side, edit mode only ═══ -->
+  <aside class="properties-panel" id="propertiesPanel">
+    <!-- Selected item properties (dynamic) -->
+    <div class="tool-section hidden" id="selectedPanel">
+      <h3 id="selectedPanelTitle">Properties</h3>
+      <div id="selectedContent"></div>
+    </div>
+    <!-- Empty state — hidden by CSS when selectedPanel is visible -->
+    <div class="props-empty">Select an object to view its properties</div>
+  </aside>
+
   <!-- Floating toolbar for when pen is on mobile (collapsed panel) -->
-  <button class="edit-panel-toggle hidden" id="editPanelToggle">🛠</button>
+  <button class="edit-panel-toggle" id="editPanelToggle" title="Show editor panel">»</button>
+
+  <!-- Crop overlay — fixed to viewport (outside #world so transform doesn't affect it) -->
+  <div id="cropOverlay">
+    <div id="cropRect">
+      <div class="crop-handle crop-tl" data-handle="tl"></div>
+      <div class="crop-handle crop-tc" data-handle="tc"></div>
+      <div class="crop-handle crop-tr" data-handle="tr"></div>
+      <div class="crop-handle crop-ml" data-handle="ml"></div>
+      <div class="crop-handle crop-mr" data-handle="mr"></div>
+      <div class="crop-handle crop-bl" data-handle="bl"></div>
+      <div class="crop-handle crop-bc" data-handle="bc"></div>
+      <div class="crop-handle crop-br" data-handle="br"></div>
+    </div>
+  </div>
+
+  <!-- Crop tool floating controls -->
+  <div id="cropToolbar">
+    <button class="ghost-btn" id="cropFitBase" title="Fit crop to base image bounds">Fit to base</button>
+    <button class="ghost-btn" id="cropApply">✓ Apply crop</button>
+    <button class="ghost-btn" id="cropCancel">✕ Cancel</button>
+  </div>
+
+  <!-- ═══ PANEL ROOT — React island mounts here ═══ -->
+  <div id="panel-root"></div>
 
   <!-- Win overlay -->
   <div class="win" id="win">
@@ -190,16 +371,42 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js"></script>
-<script src="js/data/presets.js"></script>
-<script src="js/audio.js"></script>
-<script src="js/animations.js"></script>
-<script src="js/sprites.js"></script>
-<script src="js/draw.js"></script>
-<script src="js/projects.js"></script>
-<script src="js/game.js"></script>
-<script src="js/editor.js"></script>
-<script src="js/app.js"></script>
+<!-- Panel bridge must load before vanilla modules so they can register panels -->
+<script src="js/panels/panels-api.js"></script>
+<script src="js/data/scene.svg.js?v=36"></script>
+<script src="js/data/presets.js?v=36"></script>
+<script src="js/data/easter-eggs.js?v=36"></script>
+<script src="js/data/changelog.js?v=36"></script>
+<script src="js/transforms.js?v=36"></script>
+<script src="js/audio.js?v=36"></script>
+<script src="js/animations.js?v=36"></script>
+<script src="js/sprites.js?v=36"></script>
+<script src="js/easter-eggs.js?v=36"></script>
+<script src="js/draw.js?v=36"></script>
+<script src="js/projects.js?v=36"></script>
+<script src="js/game.js?v=36"></script>
+<script src="js/editor.js?v=36"></script>
+<script src="js/shortcuts.js?v=36"></script>
+<script src="js/menu.js?v=36"></script>
+<script src="js/app.js?v=36"></script>
 
+<!-- Panel island React files — load after vanilla modules -->
+<script type="text/babel" src="js/panels/panel-system.jsx"></script>
+<script type="text/babel" src="js/panels/mount.jsx"></script>
+
+<script>
+  // Register Service Worker for offline support
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  }
+  // Offline indicator — dot in the HUD turns red when connection drops
+  function updateOnlineStatus() {
+    const dot = document.getElementById('offlineDot');
+    if (dot) dot.classList.toggle('is-offline', !navigator.onLine);
+  }
+  window.addEventListener('online',  updateOnlineStatus);
+  window.addEventListener('offline', updateOnlineStatus);
+  updateOnlineStatus();
+</script>
 </body>
 </html>

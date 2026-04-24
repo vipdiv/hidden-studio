@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════
+   HIDDEN STUDIO — PANEL SYSTEM TOKENS
+   Four themes via body[data-theme=...].
+   Both vanilla shell and React island read these vars.
+   ═══════════════════════════════════════════════════ */
+
+/* ── Classic (Illustrator grey) — default ───────── */
+body,
+body[data-theme="classic"] {
+  --ps-app-bg:        #535353;
+  --ps-canvas-bg:     #404040;
+  --ps-panel-bg:      #383838;
+  --ps-panel-header:  #2e2e2e;
+  --ps-dock-bg:       #323232;
+  --ps-menu-bg:       #2a2a2a;
+  --ps-border:        #484848;
+  --ps-text:          #d0d0d0;
+  --ps-dim-text:      #888888;
+  --ps-accent:        #4a8acc;
+  --ps-accent-dim:    rgba(74,138,204,0.18);
+}
+
+/* ── Night (dark navy / purple) ─────────────────── */
+body[data-theme="night"] {
+  --ps-app-bg:        #1e1e2e;
+  --ps-canvas-bg:     #161622;
+  --ps-panel-bg:      #262638;
+  --ps-panel-header:  #1e1e2e;
+  --ps-dock-bg:       #1a1a2a;
+  --ps-menu-bg:       #181828;
+  --ps-border:        #3a3a5a;
+  --ps-text:          #d0d0e8;
+  --ps-dim-text:      #7070a0;
+  --ps-accent:        #6a8aee;
+  --ps-accent-dim:    rgba(106,138,238,0.18);
+}
+
+/* ── Warm (dark amber / brown) ──────────────────── */
+body[data-theme="warm"] {
+  --ps-app-bg:        #3a3028;
+  --ps-canvas-bg:     #2e2620;
+  --ps-panel-bg:      #3e342a;
+  --ps-panel-header:  #302820;
+  --ps-dock-bg:       #2a2218;
+  --ps-menu-bg:       #252018;
+  --ps-border:        #5a4a38;
+  --ps-text:          #e0d4c0;
+  --ps-dim-text:      #9a8870;
+  --ps-accent:        #e8931a;
+  --ps-accent-dim:    rgba(232,147,26,0.18);
+}
+
+/* ── Paper (light / white) ──────────────────────── */
+body[data-theme="paper"] {
+  --ps-app-bg:        #e8e4dc;
+  --ps-canvas-bg:     #f5f0e8;
+  --ps-panel-bg:      #ffffff;
+  --ps-panel-header:  #f0ece4;
+  --ps-dock-bg:       #ece8e0;
+  --ps-menu-bg:       #e4e0d8;
+  --ps-border:        #ccc8c0;
+  --ps-text:          #2a2420;
+  --ps-dim-text:      #888070;
+  --ps-accent:        #c43f2e;
+  --ps-accent-dim:    rgba(196,63,46,0.12);
+}
+
+/* ── Panel root overlay ─────────────────────────── */
+#panel-root {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  overflow: visible;
+}
