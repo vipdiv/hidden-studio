@@ -509,14 +509,23 @@
     document.addEventListener('pointerup',   (e) => { if (pointerDown) onUp(e); });
 
     // ── Mouse-wheel / trackpad scroll & zoom ───────────────────────────────
-    // Ctrl+wheel (or trackpad pinch, which browsers send as Ctrl+wheel) = zoom.
-    // Plain scroll (two-finger trackpad swipe, or mouse wheel) = pan.
+    // Ctrl+wheel (trackpad pinch) → zoom.
+    // Mouse wheel (line-mode OR large pixel delta with no X component) → zoom.
+    // Trackpad two-finger swipe (small pixel delta or has X component) → pan.
     stage.addEventListener('wheel', (e) => {
       e.preventDefault();
 
-      if (e.ctrlKey) {
-        // Zoom — keep the world point under the cursor fixed
-        const factor   = Math.pow(1.001, -e.deltaY);
+      // Detect mouse wheel vs trackpad: mouse wheel arrives in line/page mode
+      // OR as large pixel deltas with no horizontal component.
+      const isMouseWheel = e.deltaMode !== 0 ||
+        (Math.abs(e.deltaY) >= 40 && Math.abs(e.deltaX) < 5);
+      const doZoom = e.ctrlKey || isMouseWheel;
+
+      if (doZoom) {
+        // Normalise delta to pixel-like units across deltaMode values
+        const lineH = 16; // px per line
+        const raw   = e.deltaY * (e.deltaMode === 1 ? lineH : e.deltaMode === 2 ? window.innerHeight : 1);
+        const factor   = Math.pow(1.001, -raw);
         const newScale = Math.max(0.1, Math.min(8, window.Game.scale * factor));
         if (newScale === window.Game.scale) return;
         const wx = (e.clientX - window.Game.camX) / window.Game.scale;
@@ -525,7 +534,7 @@
         window.Game.camX  = e.clientX - wx * newScale;
         window.Game.camY  = e.clientY - wy * newScale;
       } else {
-        // Pan — plain scroll or two-finger trackpad swipe
+        // Pan — trackpad two-finger swipe
         window.Game.camX -= e.deltaX;
         window.Game.camY -= e.deltaY;
       }
