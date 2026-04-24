@@ -6,9 +6,42 @@ window.Menu = (function() {
 
   let anyOpen = false;
 
+  /* ── Per-panel visibility state ────────────────── */
+  const PANEL_KEY = 'hs_panelVisibility';
+  const PANEL_DEFS = [
+    { id: 'editor',     cls: 'panel-off-editor' },
+    { id: 'toolstrip',  cls: 'panel-off-toolstrip' },
+    { id: 'properties', cls: 'panel-off-properties' },
+    { id: 'minimap',    cls: 'panel-off-minimap' },
+  ];
+
+  function loadPanelState() {
+    try { return JSON.parse(localStorage.getItem(PANEL_KEY) || '{}'); } catch { return {}; }
+  }
+  function savePanelState(state) {
+    localStorage.setItem(PANEL_KEY, JSON.stringify(state));
+  }
+  function applyPanelState(state) {
+    PANEL_DEFS.forEach(({ id, cls }) => {
+      document.body.classList.toggle(cls, !!state[id]);
+    });
+  }
+  function refreshDots() {
+    const state = loadPanelState();
+    document.querySelectorAll('#panelsMenuDropdown [data-panel-id]').forEach(li => {
+      const dot = li.querySelector('.panel-dot');
+      if (!dot) return;
+      const on = !state[li.dataset.panelId]; // "on" = NOT hidden
+      dot.classList.toggle('dot-on', on);
+    });
+  }
+
   function init() {
     const bar = document.getElementById('menuBar');
     if (!bar) return;
+
+    // Apply saved panel visibility on startup
+    applyPanelState(loadPanelState());
 
     const items = bar.querySelectorAll('.menu-item[data-menu]');
 
@@ -17,7 +50,11 @@ window.Menu = (function() {
         e.preventDefault();
         const wasOpen = item.classList.contains('open');
         closeAll();
-        if (!wasOpen) { item.classList.add('open'); anyOpen = true; }
+        if (!wasOpen) {
+          item.classList.add('open');
+          anyOpen = true;
+          if (item.dataset.menu === 'panels') refreshDots();
+        }
       });
       // Hover-to-open once any menu is already open
       item.addEventListener('mouseenter', () => {
@@ -25,6 +62,7 @@ window.Menu = (function() {
           closeAll();
           item.classList.add('open');
           anyOpen = true;
+          if (item.dataset.menu === 'panels') refreshDots();
         }
       });
     });
@@ -118,6 +156,31 @@ window.Menu = (function() {
 
       case 'shortcuts':
         window.Shortcuts?.showShortcutsModal?.();
+        break;
+
+      // ── Panels menu ──────────────────────────────────
+      case 'toggle-panel-editor':
+      case 'toggle-panel-toolstrip':
+      case 'toggle-panel-properties':
+      case 'toggle-panel-minimap': {
+        const id = action.replace('toggle-panel-', '');
+        const def = PANEL_DEFS.find(d => d.id === id);
+        if (!def) break;
+        const state = loadPanelState();
+        state[id] = !state[id];
+        savePanelState(state);
+        applyPanelState(state);
+        break;
+      }
+
+      case 'panels-show-all': {
+        savePanelState({});
+        applyPanelState({});
+        break;
+      }
+
+      case 'panels-hide-all':
+        window.Shortcuts?.togglePanels?.();
         break;
     }
   }

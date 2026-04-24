@@ -349,6 +349,9 @@
     document.getElementById('editPanel').classList.toggle('hidden', m !== 'edit');
 
     if (m === 'play') {
+      // Start with list panel collapsed so it doesn't cover the artwork;
+      // user can open it with the 📋 button
+      document.getElementById('listPanel').classList.add('collapsed');
       window.Editor.deselect();
       window.Game.renderSparkles();
       // Restart the round fresh when entering play

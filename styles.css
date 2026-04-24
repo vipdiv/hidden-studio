@@ -767,7 +767,7 @@ button.chip.off { opacity: 0.45; }
   border-left: none;
 }
 .list-panel.collapsed ~ .panel-toggle { display: block; }
-.edit-panel.collapsed ~ .edit-panel-toggle { display: block; }
+body.edit-mode .edit-panel.collapsed ~ .edit-panel-toggle { display: block; }
 
 .minimap {
   position: fixed;
@@ -1915,6 +1915,16 @@ body.panels-hidden .tool-strip,
 body.panels-hidden .list-panel,
 body.panels-hidden .properties-panel,
 body.panels-hidden .hud-top { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+
+/* Panels menu — individual panel visibility */
+body.panel-off-editor      .edit-panel       { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+body.panel-off-toolstrip   .tool-strip       { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+body.panel-off-properties  .properties-panel { opacity: 0 !important; pointer-events: none; transition: opacity 0.2s; }
+body.panel-off-minimap     .minimap          { opacity: 0; pointer-events: none; transition: opacity 0.2s; }
+
+/* Green / dim dot in Panels menu */
+.panel-dot { color: rgba(212,212,212,0.2); margin-right: 4px; font-size: 8px; vertical-align: middle; }
+.panel-dot.dot-on { color: #4caf50; }
 
 /* ── Easter egg editor section ──────────────────── */
 .egg-details summary {
