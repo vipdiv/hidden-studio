@@ -217,62 +217,296 @@ window.Shortcuts = (function() {
     }
   }
 
-  /* ── shortcuts modal ────────────────────────── */
+  /* ── M7: Keyboard Shortcuts modal ──────────── */
 
   function showShortcutsModal() {
-    const section = (label) =>
-      `<tr><td colspan="2" style="padding:10px 0 4px;font-family:'Caveat',cursive;font-size:17px;color:var(--accent);border-top:1px dashed rgba(245,239,226,0.15)">${label}</td></tr>`;
+    const sec = label =>
+      `<div style="padding:10px 0 3px;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ui-text-dim);border-top:1px solid var(--panel-border);margin-top:8px">${label}</div>`;
     const row = (action, key) =>
-      `<tr>
-         <td style="padding:2px 20px 2px 0;font-family:'Fraunces',serif;font-size:13px;color:rgba(245,239,226,0.8)">${action}</td>
-         <td style="padding:2px 0;font-family:'Caveat',cursive;font-size:15px;white-space:nowrap;color:var(--paper)">${key}</td>
-       </tr>`;
-    const gap = () => `<tr><td colspan="2" style="height:2px"></td></tr>`;
+      `<div style="display:flex;justify-content:space-between;align-items:baseline;padding:3px 0;gap:12px">
+         <span style="font-size:12px;color:var(--ui-text)">${action}</span>
+         <span style="font-size:11px;color:var(--ui-text-dim);white-space:nowrap;font-family:monospace;background:var(--panel-bg-2);border:1px solid var(--panel-border);border-radius:3px;padding:1px 6px">${key}</span>
+       </div>`;
 
-    const html = `<table style="border-collapse:collapse;width:100%">
-      ${section('Tools')}
-      ${row('Select / Move', 'V')}
-      ${row('Hand (pan)', 'H')}
-      ${row('Pen', 'P')}
-      ${row('Eraser', 'E')}
-      ${row('Import image', 'I')}
-      ${row('Add hit zone', 'T')}
-      ${row('Add surprise', 'S')}
-      ${row('Text', 'X')}
-      ${row('Temporary pan', 'Spacebar (hold) or Middle-drag')}
-      ${row('Scroll to pan', 'Two-finger swipe / scroll wheel')}
-      ${row('Zoom', 'Ctrl + scroll / pinch')}
-      ${row('Crop document', 'C')}
-      ${row('Constrain shape (square / circle)', 'Shift while drawing')}
-      ${section('Object')}
-      ${row('Deselect', 'Esc')}
-      ${row('Delete', 'Delete / Backspace')}
-      ${row('Duplicate', 'Ctrl+D')}
-      ${row('Nudge 1 px', '↑ ↓ ← →')}
-      ${row('Nudge 10 px', 'Shift + Arrow')}
-      ${row('Rotate (drag handle)', 'Shift = 15° snap')}
-      ${section('Layer Order')}
-      ${row('Bring forward', 'Ctrl+]')}
-      ${row('Send backward', 'Ctrl+[')}
-      ${row('Bring to front', 'Ctrl+Shift+]')}
-      ${row('Send to back', 'Ctrl+Shift+[')}
-      ${section('View')}
-      ${row('Zoom in', 'Z  ·  Ctrl+=')}
-      ${row('Zoom out', 'Alt+Z  ·  Ctrl+−')}
-      ${row('Zoom to fit', 'Ctrl+0')}
-      ${row('Zoom to 100%', 'Ctrl+1')}
-      ${row('Toggle panels', 'Tab')}
-      ${row('Toggle play / edit', 'F')}
-      ${section('File')}
-      ${row('Save now', 'Ctrl+S')}
-      ${row('Export HTML', 'Ctrl+E')}
-      ${row('Undo', 'Ctrl+Z  (coming soon)')}
-      ${row('Redo', 'Ctrl+Shift+Z  (coming soon)')}
-      ${section('Help')}
-      ${row('This dialog', '?')}
-    </table>`;
+    const html = `<div style="columns:2;column-gap:24px;column-fill:balance">
+      <div style="break-inside:avoid">
+        ${sec('Tools')}
+        ${row('Select / Move', 'V')}
+        ${row('Hand / Pan', 'H')}
+        ${row('Pen', 'P')}
+        ${row('Eraser', 'E')}
+        ${row('Import image', 'I')}
+        ${row('Add hit zone', 'T')}
+        ${row('Add surprise', 'S')}
+        ${row('Text', 'X')}
+        ${row('Crop', 'C')}
+        ${row('Temp pan', 'Space')}
+        ${row('Constrain', 'Shift')}
+      </div>
+      <div style="break-inside:avoid">
+        ${sec('View')}
+        ${row('Zoom in', 'Z')}
+        ${row('Zoom out', 'Alt+Z')}
+        ${row('Fit to screen', 'Ctrl+0')}
+        ${row('100%', 'Ctrl+1')}
+        ${row('Rulers', 'Ctrl+R')}
+        ${row('Grid', "Ctrl+'")}
+        ${row('Outline mode', 'Ctrl+Y')}
+        ${row('Hide panels', 'Tab')}
+        ${row('Play / Edit', 'F')}
+      </div>
+      <div style="break-inside:avoid">
+        ${sec('Object')}
+        ${row('Deselect', 'Esc')}
+        ${row('Delete', 'Del')}
+        ${row('Duplicate', 'Ctrl+D')}
+        ${row('Nudge 1px', '↑↓←→')}
+        ${row('Nudge 10px', 'Shift+Arrow')}
+      </div>
+      <div style="break-inside:avoid">
+        ${sec('Layer order')}
+        ${row('Bring forward', 'Ctrl+]')}
+        ${row('Send backward', 'Ctrl+[')}
+        ${row('To front', 'Ctrl+Shift+]')}
+        ${row('To back', 'Ctrl+Shift+[')}
+        ${sec('File')}
+        ${row('Save', 'Ctrl+S')}
+        ${row('Export HTML', 'Ctrl+E')}
+        ${row('Shortcuts', '?')}
+      </div>
+    </div>`;
 
-    window.Editor.openModal('Keyboard Shortcuts', html);
+    _openWide('Keyboard Shortcuts', html);
+  }
+
+  /* ── M7: Documentation modal ────────────────── */
+
+  function showDocsModal() {
+    const DOCS = [
+      { title: 'Getting Started', content: `
+        <p>Hidden Studio is a browser-based editor for building hidden-object games. No account needed — everything saves to your browser.</p>
+        <h4>Workflow</h4>
+        <ol>
+          <li>Create a project from the start screen</li>
+          <li>Upload a background image or SVG planet</li>
+          <li>Switch to <strong>Edit</strong> mode</li>
+          <li>Add hit zones over objects players need to find</li>
+          <li>Switch to <strong>Play</strong> mode to test</li>
+          <li>Export as HTML to share</li>
+        </ol>` },
+      { title: 'Tools', content: `
+        <dl>
+          <dt><strong>Select (V)</strong></dt><dd>Click to select, drag to move, drag handle to rotate/resize.</dd>
+          <dt><strong>Pan (H)</strong></dt><dd>Drag to pan the canvas. Also: hold Space or middle-click drag.</dd>
+          <dt><strong>Pen (P)</strong></dt><dd>Draw freehand shapes as SVG paths. Shift = constrain.</dd>
+          <dt><strong>Eraser (E)</strong></dt><dd>Erase drawn strokes by dragging over them.</dd>
+          <dt><strong>Import (I)</strong></dt><dd>Import PNG/JPG/SVG sprites onto the canvas.</dd>
+          <dt><strong>Hit Zone (T)</strong></dt><dd>Draw a hit zone rectangle over an object to make it findable.</dd>
+          <dt><strong>Surprise (S)</strong></dt><dd>Add a secret element with a custom reveal animation.</dd>
+          <dt><strong>Text (X)</strong></dt><dd>Place text labels on the canvas.</dd>
+          <dt><strong>Crop (C)</strong></dt><dd>Resize the document canvas boundary.</dd>
+        </dl>` },
+      { title: 'Objects & Layers', content: `
+        <p>Every element lives on a layer. The Layers panel shows the full stack — drag to reorder.</p>
+        <ul>
+          <li><strong>Base layer</strong> — your background image or SVG world</li>
+          <li><strong>Drawn strokes</strong> — pen paths rendered as SVG</li>
+          <li><strong>Sprites</strong> — imported images positioned freely</li>
+          <li><strong>Hit zones</strong> — invisible in play mode; mark findable objects</li>
+          <li><strong>Surprises</strong> — secret items revealed on completion</li>
+        </ul>
+        <p>Use Ctrl+] / Ctrl+[ to move items forward/backward in the stack.</p>` },
+      { title: 'Gameplay & Hit Zones', content: `
+        <p>Hit zones are the core of the game loop. Each hit zone represents one object the player needs to find.</p>
+        <ul>
+          <li>Draw a hit zone rectangle over the object</li>
+          <li>Name it in the Properties panel</li>
+          <li>The name appears in the "Find These" list in play mode</li>
+          <li>A <strong>Miss Tap</strong> zone marks areas that count as wrong taps</li>
+          <li>Surprises appear after all items are found</li>
+        </ul>` },
+      { title: 'Exporting', content: `
+        <p>File → Export HTML creates a self-contained HTML file with your game embedded — no server needed.</p>
+        <ul>
+          <li>The exported file works offline and on mobile</li>
+          <li>Share it by uploading to any web host or sending the file directly</li>
+          <li>File → Export JSON saves just the project data for backup</li>
+          <li>All projects are also auto-saved in your browser's localStorage</li>
+        </ul>` },
+    ];
+
+    let activeIdx = 0;
+
+    function render() {
+      const nav = DOCS.map((d, i) =>
+        `<button onclick="window._docsSetTab(${i})" style="
+          display:block;width:100%;text-align:left;padding:6px 10px;margin-bottom:2px;
+          border-radius:4px;font-size:12px;border:none;cursor:pointer;
+          background:${i === activeIdx ? 'var(--ps-accent-dim)' : 'transparent'};
+          color:${i === activeIdx ? 'var(--ps-accent)' : 'var(--ui-text-dim)'};
+          font-weight:${i === activeIdx ? 600 : 400};
+        ">${d.title}</button>`
+      ).join('');
+
+      const content = `<div style="font-size:12px;line-height:1.75;color:var(--ui-text)">
+        ${DOCS[activeIdx].content}
+        </div>`.replace(/<dt>/g, '<dt style="margin-top:8px;color:var(--ui-text);font-size:12px">')
+               .replace(/<dd>/g, '<dd style="margin:1px 0 4px 12px;color:var(--ui-text-dim);font-size:11px">')
+               .replace(/<h4>/g, '<h4 style="margin:10px 0 4px;font-size:12px;color:var(--ui-text)">')
+               .replace(/<li>/g, '<li style="margin-bottom:3px">');
+
+      const html = `<div style="display:flex;gap:14px;height:340px">
+        <div style="width:130px;flex-shrink:0;border-right:1px solid var(--panel-border);padding-right:10px">
+          ${nav}
+        </div>
+        <div style="flex:1;overflow-y:auto;padding-right:4px">${content}</div>
+      </div>`;
+
+      document.getElementById('modalBody').innerHTML = html;
+    }
+
+    window._docsSetTab = (i) => { activeIdx = i; render(); };
+    _openWide('Documentation', '');
+    render();
+  }
+
+  /* ── M7: Settings modal ──────────────────────── */
+
+  function showSettingsModal() {
+    const PANELS_LIST = ['layers','navigator','properties','transform','swatches','hitzone','surprise','difficulty','project','history'];
+
+    let activeTab = 'general';
+
+    function renderTab() {
+      let content = '';
+      if (activeTab === 'general') {
+        const theme = window.Panels?.getTheme() || 'classic';
+        const rulers = document.body.classList.contains('show-rulers');
+        const grid   = document.body.classList.contains('show-grid');
+        const outline = document.body.classList.contains('outline-mode');
+        content = `
+          ${row('Theme', `<select onchange="window._settingsTheme(this.value)" style="background:var(--panel-bg-2);border:1px solid var(--panel-border);color:var(--ui-text);border-radius:3px;padding:2px 6px;font-size:12px">
+            <option value="classic" ${theme==='classic'?'selected':''}>Classic</option>
+            <option value="night"   ${theme==='night'  ?'selected':''}>Night Studio</option>
+            <option value="warm"    ${theme==='warm'   ?'selected':''}>Warm Studio</option>
+            <option value="paper"   ${theme==='paper'  ?'selected':''}>Paper (Light)</option>
+          </select>`)}
+          ${toggle('Rulers (Ctrl+R)', rulers,   'window._settingsToggle("rulers")')}
+          ${toggle('Grid (Ctrl+\')',  grid,     'window._settingsToggle("grid")')}
+          ${toggle('Outline mode',    outline,  'window._settingsToggle("outline")')}
+        `;
+      } else if (activeTab === 'panels') {
+        const regs = window.Panels?._getRegs() || {};
+        content = PANELS_LIST.map(id => {
+          const visible = window.Panels?.isVisible(id) ?? false;
+          const title = regs[id]?.title || id;
+          return toggle(title, visible, `window._settingsPanel('${id}')`);
+        }).join('');
+      } else if (activeTab === 'export') {
+        content = `
+          <p style="font-size:12px;color:var(--ui-text-dim);margin-bottom:12px">Export settings (coming soon)</p>
+          ${row('Format', '<span style="font-size:12px;color:var(--ui-text-dim)">Self-contained HTML (always)</span>')}
+          ${row('Image quality', '<span style="font-size:12px;color:var(--ui-text-dim)">Original (lossless)</span>')}
+        `;
+      } else if (activeTab === 'canvas') {
+        const proj = window.Editor?.getProject?.();
+        const w = proj?.canvasWidth  || proj?.width  || 1600;
+        const h = proj?.canvasHeight || proj?.height || 1600;
+        content = `
+          ${row('Width',  `<input type="number" id="settingsW" value="${w}" min="100" max="8000" style="${inputStyle}">`)}
+          ${row('Height', `<input type="number" id="settingsH" value="${h}" min="100" max="8000" style="${inputStyle}">`)}
+          <div style="margin-top:12px">
+            <button onclick="window._settingsCanvasApply()" style="background:var(--ui-blue);border:none;color:#fff;padding:5px 14px;border-radius:3px;font-size:12px;cursor:pointer">Apply</button>
+          </div>
+        `;
+      }
+
+      document.getElementById('settingsContent').innerHTML = content;
+    }
+
+    const inputStyle = 'width:90px;background:var(--panel-bg-2);border:1px solid var(--panel-border);color:var(--ui-text);border-radius:3px;padding:3px 6px;font-size:12px';
+
+    function row(label, control) {
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--panel-border)">
+        <span style="font-size:12px;color:var(--ui-text)">${label}</span>
+        ${control}
+      </div>`;
+    }
+
+    function toggle(label, checked, onchange) {
+      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--panel-border)">
+        <span style="font-size:12px;color:var(--ui-text)">${label}</span>
+        <label style="position:relative;display:inline-block;width:34px;height:18px;cursor:pointer">
+          <input type="checkbox" ${checked?'checked':''} onchange="${onchange}" style="opacity:0;width:0;height:0;position:absolute">
+          <span style="position:absolute;inset:0;border-radius:9px;background:${checked?'var(--ui-blue)':'var(--panel-border)'};transition:.2s">
+            <span style="position:absolute;top:2px;left:${checked?'18':'2'}px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s"></span>
+          </span>
+        </label>
+      </div>`;
+    }
+
+    const tabs = [
+      { id: 'general', label: 'General' },
+      { id: 'canvas',  label: 'Canvas'  },
+      { id: 'export',  label: 'Export'  },
+      { id: 'panels',  label: 'Panels'  },
+    ];
+
+    const tabBar = tabs.map(t =>
+      `<button onclick="window._settingsTab('${t.id}')" data-settings-tab="${t.id}" style="
+        padding:5px 12px;font-size:12px;border:none;cursor:pointer;border-radius:3px 3px 0 0;
+        border-bottom:2px solid ${t.id===activeTab?'var(--ui-blue)':'transparent'};
+        background:${t.id===activeTab?'var(--panel-bg-2)':'transparent'};
+        color:${t.id===activeTab?'var(--ui-text)':'var(--ui-text-dim)'};
+      ">${t.label}</button>`
+    ).join('');
+
+    const html = `
+      <div style="display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--panel-border)">${tabBar}</div>
+      <div id="settingsContent"></div>`;
+
+    window._settingsTab = (id) => {
+      activeTab = id;
+      document.querySelectorAll('[data-settings-tab]').forEach(btn => {
+        const active = btn.dataset.settingsTab === id;
+        btn.style.borderBottomColor = active ? 'var(--ui-blue)' : 'transparent';
+        btn.style.background        = active ? 'var(--panel-bg-2)' : 'transparent';
+        btn.style.color             = active ? 'var(--ui-text)' : 'var(--ui-text-dim)';
+      });
+      renderTab();
+    };
+    window._settingsTheme = (v) => { window.Panels?.setTheme(v); };
+    window._settingsToggle = (key) => {
+      if (key === 'rulers')  toggleRulers();
+      if (key === 'grid')    toggleGrid();
+      if (key === 'outline') toggleOutlineMode();
+    };
+    window._settingsPanel = (id) => { window.Panels?.toggle(id); };
+    window._settingsCanvasApply = () => {
+      const w = parseInt(document.getElementById('settingsW')?.value) || 1600;
+      const h = parseInt(document.getElementById('settingsH')?.value) || 1600;
+      window.Editor?.resizeCanvas?.(w, h);
+    };
+
+    _openWide('Settings', html);
+    renderTab();
+  }
+
+  /* ── helper: open modal wider than default 420px ── */
+  function _openWide(title, html) {
+    window.Editor?.openModal?.(title, html);
+    const modal = document.getElementById('modal');
+    if (modal) {
+      modal.style.maxWidth = '640px';
+      const backdrop = document.getElementById('modalBackdrop');
+      const obs = new MutationObserver(() => {
+        if (backdrop?.classList.contains('hidden')) {
+          modal.style.maxWidth = '';
+          obs.disconnect();
+        }
+      });
+      if (backdrop) obs.observe(backdrop, { attributes: true, attributeFilter: ['class'] });
+    }
   }
 
   /* ── init ───────────────────────────────────── */
@@ -280,6 +514,8 @@ window.Shortcuts = (function() {
   function init() {
     document.addEventListener('keydown', onKeyDown);
     document.addEventListener('keyup',   onKeyUp);
+    startZoomBadge();
+    startStatusBar();
   }
 
   function togglePanels() {
@@ -327,32 +563,6 @@ window.Shortcuts = (function() {
       const wp = window.Game.screenToWorld(e.clientX, e.clientY);
       coords.textContent = `${Math.round(wp.x)}, ${Math.round(wp.y)}`;
     });
-  }
-
-  /* ── M7 stubs — filled in next milestone ────── */
-
-  function showDocsModal() {
-    window.Editor?.openModal?.('Documentation', `
-      <p style="color:var(--ui-text-dim);font-size:13px;line-height:1.7">
-        Full documentation coming in M7.<br>
-        For now, press <strong>?</strong> for keyboard shortcuts.
-      </p>`);
-  }
-
-  function showSettingsModal() {
-    window.Editor?.openModal?.('Settings', `
-      <p style="color:var(--ui-text-dim);font-size:13px;line-height:1.7">
-        Settings panel coming in M7.
-      </p>`);
-  }
-
-  /* ── init ───────────────────────────────────── */
-
-  function init() {
-    document.addEventListener('keydown', onKeyDown);
-    document.addEventListener('keyup',   onKeyUp);
-    startZoomBadge();
-    startStatusBar();
   }
 
   return {
