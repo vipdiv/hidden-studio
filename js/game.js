@@ -184,9 +184,32 @@ window.Game = (function() {
     });
   }
 
+  const DISNEY_QUOTES = [
+    '"All our dreams can come true, if we have the courage to pursue them."',
+    '"It\'s kind of fun to do the impossible."',
+    '"The way to get started is to quit talking and begin doing."',
+    '"First, think. Second, dream. Third, believe. And finally, dare."',
+    '"Laughter is timeless, imagination has no age, dreams are forever."',
+    '"Around here, however, we don\'t look backwards for very long. We keep moving forward, opening new doors."',
+    '"The more you are in a state of gratitude, the more you will attract things to be grateful for."',
+    '"Somehow I can\'t believe there are any heights that can\'t be scaled by a person who knows the secrets of making dreams come true."',
+  ];
+
   /* ————————————————————————————————————————
      LIST + COUNTER
   ———————————————————————————————————————— */
+  function updateEmptyState() {
+    const el = document.getElementById('playEmpty');
+    if (!el) return;
+    const isEmpty = !project || ((project.items || []).length === 0 && (project.surprises || []).length === 0);
+    el.classList.toggle('visible', isEmpty);
+    if (isEmpty) {
+      const q = DISNEY_QUOTES[Math.floor(Math.random() * DISNEY_QUOTES.length)];
+      const quoteEl = document.getElementById('playEmptyQuote');
+      if (quoteEl) quoteEl.textContent = q + '  — Walt Disney';
+    }
+  }
+
   function renderList() {
     listEl.innerHTML = '';
     if (!project) return;
@@ -199,6 +222,7 @@ window.Game = (function() {
     });
     totalEl.textContent = (project.items || []).length;
     secretTotalEl.textContent = (project.surprises || []).length;
+    updateEmptyState();
   }
   function updateCounter(bump = false) {
     if (!project) return;

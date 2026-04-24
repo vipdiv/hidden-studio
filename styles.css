@@ -1607,6 +1607,38 @@ body.edit-mode #counter { display: none; }
   transition: opacity 0.3s;
 }
 .hint-tip.show { opacity: 1; }
+body.play-mode .hint-tip { display: none; }
+
+/* Play-mode empty state */
+.play-empty {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: 480px;
+  text-align: center;
+  padding: 0 24px;
+  pointer-events: none;
+  z-index: 5;
+}
+body.play-mode .play-empty.visible { display: block; }
+.play-empty-quote {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 300;
+  font-style: italic;
+  color: rgba(245, 239, 226, 0.55);
+  line-height: 1.5;
+  margin: 0 0 14px;
+}
+.play-empty-sub {
+  font-size: 13px;
+  color: rgba(245, 239, 226, 0.25);
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+.play-empty-sub strong { color: rgba(245, 239, 226, 0.38); font-weight: 600; }
 
 /* Modal */
 .modal-backdrop {
