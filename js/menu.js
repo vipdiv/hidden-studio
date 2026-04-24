@@ -89,11 +89,10 @@ window.Menu = (function() {
     new MutationObserver(copy).observe(src, { childList: true, subtree: true, characterData: true });
   }
 
-  /* Wire Play/Edit toggle buttons and fullscreen in menu-right */
+  /* Wire Play/Edit toggle buttons in menu-right */
   function wireModeBtns() {
     const playBtn = document.getElementById('menuPlayBtn');
     const editBtn = document.getElementById('menuEditBtn');
-    const fsBtn   = document.getElementById('menuFullscreenBtn');
 
     playBtn?.addEventListener('click', () => {
       if (window.App) window.App.setMode('play');
@@ -102,10 +101,6 @@ window.Menu = (function() {
     editBtn?.addEventListener('click', () => {
       if (window.App) window.App.setMode('edit');
       refreshModeBtns();
-    });
-    fsBtn?.addEventListener('click', () => {
-      if (!document.fullscreenElement) document.documentElement.requestFullscreen?.().catch(() => {});
-      else document.exitFullscreen?.();
     });
 
     // Also refresh when hud-top mode buttons fire
