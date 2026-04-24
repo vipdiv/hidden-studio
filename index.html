@@ -103,24 +103,24 @@
     <div class="viewbox" id="viewbox"></div>
   </div>
 
+  <!-- ═══ VERTICAL TOOL STRIP — edit mode only ═══ -->
+  <div class="tool-strip" id="toolStrip">
+    <button class="tool-btn active" data-tool="select"      title="Select (V)">↖</button>
+    <button class="tool-btn"        data-tool="pan"         title="Hand (H)">✋</button>
+    <div class="tool-divider"></div>
+    <button class="tool-btn"        data-tool="pen"         title="Pen (P)">✎</button>
+    <button class="tool-btn"        data-tool="eraser"      title="Eraser (E)">⌫</button>
+    <button class="tool-btn"        data-tool="rect"        title="Rectangle (R)">▭</button>
+    <button class="tool-btn"        data-tool="ellipse"     title="Ellipse (O)">◯</button>
+    <button class="tool-btn"        data-tool="star"        title="Star">★</button>
+    <div class="tool-divider"></div>
+    <button class="tool-btn"        data-tool="addItem"     title="Add hit zone (T)">⊕</button>
+    <button class="tool-btn"        data-tool="addSurprise" title="Add surprise (S)">✨</button>
+    <button class="tool-btn"        data-tool="import"      title="Import image (I)">🖼</button>
+  </div>
+
   <!-- ═══ EDIT MODE UI ═══ -->
   <aside class="edit-panel hidden" id="editPanel">
-    <!-- Tool palette -->
-    <div class="tool-section">
-      <h3>Tools</h3>
-      <div class="tool-grid">
-        <button class="tool-btn active" data-tool="select"      title="Select &amp; move (V)">↖</button>
-        <button class="tool-btn" data-tool="addItem"            title="Add find-it item (T)">⊕</button>
-        <button class="tool-btn" data-tool="addSurprise"        title="Add surprise (S)">✨</button>
-        <button class="tool-btn" data-tool="pen"                title="Draw (P)">✎</button>
-        <button class="tool-btn" data-tool="eraser"             title="Erase (E)">⌫</button>
-        <button class="tool-btn" data-tool="import"             title="Import image as sprite (I)">🖼</button>
-        <button class="tool-btn" data-tool="rect"               title="Rectangle (R)">▭</button>
-        <button class="tool-btn" data-tool="ellipse"            title="Ellipse (O)">◯</button>
-        <button class="tool-btn" data-tool="star"               title="Star">★</button>
-      </div>
-    </div>
-
     <!-- Pen options (shown when pen tool active) -->
     <div class="tool-options hidden" id="penOptions">
       <h3>Pen</h3>
@@ -210,18 +210,18 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=8"></script>
-<script src="js/data/presets.js?v=8"></script>
-<script src="js/transforms.js?v=8"></script>
-<script src="js/audio.js?v=8"></script>
-<script src="js/animations.js?v=8"></script>
-<script src="js/sprites.js?v=8"></script>
-<script src="js/draw.js?v=8"></script>
-<script src="js/projects.js?v=8"></script>
-<script src="js/game.js?v=8"></script>
-<script src="js/editor.js?v=8"></script>
-<script src="js/shortcuts.js?v=8"></script>
-<script src="js/app.js?v=8"></script>
+<script src="js/data/scene.svg.js?v=9"></script>
+<script src="js/data/presets.js?v=9"></script>
+<script src="js/transforms.js?v=9"></script>
+<script src="js/audio.js?v=9"></script>
+<script src="js/animations.js?v=9"></script>
+<script src="js/sprites.js?v=9"></script>
+<script src="js/draw.js?v=9"></script>
+<script src="js/projects.js?v=9"></script>
+<script src="js/game.js?v=9"></script>
+<script src="js/editor.js?v=9"></script>
+<script src="js/shortcuts.js?v=9"></script>
+<script src="js/app.js?v=9"></script>
 
 </body>
 </html>

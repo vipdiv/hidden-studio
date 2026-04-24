@@ -665,10 +665,82 @@ button.chip.off { opacity: 0.45; }
 .win-card button:hover { background: var(--ink); color: var(--paper); }
 
 /* 6. EDIT MODE UI ─────────────────────────────────── */
-.edit-panel {
+
+/* ── Vertical tool strip (left of edit panel) ── */
+.tool-strip {
+  display: none; /* shown via body.edit-mode below */
   position: fixed;
   top: 50px;
   left: 0;
+  width: 46px;
+  height: calc(100vh - 50px);
+  background: var(--panel-bg);
+  border-right: 1px solid var(--panel-border);
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px;
+  z-index: 26;
+  overflow: visible;
+}
+body.edit-mode .tool-strip { display: flex; }
+
+.tool-strip .tool-btn {
+  position: relative;
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  font-size: 17px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--ui-text);
+  flex-shrink: 0;
+  transition: all 0.12s;
+}
+.tool-strip .tool-btn:hover {
+  background: rgba(212,212,212,0.12);
+  border-color: var(--panel-border);
+}
+.tool-strip .tool-btn.active {
+  background: rgba(190, 150, 80, 0.25);
+  border-color: rgba(190, 150, 80, 0.6);
+  color: #d4b060;
+}
+
+/* Tooltip on the right of each strip button */
+.tool-strip .tool-btn::after {
+  content: attr(title);
+  position: absolute;
+  left: calc(100% + 10px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--panel-bg);
+  color: var(--ui-text);
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-size: 11px;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s 0.4s; /* delay so it doesn't flash on quick pass */
+  z-index: 200;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.tool-strip .tool-btn:hover::after { opacity: 1; }
+
+.tool-divider {
+  width: 28px;
+  height: 1px;
+  background: var(--panel-border);
+  margin: 4px 0;
+  flex-shrink: 0;
+}
+
+.edit-panel {
+  position: fixed;
+  top: 50px;
+  left: 46px; /* pushed right by the tool strip */
   width: 240px;
   max-height: calc(100vh - 50px);
   overflow-y: auto;
@@ -679,7 +751,7 @@ button.chip.off { opacity: 0.45; }
   z-index: 25;
   transition: transform 0.3s ease;
 }
-.edit-panel.collapsed { transform: translateX(-100%); }
+.edit-panel.collapsed { transform: translateX(calc(-100% - 46px)); }
 
 .tool-section {
   margin: 0;
@@ -698,12 +770,6 @@ button.chip.off { opacity: 0.45; }
 .tool-section > *:not(h3) { padding: 0 12px; }
 .tool-section > *:last-child { padding-bottom: 10px; }
 
-.tool-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 2px;
-  padding: 6px 8px !important;
-}
 .tool-btn {
   aspect-ratio: 1;
   background: transparent;
@@ -1053,7 +1119,11 @@ button.chip.off { opacity: 0.45; }
 @media (max-width: 640px) {
   .project-name { display: none; }
 
-  /* Edit panel — slide up from bottom */
+  /* Tool strip: hide the side strip on mobile, rely on bottom-sheet panel */
+  .tool-strip { display: none !important; }
+
+  /* Edit panel — slide up from bottom, no left offset since strip is hidden */
+  .edit-panel { left: 0 !important; }
   .edit-panel {
     position: fixed !important;
     top: auto !important;
@@ -1284,5 +1354,6 @@ body.space-pan .stage.grabbing { cursor: grabbing !important; }
 
 /* Tab: hide all panels for full-canvas view */
 body.panels-hidden .edit-panel,
+body.panels-hidden .tool-strip,
 body.panels-hidden .list-panel,
 body.panels-hidden .hud-top { opacity: 0; pointer-events: none; transition: opacity 0.2s; }

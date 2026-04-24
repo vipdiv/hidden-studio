@@ -29,7 +29,8 @@ window.Editor = (function() {
     modalTitle = refs.modalTitle;
     modalBody = refs.modalBody;
 
-    toolBtns = panel.querySelectorAll('.tool-btn');
+    // Tool buttons live in #toolStrip (vertical strip) — query document-wide
+    toolBtns = document.querySelectorAll('.tool-btn[data-tool]');
     toolBtns.forEach(b => b.addEventListener('click', () => setTool(b.dataset.tool)));
 
     // Pen color + size
