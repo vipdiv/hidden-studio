@@ -18,17 +18,6 @@ body[data-theme="classic"] {
   --ps-dim-text:      #888888;
   --ps-accent:        #4a8acc;
   --ps-accent-dim:    rgba(74,138,204,0.18);
-
-  /* Bridge to legacy vars so the whole UI themes */
-  --ui-bg:        #535353;
-  --panel-bg:     #383838;
-  --panel-bg-2:   #2e2e2e;
-  --panel-border: #484848;
-  --ui-text:      #d0d0d0;
-  --ui-text-dim:  #888888;
-  --ui-blue:      #4a8acc;
-  --ui-blue-dim:  rgba(74,138,204,0.25);
-  --space:        #404040;
 }
 
 /* ── Night (dark navy / purple) ─────────────────── */
@@ -44,16 +33,6 @@ body[data-theme="night"] {
   --ps-dim-text:      #7070a0;
   --ps-accent:        #6a8aee;
   --ps-accent-dim:    rgba(106,138,238,0.18);
-
-  --ui-bg:        #1e1e2e;
-  --panel-bg:     #262638;
-  --panel-bg-2:   #1e1e2e;
-  --panel-border: #3a3a5a;
-  --ui-text:      #d0d0e8;
-  --ui-text-dim:  #7070a0;
-  --ui-blue:      #6a8aee;
-  --ui-blue-dim:  rgba(106,138,238,0.25);
-  --space:        #161622;
 }
 
 /* ── Warm (dark amber / brown) ──────────────────── */
@@ -69,16 +48,6 @@ body[data-theme="warm"] {
   --ps-dim-text:      #9a8870;
   --ps-accent:        #e8931a;
   --ps-accent-dim:    rgba(232,147,26,0.18);
-
-  --ui-bg:        #3a3028;
-  --panel-bg:     #3e342a;
-  --panel-bg-2:   #302820;
-  --panel-border: #5a4a38;
-  --ui-text:      #e0d4c0;
-  --ui-text-dim:  #9a8870;
-  --ui-blue:      #e8931a;
-  --ui-blue-dim:  rgba(232,147,26,0.25);
-  --space:        #2e2620;
 }
 
 /* ── Paper (light / white) ──────────────────────── */
@@ -94,16 +63,22 @@ body[data-theme="paper"] {
   --ps-dim-text:      #888070;
   --ps-accent:        #c43f2e;
   --ps-accent-dim:    rgba(196,63,46,0.12);
+}
 
-  --ui-bg:        #e8e4dc;
-  --panel-bg:     #ffffff;
-  --panel-bg-2:   #f0ece4;
-  --panel-border: #ccc8c0;
-  --ui-text:      #2a2420;
-  --ui-text-dim:  #888070;
-  --ui-blue:      #c43f2e;
-  --ui-blue-dim:  rgba(196,63,46,0.15);
-  --space:        #ddd8ce;
+/* ── Bridge: map --ps-* → legacy vars so the entire UI themes.
+   Placed AFTER theme blocks so --ps-* are already resolved on body.
+   body[data-theme] specificity (0,1,1) beats :root (0,1,0) in styles.css,
+   ensuring these override the default dark values for ALL descendants. ── */
+body[data-theme] {
+  --ui-bg:        var(--ps-app-bg);
+  --panel-bg:     var(--ps-panel-bg);
+  --panel-bg-2:   var(--ps-panel-header);
+  --panel-border: var(--ps-border);
+  --ui-text:      var(--ps-text);
+  --ui-text-dim:  var(--ps-dim-text);
+  --ui-blue:      var(--ps-accent);
+  --ui-blue-dim:  var(--ps-accent-dim);
+  --space:        var(--ps-canvas-bg);
 }
 
 /* ── Panel root overlay ─────────────────────────── */
@@ -232,3 +207,141 @@ body[data-theme="paper"] {
   pointer-events: none;
   flex-shrink: 0;
 }
+
+/* ── M6: Canvas chrome ──────────────────────────── */
+
+/* Rulers — visible only when body.show-rulers */
+.ruler-corner,
+.ruler-h,
+.ruler-v {
+  position: fixed;
+  background: var(--ps-panel-header);
+  border-color: var(--ps-border);
+  z-index: 90;
+  display: none;
+  pointer-events: none;
+  font-size: 9px;
+  color: var(--ps-dim-text);
+  overflow: hidden;
+}
+body.show-rulers .ruler-corner,
+body.show-rulers .ruler-h,
+body.show-rulers .ruler-v { display: block; }
+
+/* Corner square */
+.ruler-corner {
+  left: 36px; top: 74px;
+  width: 16px; height: 16px;
+  border-right: 1px solid var(--ps-border);
+  border-bottom: 1px solid var(--ps-border);
+}
+
+/* Horizontal ruler (top) */
+.ruler-h {
+  left: 52px; top: 74px;
+  right: 266px; height: 16px;
+  border-bottom: 1px solid var(--ps-border);
+  background-image: repeating-linear-gradient(
+    90deg,
+    var(--ps-border) 0px, var(--ps-border) 1px,
+    transparent 1px, transparent 9px,
+    var(--ps-border) 9px, var(--ps-border) 10px,
+    transparent 10px, transparent 49px,
+    var(--ps-border) 49px, var(--ps-border) 50px,
+    transparent 50px, transparent 99px
+  );
+}
+
+/* Vertical ruler (left) */
+.ruler-v {
+  left: 36px; top: 90px;
+  width: 16px; bottom: 20px;
+  border-right: 1px solid var(--ps-border);
+  background-image: repeating-linear-gradient(
+    180deg,
+    var(--ps-border) 0px, var(--ps-border) 1px,
+    transparent 1px, transparent 9px,
+    var(--ps-border) 9px, var(--ps-border) 10px,
+    transparent 10px, transparent 49px,
+    var(--ps-border) 49px, var(--ps-border) 50px,
+    transparent 50px, transparent 99px
+  );
+}
+
+/* Shift stage content right when rulers visible */
+body.show-rulers .stage { left: 52px !important; }
+
+/* Grid overlay on the stage */
+body.show-grid .stage {
+  background-image:
+    linear-gradient(var(--ps-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--ps-border) 1px, transparent 1px);
+  background-size: 50px 50px;
+  background-position: 0 0;
+}
+
+/* Outline mode — show only strokes, no fills */
+body.outline-mode .world * {
+  fill: transparent !important;
+  stroke: var(--ps-accent) !important;
+  stroke-width: 1px !important;
+  color: var(--ps-accent) !important;
+  background: transparent !important;
+  border-color: var(--ps-accent) !important;
+  box-shadow: none !important;
+  opacity: 1 !important;
+}
+body.outline-mode .base-layer img,
+body.outline-mode .sprite-layer img {
+  opacity: 0.15 !important;
+}
+body.outline-mode .hits-layer > * {
+  fill: transparent !important;
+  stroke: var(--ps-accent) !important;
+  opacity: 1 !important;
+}
+
+/* Zoom badge */
+.zoom-badge {
+  position: fixed;
+  left: 52px;
+  bottom: 24px;
+  background: var(--ps-panel-header);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-dim-text);
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 3px;
+  pointer-events: none;
+  z-index: 89;
+  font-variant-numeric: tabular-nums;
+  transition: opacity 0.2s;
+}
+body.edit-mode .zoom-badge { opacity: 1; }
+body:not(.edit-mode) .zoom-badge { opacity: 0; }
+
+/* Status bar — 20px at bottom, edit mode only */
+.status-bar {
+  position: fixed;
+  left: 36px; right: 266px; bottom: 0;
+  height: 20px;
+  background: var(--ps-panel-header);
+  border-top: 1px solid var(--ps-border);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: 10px;
+  color: var(--ps-dim-text);
+  pointer-events: none;
+  z-index: 89;
+  justify-content: space-between;
+  overflow: hidden;
+}
+.status-right { display: flex; gap: 12px; }
+body:not(.edit-mode) .status-bar { display: none; }
+
+/* Adjust tool-strip height to account for status bar in edit mode */
+body.edit-mode .tool-strip {
+  height: calc(100vh - 94px) !important;
+}
+body.show-rulers.edit-mode .zoom-badge { bottom: 24px; left: 68px; }
