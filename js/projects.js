@@ -55,12 +55,13 @@ window.Projects = (function() {
 
   function update(id, data) {
     const all = load();
-    if (!all[id]) return null;
-    data.meta = { ...(all[id].meta || {}), updatedAt: Date.now() };
-    data.meta.id = id;
+    // Upsert: if the project isn't in storage yet (e.g. initial save failed),
+    // save it now rather than silently dropping the update.
+    const existing = all[id];
+    data.meta = { ...(existing?.meta || {}), id, updatedAt: Date.now() };
+    if (!data.meta.createdAt) data.meta.createdAt = Date.now();
     all[id] = data;
-    save(all);
-    return data;
+    return save(all) ? data : null;
   }
 
   function remove(id) {
@@ -100,13 +101,20 @@ window.Projects = (function() {
     }
   }
 
+  function markSaveFailed() {
+    if (statusEl) {
+      statusEl.textContent = 'save failed — storage full?';
+      statusEl.classList.add('unsaved');
+    }
+  }
+
   function scheduleAutosave(data) {
     markDirty();
     if (saveTimer) clearTimeout(saveTimer);
     saveTimer = setTimeout(() => {
       if (data?.meta?.id) {
-        update(data.meta.id, data);
-        markClean();
+        const ok = update(data.meta.id, data);
+        if (ok) markClean(); else markSaveFailed();
       }
     }, AUTOSAVE_DELAY);
   }
@@ -115,8 +123,8 @@ window.Projects = (function() {
   function saveNow(data) {
     if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; }
     if (data?.meta?.id) {
-      update(data.meta.id, data);
-      markClean();
+      const ok = update(data.meta.id, data);
+      if (ok) markClean(); else markSaveFailed();
     }
   }
 
