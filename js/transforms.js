@@ -8,6 +8,7 @@ window.Transforms = (function() {
   // Default "no transform" state — treated as identity
   function defaults() {
     return {
+      opacity:    1,    // 0 to 1
       rotation:   0,    // degrees
       scale:      1,    // 0.1 to 3
       flipH:      false,
@@ -76,6 +77,8 @@ window.Transforms = (function() {
     }
     el.style.transform = parts.join(' ');
     el.style.filter    = buildFilter(t);
+    // Only set inline opacity when non-default; otherwise clear so CSS animations work
+    el.style.opacity   = (t.opacity !== undefined && t.opacity !== 1) ? t.opacity : '';
   }
 
   /* Renders the transform sliders UI as HTML string.
@@ -100,6 +103,10 @@ window.Transforms = (function() {
         <div class="xf-flip-row">
           <button class="xf-flip${t.flipH ? ' active' : ''}" id="${prefix}-flipH">⇄ Flip H</button>
           <button class="xf-flip${t.flipV ? ' active' : ''}" id="${prefix}-flipV">⇅ Flip V</button>
+        </div>
+        <div class="xf-row">
+          <label>Opacity <span class="xf-val" id="${prefix}-opacity-val">${Math.round(t.opacity * 100)}%</span></label>
+          <input type="range" id="${prefix}-opacity" min="0" max="1" step="0.05" value="${t.opacity}">
         </div>
 
         <div class="xf-group-title">Color</div>
@@ -159,6 +166,7 @@ window.Transforms = (function() {
     }
     bindRange('rotation',   (v) => `${Math.round(v)}°`);
     if (showScale) bindRange('scale', (v) => `${v.toFixed(2)}×`);
+    bindRange('opacity',    (v) => `${Math.round(v * 100)}%`);
     bindRange('brightness', (v) => `${Math.round(v*100)}%`);
     bindRange('contrast',   (v) => `${Math.round(v*100)}%`);
     bindRange('saturation', (v) => `${Math.round(v*100)}%`);

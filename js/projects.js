@@ -304,18 +304,34 @@ else if (B.type === 'image') base.innerHTML = '<img src="' + B.content + '">';
 // Drawings
 const dLayer = document.getElementById('draw');
 (D.drawings || []).forEach(s => {
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+  if(s.tx||s.ty) g.setAttribute('transform','translate('+(s.tx||0)+','+(s.ty||0)+')');
   const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
   p.setAttribute('d', s.d); p.setAttribute('stroke', s.color); p.setAttribute('stroke-width', s.width);
   p.setAttribute('stroke-linecap','round'); p.setAttribute('stroke-linejoin','round'); p.setAttribute('fill','none');
-  dLayer.appendChild(p);
+  if(s.dash){const w=s.width||3,gap=s.gap||8;p.setAttribute('stroke-dasharray',s.dash==='dot'?w+' '+gap:(w*4)+' '+gap);}
+  g.appendChild(p); dLayer.appendChild(g);
 });
 // Sprites
 const sprLayer = document.getElementById('sprs');
 (D.sprites || []).forEach(s => {
   const el = document.createElement('div');
   el.className = 'sprite';
-  const st = s.transform || {}; const stp=[]; if (st.rotation) stp.push('rotate('+st.rotation+'deg)'); const sfx=(st.flipH?-1:1), sfy=(st.flipV?-1:1); if(sfx!==1||sfy!==1) stp.push('scale('+sfx+','+sfy+')');
-  el.style.cssText = 'left:' + (s.x - s.w/2) + 'px;top:' + (s.y - s.h/2) + 'px;width:' + s.w + 'px;height:' + s.h + 'px;' + (stp.length?'transform:'+stp.join(' ')+';':'');
+  const st = s.transform || {};
+  const stp=[]; if(st.rotation) stp.push('rotate('+st.rotation+'deg)');
+  const sfx=(st.flipH?-1:1),sfy=(st.flipV?-1:1); if(sfx!==1||sfy!==1) stp.push('scale('+sfx+','+sfy+')');
+  const sfp=[];
+  if(st.brightness&&st.brightness!==1) sfp.push('brightness('+st.brightness+')');
+  if(st.contrast&&st.contrast!==1) sfp.push('contrast('+st.contrast+')');
+  if(st.saturation&&st.saturation!==1) sfp.push('saturate('+st.saturation+')');
+  if(st.hue) sfp.push('hue-rotate('+st.hue+'deg)');
+  if(st.blur) sfp.push('blur('+st.blur+'px)');
+  if(st.grayscale) sfp.push('grayscale('+st.grayscale+')');
+  if(st.invert) sfp.push('invert('+st.invert+')');
+  el.style.cssText = 'left:'+(s.x-s.w/2)+'px;top:'+(s.y-s.h/2)+'px;width:'+s.w+'px;height:'+s.h+'px;transform-origin:center;'
+    +(stp.length?'transform:'+stp.join(' ')+';':'')
+    +(sfp.length?'filter:'+sfp.join(' ')+';':'')
+    +(st.opacity!=null&&st.opacity!==1?'opacity:'+st.opacity+';':'');
   if (s.imageData) el.innerHTML = '<img src="' + s.imageData + '">';
   sprLayer.appendChild(el);
 });
