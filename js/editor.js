@@ -132,6 +132,8 @@ window.Editor = (function() {
 
     // Collapsible panel sections + panel-level collapse button
     initCollapsibleSections();
+    // Crop tool
+    initCropTool();
 
     // Click on hit zones to select
     hitsLayer.addEventListener('pointerdown', onHitPointerDown);
@@ -209,6 +211,10 @@ window.Editor = (function() {
     else if (t === 'eraser')                      stage.classList.add('erase-cursor');
     else if (t === 'addItem' || t === 'addSurprise' || t === 'text') stage.classList.add('add-cursor');
     else if (t === 'rect' || t === 'ellipse' || t === 'star') stage.classList.add('crosshair-cursor');
+    else if (t === 'crop') stage.classList.add('crosshair-cursor');
+    // Show/hide crop overlay
+    if (t === 'crop') { document.body.classList.add('crop-active'); }
+    else              { document.body.classList.remove('crop-active'); }
     // Pen options panel visibility — also show for shape tools
     const isPenLike = ['pen','eraser','rect','ellipse','star'].includes(t);
     penOptions.classList.toggle('hidden', !isPenLike);
@@ -222,6 +228,7 @@ window.Editor = (function() {
     else if (t === 'star')    showHint('Click to set centre, drag for size');
     else if (t === 'text')    showHint('Click to place text');
     else if (t === 'import')  { fileImportDialog(); setTool('select'); }
+    else if (t === 'crop')    showHint('Drag handles to set crop area · Fit to Base · Apply');
     else hideHint();
   }
   function getTool() { return tool; }
@@ -2341,6 +2348,129 @@ window.Editor = (function() {
 
   function escapeAttr(s) {
     return String(s).replace(/"/g, '&quot;');
+  }
+
+  /* ————————————————————————————————————————
+     CROP TOOL
+  ———————————————————————————————————————— */
+  function initCropTool() {
+    const overlay  = document.getElementById('cropOverlay');
+    const cropRect = document.getElementById('cropRect');
+    if (!overlay || !cropRect) return;
+
+    let cropX = 0, cropY = 0, cropW = 1600, cropH = 1600;
+    let drag = null; // { handle, startCX, startCY, startCrop }
+
+    function updateRect() {
+      cropRect.style.left   = cropX + 'px';
+      cropRect.style.top    = cropY + 'px';
+      cropRect.style.width  = cropW + 'px';
+      cropRect.style.height = cropH + 'px';
+    }
+
+    // Reset crop bounds to current doc size whenever crop tool is activated
+    const origSetTool = setTool; // capture after our modification
+    document.querySelectorAll('.tool-btn[data-tool="crop"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!project) return;
+        cropX = 0; cropY = 0;
+        cropW = project.docWidth  || 1600;
+        cropH = project.docHeight || 1600;
+        updateRect();
+      });
+    });
+
+    // Drag handler (move or resize)
+    cropRect.addEventListener('pointerdown', (e) => {
+      if (e.button !== 0) return;
+      e.stopPropagation();
+      const handle = e.target.dataset.handle || 'body';
+      const sc = window.Game.scale;
+      drag = {
+        handle,
+        startCX: e.clientX / sc,
+        startCY: e.clientY / sc,
+        startCrop: { cropX, cropY, cropW, cropH },
+      };
+      cropRect.setPointerCapture(e.pointerId);
+    });
+
+    cropRect.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      const sc = window.Game.scale;
+      const dx = e.clientX / sc - drag.startCX;
+      const dy = e.clientY / sc - drag.startCY;
+      const s  = drag.startCrop;
+      const MIN = 50;
+
+      switch (drag.handle) {
+        case 'body': cropX = s.cropX + dx; cropY = s.cropY + dy; break;
+        case 'tl': cropX = s.cropX + dx; cropY = s.cropY + dy; cropW = Math.max(MIN, s.cropW - dx); cropH = Math.max(MIN, s.cropH - dy); break;
+        case 'tc': cropY = s.cropY + dy; cropH = Math.max(MIN, s.cropH - dy); break;
+        case 'tr': cropY = s.cropY + dy; cropW = Math.max(MIN, s.cropW + dx); cropH = Math.max(MIN, s.cropH - dy); break;
+        case 'ml': cropX = s.cropX + dx; cropW = Math.max(MIN, s.cropW - dx); break;
+        case 'mr': cropW = Math.max(MIN, s.cropW + dx); break;
+        case 'bl': cropX = s.cropX + dx; cropW = Math.max(MIN, s.cropW - dx); cropH = Math.max(MIN, s.cropH + dy); break;
+        case 'bc': cropH = Math.max(MIN, s.cropH + dy); break;
+        case 'br': cropW = Math.max(MIN, s.cropW + dx); cropH = Math.max(MIN, s.cropH + dy); break;
+      }
+      updateRect();
+    });
+
+    cropRect.addEventListener('pointerup', () => { drag = null; });
+    cropRect.addEventListener('pointercancel', () => { drag = null; });
+
+    // Fit to base layer
+    document.getElementById('cropFitBase')?.addEventListener('click', () => {
+      const inner = document.getElementById('baseLayer')?.firstElementChild;
+      if (!inner) return;
+      const r = inner.getBoundingClientRect();
+      const tl = window.Game.screenToWorld(r.left, r.top);
+      const br = window.Game.screenToWorld(r.right, r.bottom);
+      cropX = Math.round(tl.x);
+      cropY = Math.round(tl.y);
+      cropW = Math.max(50, Math.round(br.x - tl.x));
+      cropH = Math.max(50, Math.round(br.y - tl.y));
+      updateRect();
+    });
+
+    // Apply crop
+    document.getElementById('cropApply')?.addEventListener('click', () => {
+      if (!project) return;
+      const dx = -cropX, dy = -cropY;
+
+      // Shift all game objects
+      (project.items     || []).forEach(o => { o.x += dx; o.y += dy; });
+      (project.surprises || []).forEach(o => { o.x += dx; o.y += dy; });
+      (project.texts     || []).forEach(o => { o.x += dx; o.y += dy; });
+      (project.sprites   || []).forEach(o => { o.x += dx; o.y += dy; });
+
+      // Shift drawings
+      window.Draw.shiftStrokes(dx, dy);
+
+      // Shift base layer
+      project.baseX = (project.baseX || 0) + dx;
+      project.baseY = (project.baseY || 0) + dy;
+
+      // New doc size
+      project.docWidth  = Math.max(50, Math.round(cropW));
+      project.docHeight = Math.max(50, Math.round(cropH));
+
+      applyDocSize();
+      applyBaseTransform();
+      renderHits();
+      renderTexts();
+      renderSprites();
+      window.Draw.render();
+      window.Game.centerOnPlanet();
+      setTool('select');
+      schedSave();
+    });
+
+    // Cancel
+    document.getElementById('cropCancel')?.addEventListener('click', () => {
+      setTool('select');
+    });
   }
 
   return {

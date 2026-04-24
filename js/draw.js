@@ -265,6 +265,11 @@ window.Draw = (function() {
     render();
   }
 
+  function shiftStrokes(dx, dy) {
+    strokes.forEach(s => { s.tx = (s.tx || 0) + dx; s.ty = (s.ty || 0) + dy; });
+    render();
+  }
+
   function deleteStroke(id) {
     strokes = strokes.filter(s => s.id !== id);
     if (selectedId === id) selectedId = null;
@@ -398,6 +403,6 @@ window.Draw = (function() {
     beginShape, previewShape, commitShape, cancelShape, isShaping,
     render, clearAll, loadFrom, getStrokes, getStroke,
     isDrawing,
-    setSelected, deleteStroke, setStrokeTranslation, updateStroke,
+    setSelected, deleteStroke, shiftStrokes, setStrokeTranslation, updateStroke,
   };
 })();

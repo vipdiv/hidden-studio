@@ -394,6 +394,7 @@
       if (e.button === 1) return; // middle mouse → let onDown handle as pan
       if (!document.body.classList.contains('edit-mode')) return;
       if (isPanMode()) return;
+      if (document.body.classList.contains('crop-active')) return; // crop overlay handles its own events
       const _tool = window.Editor.getTool();
       if (!DRAW_TOOLS.includes(_tool)) return;
       // Only intercept clicks within the stage (not on panels / HUD)
@@ -427,6 +428,9 @@
         try { stage.setPointerCapture(e.pointerId); } catch (_) {}
         return;
       }
+
+      // Let crop overlay handle its own events
+      if (document.body.classList.contains('crop-active') && e.target.closest('#cropOverlay')) return;
 
       // Draw tools already handled by the capture listener above
       if (isDrawing) return;

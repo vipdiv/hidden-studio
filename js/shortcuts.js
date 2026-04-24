@@ -149,6 +149,7 @@ window.Shortcuts = (function() {
       case 't': case 'T': window.Editor.setTool('addItem');     e.preventDefault(); break;
       case 's': case 'S': window.Editor.setTool('addSurprise'); e.preventDefault(); break;
       case 'x': case 'X': window.Editor.setTool('text');       e.preventDefault(); break;
+      case 'c': case 'C': window.Editor.setTool('crop');       e.preventDefault(); break;
 
       // Zoom: Z = in, Alt+Z = out
       case 'z': case 'Z':
@@ -158,7 +159,8 @@ window.Shortcuts = (function() {
 
       // Selection / deletion
       case 'Escape':
-        window.Editor.deselect();
+        if (window.Editor.getTool() === 'crop') window.Editor.setTool('select');
+        else window.Editor.deselect();
         e.preventDefault();
         break;
       case 'Delete':
@@ -225,6 +227,7 @@ window.Shortcuts = (function() {
       ${row('Temporary pan', 'Spacebar (hold) or Middle-drag')}
       ${row('Scroll to pan', 'Two-finger swipe / scroll wheel')}
       ${row('Zoom', 'Ctrl + scroll / pinch')}
+      ${row('Crop document', 'C')}
       ${row('Constrain shape (square / circle)', 'Shift while drawing')}
       ${section('Object')}
       ${row('Deselect', 'Esc')}

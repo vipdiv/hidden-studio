@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=20">
+<link rel="stylesheet" href="styles.css?v=21">
 </head>
 <body>
 
@@ -159,6 +159,19 @@
       <svg class="drawing-layer" id="drawingLayer" viewBox="0 0 1600 1600" preserveAspectRatio="none"></svg>
       <!-- Imported sprites -->
       <div class="sprite-layer" id="spriteLayer"></div>
+      <!-- Crop overlay — shown only when crop tool is active -->
+      <div id="cropOverlay">
+        <div id="cropRect">
+          <div class="crop-handle crop-tl" data-handle="tl"></div>
+          <div class="crop-handle crop-tc" data-handle="tc"></div>
+          <div class="crop-handle crop-tr" data-handle="tr"></div>
+          <div class="crop-handle crop-ml" data-handle="ml"></div>
+          <div class="crop-handle crop-mr" data-handle="mr"></div>
+          <div class="crop-handle crop-bl" data-handle="bl"></div>
+          <div class="crop-handle crop-bc" data-handle="bc"></div>
+          <div class="crop-handle crop-br" data-handle="br"></div>
+        </div>
+      </div>
       <!-- Hit zones (in edit mode they're visible, in play mode invisible) -->
       <div class="hits-layer" id="hitsLayer"></div>
       <!-- Play-mode overlays (marks, pops) -->
@@ -196,6 +209,8 @@
     <button class="tool-btn"        data-tool="addSurprise" title="Add surprise (S)">✨</button>
     <button class="tool-btn"        data-tool="text"        title="Text (X)">T</button>
     <button class="tool-btn"        data-tool="import"      title="Import image (I)">🖼</button>
+    <div class="tool-divider"></div>
+    <button class="tool-btn"        data-tool="crop"        title="Crop document (C)">⊡</button>
   </div>
 
   <!-- ═══ EDIT MODE UI ═══ -->
@@ -302,6 +317,13 @@
   <!-- Floating toolbar for when pen is on mobile (collapsed panel) -->
   <button class="edit-panel-toggle" id="editPanelToggle" title="Show editor panel">»</button>
 
+  <!-- Crop tool floating controls -->
+  <div id="cropToolbar">
+    <button class="ghost-btn" id="cropFitBase" title="Fit crop to base image bounds">Fit to base</button>
+    <button class="ghost-btn" id="cropApply">✓ Apply crop</button>
+    <button class="ghost-btn" id="cropCancel">✕ Cancel</button>
+  </div>
+
   <!-- Win overlay -->
   <div class="win" id="win">
     <div class="win-card">
@@ -328,21 +350,21 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=20"></script>
-<script src="js/data/presets.js?v=20"></script>
-<script src="js/data/easter-eggs.js?v=20"></script>
-<script src="js/transforms.js?v=20"></script>
-<script src="js/audio.js?v=20"></script>
-<script src="js/animations.js?v=20"></script>
-<script src="js/sprites.js?v=20"></script>
-<script src="js/easter-eggs.js?v=20"></script>
-<script src="js/draw.js?v=20"></script>
-<script src="js/projects.js?v=20"></script>
-<script src="js/game.js?v=20"></script>
-<script src="js/editor.js?v=20"></script>
-<script src="js/shortcuts.js?v=20"></script>
-<script src="js/menu.js?v=20"></script>
-<script src="js/app.js?v=20"></script>
+<script src="js/data/scene.svg.js?v=21"></script>
+<script src="js/data/presets.js?v=21"></script>
+<script src="js/data/easter-eggs.js?v=21"></script>
+<script src="js/transforms.js?v=21"></script>
+<script src="js/audio.js?v=21"></script>
+<script src="js/animations.js?v=21"></script>
+<script src="js/sprites.js?v=21"></script>
+<script src="js/easter-eggs.js?v=21"></script>
+<script src="js/draw.js?v=21"></script>
+<script src="js/projects.js?v=21"></script>
+<script src="js/game.js?v=21"></script>
+<script src="js/editor.js?v=21"></script>
+<script src="js/shortcuts.js?v=21"></script>
+<script src="js/menu.js?v=21"></script>
+<script src="js/app.js?v=21"></script>
 
 </body>
 </html>
