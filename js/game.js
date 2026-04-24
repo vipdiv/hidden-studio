@@ -201,7 +201,11 @@ window.Game = (function() {
   function updateEmptyState() {
     const el = document.getElementById('playEmpty');
     if (!el) return;
-    const isEmpty = !project || ((project.items || []).length === 0 && (project.surprises || []).length === 0);
+    const isEmpty = !project || (
+      !project.baseContent &&
+      (project.items     || []).length === 0 &&
+      (project.surprises || []).length === 0
+    );
     el.classList.toggle('visible', isEmpty);
     if (isEmpty) {
       const q = DISNEY_QUOTES[Math.floor(Math.random() * DISNEY_QUOTES.length)];
