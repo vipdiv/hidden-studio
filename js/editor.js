@@ -1830,12 +1830,14 @@ window.Editor = (function() {
   function setBasePlanet() {
     project.baseType = 'svg';
     project.baseContent = 'PLANET_SVG';
+    delete project.baseImgW; delete project.baseImgH;
     renderBaseLayer();
     schedSave();
   }
   function setBaseScan() {
     project.baseType = 'image';
     project.baseContent = 'assets/scene.jpg';
+    delete project.baseImgW; delete project.baseImgH;
     renderBaseLayer();
     schedSave();
   }
@@ -1846,6 +1848,7 @@ window.Editor = (function() {
     reader.onload = (ev) => {
       project.baseType = 'image';
       project.baseContent = ev.target.result;
+      delete project.baseImgW; delete project.baseImgH;
       renderBaseLayer();
       schedSave();
     };
@@ -1880,6 +1883,15 @@ window.Editor = (function() {
     if (sx !== 1 || sy !== 1) parts.push(`scale(${sx}, ${sy})`);
     inner.style.transform = parts.join(' ');
     inner.style.filter = window.Transforms.buildFilter(t);
+    // If the image was frozen at explicit pixel dims (after a crop), apply them
+    // so it doesn't resize when the canvas (world) changes size.
+    if (inner.tagName === 'IMG' && project.baseImgW) {
+      inner.style.width  = project.baseImgW + 'px';
+      inner.style.height = project.baseImgH + 'px';
+    } else {
+      inner.style.width  = '';
+      inner.style.height = '';
+    }
   }
 
   function renderBaseTransformPanel() {
@@ -2462,6 +2474,14 @@ window.Editor = (function() {
 
       // Shift pen strokes
       window.Draw.shiftStrokes(dx, dy);
+
+      // Freeze base image at its current rendered size BEFORE the canvas shrinks.
+      // The img uses width:100%;height:100% which would make it shrink with the
+      // canvas — we store explicit px dimensions so the image stays the same size.
+      if (project.baseType === 'image' && project.baseContent) {
+        project.baseImgW = project.docWidth  || 1600;
+        project.baseImgH = project.docHeight || 1600;
+      }
 
       // Shift base layer
       project.baseX = (project.baseX || 0) + dx;
