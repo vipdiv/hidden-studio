@@ -1981,6 +1981,23 @@ body.panel-off-minimap     .minimap          { opacity: 0; pointer-events: none;
 /* Green / dim dot in Panels menu */
 .panel-dot { color: rgba(212,212,212,0.2); margin-right: 4px; font-size: 8px; vertical-align: middle; }
 .panel-dot.dot-on { color: #4caf50; }
+.menu-section-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: rgba(212,212,212,0.35);
+  padding: 4px 14px 2px;
+  pointer-events: none;
+  cursor: default;
+}
+.version-check {
+  display: inline-block;
+  width: 14px;
+  color: #4caf50;
+  font-size: 12px;
+}
+.menu-version-item .version-check { opacity: 1; }
+.menu-version-item:not(.menu-disabled) .version-check { opacity: 0; }
 
 /* ── Crop tool ──────────────────────────────────── */
 #cropOverlay {

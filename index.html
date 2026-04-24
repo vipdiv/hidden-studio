@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@300;400;600&family=Caveat:wght@400;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,400&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css?v=32">
+<link rel="stylesheet" href="styles.css?v=33">
 </head>
 <body>
 
@@ -122,8 +122,16 @@
       </ul>
     </div>
     <div class="menu-item" data-menu="help">Help
-      <ul class="menu-dropdown">
+      <ul class="menu-dropdown" id="helpMenuDropdown">
         <li data-action="shortcuts">Keyboard Shortcuts <span class="menu-shortcut">?</span></li>
+        <li class="menu-sep"></li>
+        <li class="menu-section-label">Version</li>
+        <!-- version items injected by JS -->
+        <li class="menu-version-item menu-disabled" data-action="version-noop" id="versionItem_v1">
+          <span class="version-check">✓</span> Version 1.0
+        </li>
+        <li class="menu-sep"></li>
+        <li data-action="new-version">+ Save as New Version</li>
       </ul>
     </div>
   </nav>
@@ -359,21 +367,21 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=32"></script>
-<script src="js/data/presets.js?v=32"></script>
-<script src="js/data/easter-eggs.js?v=32"></script>
-<script src="js/transforms.js?v=32"></script>
-<script src="js/audio.js?v=32"></script>
-<script src="js/animations.js?v=32"></script>
-<script src="js/sprites.js?v=32"></script>
-<script src="js/easter-eggs.js?v=32"></script>
-<script src="js/draw.js?v=32"></script>
-<script src="js/projects.js?v=32"></script>
-<script src="js/game.js?v=32"></script>
-<script src="js/editor.js?v=32"></script>
-<script src="js/shortcuts.js?v=32"></script>
-<script src="js/menu.js?v=32"></script>
-<script src="js/app.js?v=32"></script>
+<script src="js/data/scene.svg.js?v=33"></script>
+<script src="js/data/presets.js?v=33"></script>
+<script src="js/data/easter-eggs.js?v=33"></script>
+<script src="js/transforms.js?v=33"></script>
+<script src="js/audio.js?v=33"></script>
+<script src="js/animations.js?v=33"></script>
+<script src="js/sprites.js?v=33"></script>
+<script src="js/easter-eggs.js?v=33"></script>
+<script src="js/draw.js?v=33"></script>
+<script src="js/projects.js?v=33"></script>
+<script src="js/game.js?v=33"></script>
+<script src="js/editor.js?v=33"></script>
+<script src="js/shortcuts.js?v=33"></script>
+<script src="js/menu.js?v=33"></script>
+<script src="js/app.js?v=33"></script>
 
 </body>
 </html>

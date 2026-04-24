@@ -36,6 +36,102 @@ window.Menu = (function() {
     });
   }
 
+  /* ── Version menu ───────────────────────────────── */
+  function refreshVersionMenu(project) {
+    const dropdown = document.getElementById('helpMenuDropdown');
+    if (!dropdown) return;
+
+    // Remove any previously injected version items
+    dropdown.querySelectorAll('.menu-version-item, .versions-sep, .versions-add').forEach(el => el.remove());
+
+    const versions  = project?.versions || [];
+    const activeId  = project?.activeVersionId;
+    const onlyOne   = versions.length <= 1;
+    const label     = dropdown.querySelector('.menu-section-label');
+    if (!label) return;
+
+    // Insert version rows after the section label
+    let insertAfter = label;
+    versions.forEach(v => {
+      const isActive = v.id === activeId;
+      const li = document.createElement('li');
+      li.className = 'menu-version-item' + (isActive && onlyOne ? ' menu-disabled' : '');
+      li.dataset.action = 'switch-version';
+      li.dataset.versionId = v.id;
+      li.innerHTML = `<span class="version-check">✓</span> ${v.name}`;
+      if (!isActive) li.querySelector('.version-check').style.opacity = '0';
+      insertAfter.insertAdjacentElement('afterend', li);
+      insertAfter = li;
+
+      li.addEventListener('mousedown', (e) => {
+        if (li.classList.contains('menu-disabled')) { e.preventDefault(); return; }
+        e.preventDefault(); e.stopPropagation();
+        closeAll();
+        switchVersion(v.id);
+      });
+    });
+
+    // Wire the "Save as New Version" item each time
+    const addBtn = dropdown.querySelector('[data-action="new-version"]');
+    if (addBtn && !addBtn._wired) {
+      addBtn._wired = true;
+      addBtn.addEventListener('mousedown', (e) => {
+        e.preventDefault(); e.stopPropagation();
+        closeAll();
+        addVersion();
+      });
+    }
+  }
+
+  function versionSnapshot(project) {
+    return {
+      baseType: project.baseType, baseContent: project.baseContent,
+      baseX: project.baseX, baseY: project.baseY,
+      baseImgW: project.baseImgW, baseImgH: project.baseImgH,
+      baseTransform: JSON.parse(JSON.stringify(project.baseTransform || {})),
+      docWidth: project.docWidth, docHeight: project.docHeight,
+    };
+  }
+
+  function addVersion() {
+    const project = window.Editor?.getProject?.();
+    if (!project) return;
+    project.versions = project.versions || [];
+    const n = project.versions.length + 1;
+    const major = Math.floor(n), minor = 0;
+    const newV = {
+      id: 'v_' + Date.now().toString(36),
+      name: `Version ${major}.${minor}`,
+      snapshot: versionSnapshot(project),
+    };
+    project.versions.push(newV);
+    project.activeVersionId = newV.id;
+    window.Projects.saveNow(project);
+    refreshVersionMenu(project);
+  }
+
+  function switchVersion(vId) {
+    const project = window.Editor?.getProject?.();
+    if (!project) return;
+    const v = (project.versions || []).find(x => x.id === vId);
+    if (!v || !v.snapshot) return;
+
+    // Save current state back into the active version's snapshot first
+    const activeId = project.activeVersionId;
+    const activeV  = (project.versions || []).find(x => x.id === activeId);
+    if (activeV) activeV.snapshot = versionSnapshot(project);
+
+    // Apply the selected version's snapshot
+    Object.assign(project, v.snapshot);
+    project.activeVersionId = vId;
+
+    window.Editor.renderBaseLayer?.();
+    window.Editor.applyBaseTransform?.();
+    window.Projects.saveNow(project);
+    refreshVersionMenu(project);
+    window.Game?.centerOnPlanet?.();
+  }
+
   function init() {
     const bar = document.getElementById('menuBar');
     if (!bar) return;
@@ -54,6 +150,7 @@ window.Menu = (function() {
           item.classList.add('open');
           anyOpen = true;
           if (item.dataset.menu === 'panels') refreshDots();
+          if (item.dataset.menu === 'help') refreshVersionMenu(window.Editor?.getProject?.());
         }
       });
       // Hover-to-open once any menu is already open
@@ -63,6 +160,7 @@ window.Menu = (function() {
           item.classList.add('open');
           anyOpen = true;
           if (item.dataset.menu === 'panels') refreshDots();
+          if (item.dataset.menu === 'help') refreshVersionMenu(window.Editor?.getProject?.());
         }
       });
     });
@@ -188,6 +286,6 @@ window.Menu = (function() {
 
   document.addEventListener('DOMContentLoaded', init);
 
-  return { init };
+  return { init, refreshVersionMenu };
 
 })();
