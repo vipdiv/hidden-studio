@@ -115,6 +115,12 @@ body[data-theme="paper"] .tool-strip .tool-btn.active {
   color: #c43f2e !important;
 }
 
+/* Dropdown menus: cap height so items don't overflow viewport */
+.menu-dropdown {
+  max-height: calc(100vh - 50px);
+  overflow-y: auto;
+}
+
 /* ── Panel root overlay ─────────────────────────── */
 #panel-root {
   position: fixed;
