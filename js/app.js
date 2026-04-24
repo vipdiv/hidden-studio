@@ -351,6 +351,28 @@
     // Document listeners for drags that leave the stage bounds
     document.addEventListener('pointermove', (e) => { if (pointerDown) onMove(e); });
     document.addEventListener('pointerup',   (e) => { if (pointerDown) onUp(e); });
+
+    // ── Mouse-wheel / trackpad zoom ────────────────────────────────────────
+    // Works for: mouse wheel, trackpad two-finger pinch (registers as Ctrl+wheel),
+    // and Ctrl+wheel on laptops.  Plain scroll also zooms (no modifier required)
+    // so mouse-wheel users don't need to hold Ctrl.
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+
+      // Smooth factor: trackpad sends many small deltaY; mouse sends larger steps
+      const factor = Math.pow(1.001, -e.deltaY);
+      const newScale = Math.max(0.1, Math.min(8, window.Game.scale * factor));
+      if (newScale === window.Game.scale) return;
+
+      // World point currently under the cursor — must stay fixed after zoom
+      const wx = (e.clientX - window.Game.camX) / window.Game.scale;
+      const wy = (e.clientY - window.Game.camY) / window.Game.scale;
+
+      window.Game.scale = newScale;
+      window.Game.camX  = e.clientX - wx * newScale;
+      window.Game.camY  = e.clientY - wy * newScale;
+      window.Game.applyCamera();
+    }, { passive: false });
   }
 
   /* ————————————————————————————————————————
