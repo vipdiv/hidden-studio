@@ -13,7 +13,7 @@ window.Menu = (function() {
     { id: 'classic', label: 'Classic' },
     { id: 'night',   label: 'Night Studio' },
     { id: 'warm',    label: 'Warm Studio' },
-    { id: 'paper',   label: 'Paper' },
+    { id: 'paper',   label: 'Paper (Light)' },
   ];
 
   /* Build Window menu dynamically each time it opens */
