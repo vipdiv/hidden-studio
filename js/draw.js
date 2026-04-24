@@ -355,16 +355,16 @@ window.Draw = (function() {
       return _rectPath(x1, y1, x2, y2);
     }
     if (type === 'ellipse') {
-      const cx = (x1 + x2) / 2, cy = (y1 + y2) / 2;
-      let rx = Math.abs(x2 - x1) / 2, ry = Math.abs(y2 - y1) / 2;
-      if (constrain) rx = ry = Math.min(rx, ry);
-      if (rx < 1 || ry < 1) return null;
-      return _ellipsePath(cx, cy, rx, ry);
+      // Center locked at click; drag sets the two radii independently
+      let rx = Math.abs(x2 - x1), ry = Math.abs(y2 - y1);
+      if (constrain) rx = ry = Math.hypot(x2 - x1, y2 - y1); // perfect circle touching cursor
+      if (rx < 1 && ry < 1) return null;
+      rx = Math.max(rx, 1); ry = Math.max(ry, 1);
+      return _ellipsePath(x1, y1, rx, ry);
     }
     if (type === 'star') {
-      // Click sets centre; drag radius determines size
-      const r = Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
-      if (r < 2) return null;
+      const r = Math.hypot(x2 - x1, y2 - y1);
+      if (r < 1) return null;
       return _starPath(x1, y1, r);
     }
     return null;
