@@ -518,6 +518,65 @@ window.Editor = (function() {
       parts.push(`</details>`);
     }
 
+    // ── Easter Egg section ──────────────────────────
+    const egg = data.easterEgg || {};
+    const eggOn = !!egg.enabled;
+    parts.push(`<details class="xf-details egg-details"${eggOn ? ' open' : ''}><summary>🥚 Easter egg</summary>`);
+    parts.push(`<label class="egg-toggle-row"><input type="checkbox" id="egg-enabled"${eggOn ? ' checked' : ''}> Make this an easter egg</label>`);
+    parts.push(`<div class="egg-fields" style="display:${eggOn ? 'block' : 'none'}">`);
+
+    // Template picker
+    const tplOpts = (window.EASTER_EGG_TEMPLATES || []).map(t =>
+      `<option value="${t.templateId}">${t.name}</option>`
+    ).join('');
+    parts.push(`<label class="prop-label" style="margin-top:8px">Load template <select id="egg-template"><option value="">— pick —</option>${tplOpts}</select></label>`);
+
+    // Audio
+    const audioLabel = egg.audioName ? `✓ ${egg.audioName}` : 'No audio uploaded';
+    parts.push(`<div class="egg-field-group"><div class="egg-field-label">Audio</div>`);
+    parts.push(`<div class="egg-file-info" id="egg-audio-info">${_escAttr(audioLabel)}</div>`);
+    parts.push(`<button class="ghost-btn" id="egg-upload-audio">⬆ Upload MP3/OGG/WAV</button>`);
+    parts.push(`<label class="egg-toggle-row" style="margin-top:4px"><input type="checkbox" id="egg-loop"${egg.loop !== false ? ' checked' : ''}> Loop audio</label>`);
+    parts.push(`</div>`);
+
+    // Visual type
+    const vt = egg.visualType || 'none';
+    parts.push(`<div class="egg-field-group"><div class="egg-field-label">Visual effect</div>`);
+    parts.push(`<select id="egg-visual-type">`);
+    [['none','None (audio only)'],['floating','Floating image'],['fullscreen','Full-screen popup'],['shake','Shake effect']].forEach(([v,l]) => {
+      parts.push(`<option value="${v}"${vt === v ? ' selected' : ''}>${l}</option>`);
+    });
+    parts.push(`</select></div>`);
+
+    // Floating & fullscreen: image picker
+    const showImg = vt === 'floating' || vt === 'fullscreen';
+    const imgLabel = egg.visualContent?.imageName ? `✓ ${egg.visualContent.imageName}` : 'No image uploaded';
+    parts.push(`<div class="egg-field-group egg-needs-image" style="display:${showImg ? 'block' : 'none'}">`);
+    parts.push(`<div class="egg-field-label">Image (PNG, JPG, SVG, GIF, WebP)</div>`);
+    parts.push(`<div class="egg-file-info" id="egg-img-info">${_escAttr(imgLabel)}</div>`);
+    parts.push(`<button class="ghost-btn" id="egg-upload-image">⬆ Upload image</button>`);
+    parts.push(`</div>`);
+
+    // Floating: position
+    const pos = egg.visualContent?.position || 'center';
+    parts.push(`<div class="egg-field-group egg-needs-position" style="display:${vt === 'floating' ? 'block' : 'none'}">`);
+    parts.push(`<label class="prop-label">Position <select id="egg-position">`);
+    [['center','Center'],['bottom-right','Bottom right'],['random','Random']].forEach(([v,l]) => {
+      parts.push(`<option value="${v}"${pos === v ? ' selected' : ''}>${l}</option>`);
+    });
+    parts.push(`</select></label></div>`);
+
+    // Shake / fullscreen optional text
+    const showText = vt === 'shake' || vt === 'fullscreen';
+    parts.push(`<div class="egg-field-group egg-needs-text" style="display:${showText ? 'block' : 'none'}">`);
+    parts.push(`<label class="prop-label" style="flex-direction:column;align-items:flex-start;gap:4px">Text<textarea id="egg-text" rows="2" style="width:100%;background:var(--panel-bg-2);color:var(--ui-text);border:1px solid var(--panel-border);border-radius:3px;padding:4px 6px;font-size:13px;resize:vertical">${_escAttr(egg.visualContent?.text || '')}</textarea></label>`);
+    parts.push(`</div>`);
+
+    // Dismissable
+    parts.push(`<label class="egg-toggle-row"><input type="checkbox" id="egg-dismissable"${egg.dismissable !== false ? ' checked' : ''}> Dismissable (X / Esc / click outside)</label>`);
+
+    parts.push(`</div></details>`); // close egg-fields, egg-details
+
     parts.push(`<button class="delete-btn" id="sel-delete">🗑 Delete this ${kind}</button>`);
 
     selectedContent.innerHTML = parts.join('');
@@ -574,6 +633,138 @@ window.Editor = (function() {
       if (!confirm(`Delete "${data.name}"?`)) return;
       deleteSelected();
     });
+
+    // ── Easter Egg wiring ───────────────────────────
+    function getEgg() {
+      if (!data.easterEgg) data.easterEgg = _defaultEgg();
+      return data.easterEgg;
+    }
+    function saveEgg() { schedSave(); renderLayersPanel(); }
+
+    document.getElementById('egg-enabled')?.addEventListener('change', (e) => {
+      getEgg().enabled = e.target.checked;
+      document.querySelector('.egg-fields').style.display = e.target.checked ? 'block' : 'none';
+      saveEgg();
+    });
+
+    document.getElementById('egg-template')?.addEventListener('change', (e) => {
+      const tpl = (window.EASTER_EGG_TEMPLATES || []).find(t => t.templateId === e.target.value);
+      if (!tpl) return;
+      const egg = getEgg();
+      // Copy template fields but keep existing audio/image data
+      Object.assign(egg, {
+        name:         tpl.name,
+        loop:         tpl.loop,
+        visualType:   tpl.visualType,
+        visualContent: Object.assign({}, tpl.visualContent, {
+          image:     egg.visualContent?.image     || null,
+          imageName: egg.visualContent?.imageName || '',
+          text: tpl.visualContent?.text || egg.visualContent?.text || '',
+        }),
+        dismissable: tpl.dismissable,
+      });
+      e.target.value = '';
+      saveEgg();
+      updateSelectedPanel(); // re-render fields
+    });
+
+    document.getElementById('egg-upload-audio')?.addEventListener('click', () => {
+      _uploadEggAudio(data);
+    });
+
+    document.getElementById('egg-loop')?.addEventListener('change', (e) => {
+      getEgg().loop = e.target.checked;
+      saveEgg();
+    });
+
+    document.getElementById('egg-upload-image')?.addEventListener('click', () => {
+      _uploadEggImage(data);
+    });
+
+    document.getElementById('egg-visual-type')?.addEventListener('change', (e) => {
+      getEgg().visualType = e.target.value;
+      // Show/hide relevant sub-fields
+      const vt = e.target.value;
+      document.querySelector('.egg-needs-image').style.display  = (vt === 'floating' || vt === 'fullscreen') ? 'block' : 'none';
+      document.querySelector('.egg-needs-position').style.display = vt === 'floating' ? 'block' : 'none';
+      document.querySelector('.egg-needs-text').style.display   = (vt === 'shake' || vt === 'fullscreen') ? 'block' : 'none';
+      saveEgg();
+    });
+
+    document.getElementById('egg-position')?.addEventListener('change', (e) => {
+      getEgg().visualContent = getEgg().visualContent || {};
+      getEgg().visualContent.position = e.target.value;
+      saveEgg();
+    });
+
+    document.getElementById('egg-text')?.addEventListener('input', (e) => {
+      getEgg().visualContent = getEgg().visualContent || {};
+      getEgg().visualContent.text = e.target.value;
+      saveEgg();
+    });
+
+    document.getElementById('egg-dismissable')?.addEventListener('change', (e) => {
+      getEgg().dismissable = e.target.checked;
+      saveEgg();
+    });
+  }
+
+  function _defaultEgg() {
+    return {
+      enabled:      false,
+      audio:        null,
+      audioName:    '',
+      loop:         true,
+      visualType:   'none',
+      visualContent: { image: null, imageName: '', text: '', position: 'center' },
+      dismissable:  true,
+    };
+  }
+
+  function _uploadEggAudio(data) {
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = 'audio/*';
+    input.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (!data.easterEgg) data.easterEgg = _defaultEgg();
+        data.easterEgg.audio     = ev.target.result;
+        data.easterEgg.audioName = file.name;
+        schedSave();
+        updateSelectedPanel();
+      };
+      reader.readAsDataURL(file);
+    });
+    input.click();
+  }
+
+  function _uploadEggImage(data) {
+    const input = document.createElement('input');
+    input.type   = 'file';
+    input.accept = 'image/*';
+    input.addEventListener('change', (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        if (!data.easterEgg) data.easterEgg = _defaultEgg();
+        if (!data.easterEgg.visualContent) data.easterEgg.visualContent = {};
+        data.easterEgg.visualContent.image     = ev.target.result;
+        data.easterEgg.visualContent.imageName = file.name;
+        schedSave();
+        updateSelectedPanel();
+      };
+      reader.readAsDataURL(file);
+    });
+    input.click();
+  }
+
+  // Escape helper used in egg HTML building
+  function _escAttr(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
 
   function deleteSelected() {
@@ -1041,9 +1232,11 @@ window.Editor = (function() {
       if (type === 'item') {
         iconHtml = `<span class="layer-icon">⊙</span>`;
         nameHtml = escapeHtmlInner(obj.name);
+        if (obj.easterEgg?.enabled) nameHtml += ' <span title="Easter egg" style="font-size:11px">🥚</span>';
       } else if (type === 'surprise') {
         iconHtml = `<span class="layer-icon">✨</span>`;
         nameHtml = escapeHtmlInner(obj.name);
+        if (obj.easterEgg?.enabled) nameHtml += ' <span title="Easter egg" style="font-size:11px">🥚</span>';
       } else if (type === 'sprite') {
         iconHtml = `<span class="layer-icon">🖼</span>`;
         nameHtml = obj.name ? escapeHtmlInner(obj.name) : `Sprite ${arrIdx + 1}`;
