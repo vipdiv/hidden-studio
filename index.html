@@ -12,38 +12,66 @@
 <body>
 
 <!-- ═══════════════════════════════════════════════════
-     START SCREEN — pick or create a project
+     START SCREEN — explorer-style project browser
 ═══════════════════════════════════════════════════ -->
 <div class="start-screen" id="startScreen">
-  <div class="start-card">
-    <h1>Hidden <em>Studio</em></h1>
-    <p class="tagline">— make & play tiny finding games —</p>
 
-    <div class="start-options">
-      <button class="start-option" data-action="new-planet">
-        <div class="start-option-title">Hidden Planet</div>
-        <div class="start-option-sub">Start from the SVG planet game</div>
-      </button>
-      <button class="start-option" data-action="new-scan">
-        <div class="start-option-title">Original Scan</div>
-        <div class="start-option-sub">Start from Vipul's pen-and-ink drawing</div>
-      </button>
-      <button class="start-option" data-action="new-blank">
-        <div class="start-option-title">Blank Canvas</div>
-        <div class="start-option-sub">Empty project, import your own image</div>
-      </button>
+  <!-- Sidebar -->
+  <aside class="explorer-sidebar">
+    <div class="explorer-brand">
+      <h1>Hidden <em>Studio</em></h1>
+      <p class="tagline">make & play tiny finding games</p>
     </div>
-
-    <div class="projects-section" id="projectsSection">
-      <h3 class="projects-title">Your projects</h3>
-      <ul class="projects-list" id="projectsList"></ul>
-    </div>
-
-    <div class="start-footer">
-      <button class="ghost-btn" id="importProjectBtn">⬆ Import Project (JSON)</button>
+    <nav class="explorer-nav">
+      <div class="explorer-nav-label">New project</div>
+      <button class="explorer-nav-btn" data-action="new-planet">
+        <span class="nav-icon">🪐</span>Hidden Planet
+      </button>
+      <button class="explorer-nav-btn" data-action="new-scan">
+        <span class="nav-icon">🖋</span>Original Scan
+      </button>
+      <button class="explorer-nav-btn" data-action="new-blank">
+        <span class="nav-icon">◻</span>Blank Canvas
+      </button>
+    </nav>
+    <div class="explorer-sidebar-footer">
+      <button class="ghost-btn full-width" id="importProjectBtn">⬆ Import JSON</button>
       <input type="file" id="importProjectInput" accept=".json" style="display:none">
     </div>
-  </div>
+  </aside>
+
+  <!-- Main content area -->
+  <main class="explorer-main">
+    <!-- Toolbar -->
+    <div class="explorer-toolbar">
+      <label class="explorer-select-all-wrap" title="Select all">
+        <input type="checkbox" id="selectAllCb">
+      </label>
+      <span class="explorer-toolbar-count" id="selectionCount"></span>
+      <div class="explorer-toolbar-actions" id="bulkActions">
+        <button class="ghost-btn sm" id="exportSelectedBtn" title="Export selected as JSON files">⬇ Export</button>
+        <button class="ghost-btn sm danger" id="deleteSelectedBtn" title="Delete selected">🗑 Delete</button>
+      </div>
+      <div class="explorer-toolbar-spacer"></div>
+    </div>
+
+    <!-- Column headers -->
+    <div class="explorer-header">
+      <span class="col-check"></span>
+      <span class="col-name" data-sort="name">Name <span class="sort-arrow" id="sortArrowName"></span></span>
+      <span class="col-items" data-sort="items">Items <span class="sort-arrow" id="sortArrowItems"></span></span>
+      <span class="col-size" data-sort="size">Size <span class="sort-arrow" id="sortArrowSize"></span></span>
+      <span class="col-date" data-sort="date">Modified <span class="sort-arrow" id="sortArrowDate">↓</span></span>
+      <span class="col-actions"></span>
+    </div>
+
+    <!-- Project rows -->
+    <ul class="explorer-list" id="projectsList">
+      <!-- populated by JS -->
+    </ul>
+
+    <p class="explorer-empty hidden" id="explorerEmpty">No saved projects yet. Create one above.</p>
+  </main>
 </div>
 
 <!-- ═══════════════════════════════════════════════════
@@ -261,19 +289,19 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=14"></script>
-<script src="js/data/presets.js?v=14"></script>
-<script src="js/transforms.js?v=14"></script>
-<script src="js/audio.js?v=14"></script>
-<script src="js/animations.js?v=14"></script>
-<script src="js/sprites.js?v=14"></script>
-<script src="js/draw.js?v=14"></script>
-<script src="js/projects.js?v=14"></script>
-<script src="js/game.js?v=14"></script>
-<script src="js/editor.js?v=14"></script>
-<script src="js/shortcuts.js?v=14"></script>
-<script src="js/menu.js?v=14"></script>
-<script src="js/app.js?v=14"></script>
+<script src="js/data/scene.svg.js?v=15"></script>
+<script src="js/data/presets.js?v=15"></script>
+<script src="js/transforms.js?v=15"></script>
+<script src="js/audio.js?v=15"></script>
+<script src="js/animations.js?v=15"></script>
+<script src="js/sprites.js?v=15"></script>
+<script src="js/draw.js?v=15"></script>
+<script src="js/projects.js?v=15"></script>
+<script src="js/game.js?v=15"></script>
+<script src="js/editor.js?v=15"></script>
+<script src="js/shortcuts.js?v=15"></script>
+<script src="js/menu.js?v=15"></script>
+<script src="js/app.js?v=15"></script>
 
 </body>
 </html>

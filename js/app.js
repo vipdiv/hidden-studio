@@ -14,6 +14,11 @@
   let stage, world, hitsLayer, playLayer, spriteLayer, drawingLayer, drawingCursor;
   let modeButtons, soundToggle;
 
+  // Explorer state
+  const selected = new Set(); // project ids
+  let sortKey = 'date';
+  let sortDir = -1; // -1 = desc, 1 = asc
+
   document.addEventListener('DOMContentLoaded', init);
 
   function init() {
@@ -61,13 +66,14 @@
     // Start screen wiring
     renderStartScreen();
 
-    document.querySelectorAll('.start-option').forEach(btn => {
+    // New project buttons (sidebar)
+    document.querySelectorAll('.explorer-nav-btn[data-action]').forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.dataset.action;
         let data;
-        if (action === 'new-planet')      data = window.Projects.create(window.PRESET_PLANET);
-        else if (action === 'new-scan')   data = window.Projects.create(window.PRESET_SCAN);
-        else                              data = window.Projects.create(window.PRESET_BLANK);
+        if (action === 'new-planet')    data = window.Projects.create(window.PRESET_PLANET);
+        else if (action === 'new-scan') data = window.Projects.create(window.PRESET_SCAN);
+        else                            data = window.Projects.create(window.PRESET_BLANK);
         loadProject(data);
       });
     });
@@ -85,6 +91,37 @@
         alert('Could not import: ' + err.message);
       }
       e.target.value = '';
+    });
+
+    // Bulk actions
+    document.getElementById('selectAllCb').addEventListener('change', (e) => {
+      const all = window.Projects.list();
+      if (e.target.checked) all.forEach(p => selected.add(p.meta.id));
+      else selected.clear();
+      renderStartScreen();
+    });
+    document.getElementById('exportSelectedBtn').addEventListener('click', () => {
+      selected.forEach(id => {
+        const p = window.Projects.get(id);
+        if (p) window.Projects.exportJson(p);
+      });
+    });
+    document.getElementById('deleteSelectedBtn').addEventListener('click', () => {
+      if (selected.size === 0) return;
+      if (!confirm(`Delete ${selected.size} project${selected.size > 1 ? 's' : ''}? This cannot be undone.`)) return;
+      selected.forEach(id => window.Projects.remove(id));
+      selected.clear();
+      renderStartScreen();
+    });
+
+    // Column sort headers
+    document.querySelectorAll('.explorer-header span[data-sort]').forEach(th => {
+      th.addEventListener('click', () => {
+        const key = th.dataset.sort;
+        if (sortKey === key) sortDir *= -1;
+        else { sortKey = key; sortDir = key === 'date' ? -1 : 1; }
+        renderStartScreen();
+      });
     });
 
     // Shortcuts help button (? in HUD)
@@ -136,39 +173,119 @@
   }
 
   /* ————————————————————————————————————————
-     START SCREEN
+     START SCREEN (explorer)
   ———————————————————————————————————————— */
+  function sortedProjects() {
+    const all = window.Projects.list();
+    return all.sort((a, b) => {
+      let av, bv;
+      if (sortKey === 'name') {
+        av = (a.name || '').toLowerCase(); bv = (b.name || '').toLowerCase();
+        return sortDir * av.localeCompare(bv);
+      }
+      if (sortKey === 'items') {
+        av = (a.items || []).length; bv = (b.items || []).length;
+      } else if (sortKey === 'size') {
+        av = JSON.stringify(a).length; bv = JSON.stringify(b).length;
+      } else { // date
+        av = a.meta?.updatedAt || 0; bv = b.meta?.updatedAt || 0;
+      }
+      return sortDir * (av - bv);
+    });
+  }
+
   function renderStartScreen() {
-    const projects = window.Projects.list();
+    const projects = sortedProjects();
     projectsList.innerHTML = '';
+
+    // Update sort arrows
+    ['name','items','size','date'].forEach(k => {
+      const el = document.getElementById('sortArrow' + k.charAt(0).toUpperCase() + k.slice(1));
+      if (el) el.textContent = sortKey === k ? (sortDir === -1 ? '↓' : '↑') : '';
+    });
+
+    // Update select-all state
+    const selectAllCb = document.getElementById('selectAllCb');
+    if (selectAllCb) {
+      selectAllCb.checked = projects.length > 0 && projects.every(p => selected.has(p.meta.id));
+      selectAllCb.indeterminate = !selectAllCb.checked && projects.some(p => selected.has(p.meta.id));
+    }
+
+    // Bulk actions visibility
+    const bulkActions = document.getElementById('bulkActions');
+    if (bulkActions) bulkActions.classList.toggle('visible', selected.size > 0);
+    const countEl = document.getElementById('selectionCount');
+    if (countEl) countEl.textContent = selected.size > 0 ? `${selected.size} selected` : `${projects.length} project${projects.length !== 1 ? 's' : ''}`;
+
+    // Empty state
+    const emptyEl = document.getElementById('explorerEmpty');
+    if (emptyEl) emptyEl.classList.toggle('hidden', projects.length > 0);
+
+    const fmtBytes = (b) => b >= 1024 ? (b / 1024).toFixed(0) + ' KB' : b + ' B';
+    const fmtDate = (ts) => {
+      if (!ts) return '—';
+      const d = new Date(ts);
+      const now = new Date();
+      const diffDays = Math.floor((now - d) / 86400000);
+      if (diffDays === 0) return 'today';
+      if (diffDays === 1) return 'yesterday';
+      if (diffDays < 7) return `${diffDays}d ago`;
+      return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+    };
+
     projects.forEach(p => {
+      const id = p.meta.id;
       const li = document.createElement('li');
-      li.className = 'project-row';
-      const date = new Date(p.meta?.updatedAt || 0);
-      const dateStr = date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+      li.className = 'explorer-row' + (selected.has(id) ? ' selected' : '');
+      li.dataset.id = id;
+
       const itemCount = (p.items || []).length;
+      const sizeBytes = JSON.stringify(p).length;
+      const dateStr = fmtDate(p.meta?.updatedAt);
+
       li.innerHTML = `
-        <span class="p-name">${escapeHtml(p.name)}</span>
-        <span class="p-meta">${itemCount} items · ${dateStr}</span>
-        <button class="icon-btn" title="Delete">🗑</button>
+        <span class="col-check"><input type="checkbox" ${selected.has(id) ? 'checked' : ''} title="Select"></span>
+        <span class="col-name">
+          <span class="p-file-icon">🎮</span>
+          <span class="p-name-text">${escapeHtml(p.name)}</span>
+        </span>
+        <span class="col-items">${itemCount}</span>
+        <span class="col-size">${fmtBytes(sizeBytes)}</span>
+        <span class="col-date">${dateStr}</span>
+        <span class="col-actions"><button class="icon-btn" title="Delete">🗑</button></span>
       `;
-      li.querySelector('.p-name').addEventListener('click', () => {
-        const fresh = window.Projects.get(p.meta.id);
+
+      // Checkbox toggle
+      li.querySelector('input[type=checkbox]').addEventListener('change', (e) => {
+        e.stopPropagation();
+        if (e.target.checked) selected.add(id);
+        else selected.delete(id);
+        renderStartScreen();
+      });
+
+      // Row click → open (not on checkbox or delete btn)
+      li.querySelector('.col-name').addEventListener('click', () => {
+        const fresh = window.Projects.get(id);
         if (fresh) loadProject(fresh);
       });
+
+      // Delete single
       li.querySelector('.icon-btn').addEventListener('click', (e) => {
         e.stopPropagation();
         if (confirm(`Delete "${p.name}"? This cannot be undone.`)) {
-          window.Projects.remove(p.meta.id);
+          selected.delete(id);
+          window.Projects.remove(id);
           renderStartScreen();
         }
       });
+
       projectsList.appendChild(li);
     });
   }
 
   function showStartScreen() {
     currentProject = null;
+    selected.clear();
     window.Projects.clearActive();
     app.classList.add('hidden');
     startScreen.classList.remove('hidden');
