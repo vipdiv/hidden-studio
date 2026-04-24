@@ -99,11 +99,18 @@ window.Editor = (function() {
   function setProject(p) {
     project = p;
     // Migrate legacy sprite.rotation → sprite.transform
-    (p.sprites || []).forEach(s => {
+    (p.sprites || []).forEach((s, i) => {
       if (!s.transform) {
         s.transform = window.Transforms.defaults();
         if (s.rotation) s.transform.rotation = s.rotation;
       }
+      if (s.hidden  === undefined) s.hidden  = false;
+      if (s.locked  === undefined) s.locked  = false;
+    });
+    // Migrate items and surprises
+    [...(p.items || []), ...(p.surprises || [])].forEach(obj => {
+      if (obj.hidden === undefined) obj.hidden = false;
+      if (obj.locked === undefined) obj.locked = false;
     });
     // Ensure base transform data exists
     if (!p.baseTransform) p.baseTransform = window.Transforms.defaults();
@@ -486,10 +493,14 @@ window.Editor = (function() {
     if (tool !== 'select') return;
     const hitEl = e.target.closest('.hit');
     if (!hitEl) return;
-    e.stopPropagation();
 
     const kind = hitEl.dataset.kind;
-    const id = hitEl.dataset.id;
+    const id   = hitEl.dataset.id;
+    // Check locked before intercepting the event
+    const obj = _findObject(kind, id);
+    if (obj?.locked) return;
+
+    e.stopPropagation();
     select(kind, id);
 
     const data = getSelected();
@@ -743,13 +754,54 @@ window.Editor = (function() {
     const rows = [];
     const sprites = project.sprites || [];
     const strokes = window.Draw.getStrokes();
+    const items     = project.items     || [];
+    const surprises = project.surprises || [];
 
-    // Sprites — last in array = frontmost; shown first in panel
+    // Helper: build eye + lock HTML for any object
+    function visBtns(obj, type) {
+      const eyeClass  = obj.hidden ? 'layer-vis is-hidden' : 'layer-vis';
+      const lockClass = obj.locked ? 'layer-lock is-locked' : 'layer-lock';
+      return `<button class="${eyeClass}" data-vis-type="${type}" data-vis-id="${obj.id}" title="Show/hide">👁</button>` +
+             `<button class="${lockClass}" data-lock-type="${type}" data-lock-id="${obj.id}" title="Lock/unlock">🔒</button>`;
+    }
+
+    // Items (findable hit zones) — not reorderable between types
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      const active = selected?.id === it.id && selected?.kind === 'item';
+      rows.push(`<li class="layer-row${active ? ' active' : ''}${it.hidden ? ' layer-hidden' : ''}"
+          data-layer-type="item" data-layer-id="${it.id}" data-arr-idx="${i}">
+        ${visBtns(it, 'item')}
+        <span class="layer-icon">⊙</span>
+        <span class="layer-name" title="${escapeAttr(it.name)}">${escapeHtmlInner(it.name)}</span>
+        <span class="layer-actions">
+          <button class="layer-del" data-del-type="item" data-del-id="${it.id}" title="Delete">×</button>
+        </span>
+      </li>`);
+    }
+
+    // Surprises
+    for (let i = surprises.length - 1; i >= 0; i--) {
+      const su = surprises[i];
+      const active = selected?.id === su.id && selected?.kind === 'surprise';
+      rows.push(`<li class="layer-row${active ? ' active' : ''}${su.hidden ? ' layer-hidden' : ''}"
+          data-layer-type="surprise" data-layer-id="${su.id}" data-arr-idx="${i}">
+        ${visBtns(su, 'surprise')}
+        <span class="layer-icon">✨</span>
+        <span class="layer-name" title="${escapeAttr(su.name)}">${escapeHtmlInner(su.name)}</span>
+        <span class="layer-actions">
+          <button class="layer-del" data-del-type="surprise" data-del-id="${su.id}" title="Delete">×</button>
+        </span>
+      </li>`);
+    }
+
+    // Sprites — last in array = frontmost; shown first in panel; draggable
     for (let i = sprites.length - 1; i >= 0; i--) {
       const s = sprites[i];
       const active = selectedSprite === s.id;
-      rows.push(`<li class="layer-row${active ? ' active' : ''}"
+      rows.push(`<li class="layer-row${active ? ' active' : ''}${s.hidden ? ' layer-hidden' : ''}"
           data-layer-type="sprite" data-layer-id="${s.id}" data-arr-idx="${i}">
+        ${visBtns(s, 'sprite')}
         <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
         <span class="layer-icon">🖼</span>
         <span class="layer-name">Sprite ${i + 1}</span>
@@ -759,12 +811,13 @@ window.Editor = (function() {
       </li>`);
     }
 
-    // Strokes — last in array = frontmost; shown after sprites
+    // Strokes — last in array = frontmost; draggable
     for (let i = strokes.length - 1; i >= 0; i--) {
       const s = strokes[i];
       const active = selectedStroke === s.id;
-      rows.push(`<li class="layer-row${active ? ' active' : ''}"
+      rows.push(`<li class="layer-row${active ? ' active' : ''}${s.hidden ? ' layer-hidden' : ''}"
           data-layer-type="stroke" data-layer-id="${s.id}" data-arr-idx="${i}">
+        ${visBtns(s, 'stroke')}
         <span class="layer-drag-handle" title="Drag to reorder">⠿</span>
         <span class="layer-icon" style="display:inline-block;width:10px;height:10px;background:${s.color};border-radius:50%;flex-shrink:0"></span>
         <span class="layer-name">Stroke ${i + 1}</span>
@@ -774,11 +827,12 @@ window.Editor = (function() {
       </li>`);
     }
 
-    // Base layer — locked at bottom, not draggable
+    // Base layer — fixed at bottom
     if (project.baseType) {
       const label = project.baseType === 'svg' ? 'Planet SVG' : 'Base image';
       rows.push(`<li class="layer-row${selectedBase ? ' active' : ''} layer-base" data-layer-type="base">
-        <span class="layer-drag-handle" style="opacity:.2;cursor:default">⠿</span>
+        <span class="layer-vis" style="opacity:.3;cursor:default">👁</span>
+        <span class="layer-lock" style="opacity:.3;cursor:default">🔒</span>
         <span class="layer-icon">🌐</span>
         <span class="layer-name">${label}</span>
       </li>`);
@@ -788,12 +842,42 @@ window.Editor = (function() {
       ? rows.join('')
       : `<li class="layer-empty">nothing yet</li>`;
 
-    // Click to select
+    // Pointer → select or drag
     listEl.querySelectorAll('.layer-row').forEach(row => {
       row.addEventListener('pointerdown', (e) => {
-        if (e.target.classList.contains('layer-del')) return;
-        // Start a drag if pointer moves, otherwise treat as click
+        if (e.target.classList.contains('layer-del') ||
+            e.target.classList.contains('layer-vis') ||
+            e.target.classList.contains('layer-lock')) return;
         _startLayerDragOrClick(e, row);
+      });
+    });
+
+    // Visibility toggles
+    listEl.querySelectorAll('.layer-vis').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.visType;
+        const id   = btn.dataset.visId;
+        const obj  = _findObject(type, id);
+        if (!obj) return;
+        obj.hidden = !obj.hidden;
+        _applyVisibility(type, id, obj.hidden);
+        renderLayersPanel();
+        schedSave();
+      });
+    });
+
+    // Lock toggles
+    listEl.querySelectorAll('.layer-lock').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const type = btn.dataset.lockType;
+        const id   = btn.dataset.lockId;
+        const obj  = _findObject(type, id);
+        if (!obj) return;
+        obj.locked = !obj.locked;
+        renderLayersPanel();
+        schedSave();
       });
     });
 
@@ -813,9 +897,47 @@ window.Editor = (function() {
           project.drawings = window.Draw.getStrokes();
           if (selectedStroke === id) { selectedStroke = null; selectedPanel.classList.add('hidden'); }
           renderLayersPanel(); schedSave();
+        } else if (type === 'item' || type === 'surprise') {
+          const arr = type === 'item' ? project.items : project.surprises;
+          const idx = arr.findIndex(x => x.id === id);
+          if (idx >= 0) arr.splice(idx, 1);
+          if (selected?.id === id) deselect();
+          window.Game.renderHits();
+          window.Game.renderList();
+          window.Game.renderSparkles();
+          window.Game.updateCounter();
+          renderLayersPanel(); schedSave();
         }
       });
     });
+  }
+
+  // Find any object across all collections by type+id
+  function _findObject(type, id) {
+    if (type === 'sprite')   return (project.sprites   || []).find(x => x.id === id) || null;
+    if (type === 'item')     return (project.items     || []).find(x => x.id === id) || null;
+    if (type === 'surprise') return (project.surprises || []).find(x => x.id === id) || null;
+    if (type === 'stroke')   return window.Draw.getStroke(id);
+    return null;
+  }
+
+  // Apply hidden state immediately to the live DOM without full re-render
+  function _applyVisibility(type, id, hidden) {
+    if (type === 'sprite') {
+      const el = document.querySelector(`.sprite[data-id="${id}"]`);
+      if (el) el.style.opacity = hidden ? '0.2' : '';
+    } else if (type === 'item' || type === 'surprise') {
+      const el = document.querySelector(`.hit[data-id="${id}"]`);
+      if (el) el.style.opacity = hidden ? '0.2' : '';
+    } else if (type === 'stroke') {
+      const g = document.querySelector(`[data-stroke-id="${id}"]`);
+      if (g) g.style.opacity = hidden ? '0.2' : '';
+    }
+  }
+
+  // Safe inner-html escape for layer names
+  function escapeHtmlInner(s) {
+    return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
 
   function _startLayerDragOrClick(e, row) {
@@ -894,9 +1016,11 @@ window.Editor = (function() {
   }
 
   function _selectLayerRow(type, id) {
-    if (type === 'sprite') selectSprite(id);
-    else if (type === 'stroke') selectStroke(id);
-    else if (type === 'base') selectBase();
+    if (type === 'sprite')   selectSprite(id);
+    else if (type === 'stroke')   selectStroke(id);
+    else if (type === 'base')     selectBase();
+    else if (type === 'item')     select('item',     id);
+    else if (type === 'surprise') select('surprise', id);
   }
 
   function onBaseLayerPointerDown(e) {
@@ -1048,6 +1172,7 @@ window.Editor = (function() {
       const el = document.createElement('div');
       el.className = 'sprite selectable';
       el.dataset.id = s.id;
+      if (s.hidden) el.style.opacity = '0.2';
       el.style.left   = `${s.x - s.w/2}px`;
       el.style.top    = `${s.y - s.h/2}px`;
       el.style.width  = `${s.w}px`;
@@ -1075,6 +1200,7 @@ window.Editor = (function() {
 
   function onSpritePointerDown(e, sprite) {
     if (!document.body.classList.contains('edit-mode')) return;
+    if (sprite.locked) return; // locked layers pass through to stage
     // Only intercept in select mode; other tools (pen, shapes) need the event to reach the stage
     if (tool !== 'select') return;
     e.stopPropagation();

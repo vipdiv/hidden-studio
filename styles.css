@@ -900,6 +900,33 @@ button.chip.off { opacity: 0.45; }
 .layer-drag-handle:active { cursor: grabbing; }
 .layer-icon { font-size: 12px; flex-shrink: 0; }
 .layer-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }
+
+/* Eye / Lock buttons */
+.layer-vis, .layer-lock {
+  font-size: 10px;
+  width: 18px; height: 18px;
+  display: grid; place-items: center;
+  border: none; background: transparent;
+  color: var(--ui-text-dim);
+  cursor: pointer;
+  flex-shrink: 0;
+  border-radius: 2px;
+  opacity: 0.35;
+  transition: opacity 0.12s;
+  padding: 0;
+}
+.layer-row:hover .layer-vis,
+.layer-row:hover .layer-lock,
+.layer-vis.is-hidden,
+.layer-lock.is-locked { opacity: 1; }
+.layer-vis:hover, .layer-lock:hover { background: rgba(212,212,212,0.1); opacity: 1; }
+.layer-vis.is-hidden { color: var(--ui-text-dim); text-decoration: line-through; }
+.layer-lock.is-locked { color: var(--accent-2); }
+
+/* Row with hidden flag — dim name and icon but keep controls readable */
+.layer-row.layer-hidden .layer-name,
+.layer-row.layer-hidden .layer-icon { opacity: 0.4; }
+
 .layer-actions {
   display: flex;
   gap: 2px;
