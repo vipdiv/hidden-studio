@@ -2352,113 +2352,128 @@ window.Editor = (function() {
 
   /* ————————————————————————————————————————
      CROP TOOL
+     State is in SCREEN coordinates so zoom/pan
+     never affects handle positions or sizes.
+     World coordinates are computed only on apply.
   ———————————————————————————————————————— */
   function initCropTool() {
     const overlay  = document.getElementById('cropOverlay');
     const cropRect = document.getElementById('cropRect');
     if (!overlay || !cropRect) return;
 
-    let cropX = 0, cropY = 0, cropW = 1600, cropH = 1600;
-    let drag = null; // { handle, startCX, startCY, startCrop }
+    // Screen-space crop rectangle
+    let sx = 0, sy = 0, sw = 400, sh = 300;
+    let drag = null; // { handle, startX, startY, startRect }
 
     function updateRect() {
-      cropRect.style.left   = cropX + 'px';
-      cropRect.style.top    = cropY + 'px';
-      cropRect.style.width  = cropW + 'px';
-      cropRect.style.height = cropH + 'px';
+      cropRect.style.left   = sx + 'px';
+      cropRect.style.top    = sy + 'px';
+      cropRect.style.width  = sw + 'px';
+      cropRect.style.height = sh + 'px';
     }
 
-    // Reset crop bounds to current doc size whenever crop tool is activated
-    const origSetTool = setTool; // capture after our modification
-    document.querySelectorAll('.tool-btn[data-tool="crop"]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        if (!project) return;
-        cropX = 0; cropY = 0;
-        cropW = project.docWidth  || 1600;
-        cropH = project.docHeight || 1600;
+    function resetToBase() {
+      // Default: snap to base image bounds, or full doc if no base
+      const inner = document.getElementById('baseLayer')?.firstElementChild;
+      if (inner) {
+        const r = inner.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) {
+          sx = r.left; sy = r.top; sw = r.width; sh = r.height;
+          updateRect(); return;
+        }
+      }
+      // Fallback: current doc bounds in screen coords
+      if (project) {
+        const tl = window.Game.worldToScreen(0, 0);
+        const br = window.Game.worldToScreen(project.docWidth || 1600, project.docHeight || 1600);
+        sx = tl.x; sy = tl.y; sw = br.x - tl.x; sh = br.y - tl.y;
         updateRect();
-      });
+      }
+    }
+
+    // When crop tool is activated, auto-snap to base
+    document.querySelectorAll('.tool-btn[data-tool="crop"]').forEach(btn => {
+      btn.addEventListener('click', () => { if (project) resetToBase(); });
     });
 
-    // Drag handler (move or resize)
+    // Drag handler — pure screen coordinates, no scale needed
     cropRect.addEventListener('pointerdown', (e) => {
       if (e.button !== 0) return;
       e.stopPropagation();
-      const handle = e.target.dataset.handle || 'body';
-      const sc = window.Game.scale;
       drag = {
-        handle,
-        startCX: e.clientX / sc,
-        startCY: e.clientY / sc,
-        startCrop: { cropX, cropY, cropW, cropH },
+        handle: e.target.dataset.handle || 'body',
+        startX: e.clientX, startY: e.clientY,
+        startRect: { sx, sy, sw, sh },
       };
       cropRect.setPointerCapture(e.pointerId);
     });
 
     cropRect.addEventListener('pointermove', (e) => {
       if (!drag) return;
-      const sc = window.Game.scale;
-      const dx = e.clientX / sc - drag.startCX;
-      const dy = e.clientY / sc - drag.startCY;
-      const s  = drag.startCrop;
-      const MIN = 50;
+      const dx = e.clientX - drag.startX;
+      const dy = e.clientY - drag.startY;
+      const s  = drag.startRect;
+      const MIN = 40; // minimum screen pixels
 
       switch (drag.handle) {
-        case 'body': cropX = s.cropX + dx; cropY = s.cropY + dy; break;
-        case 'tl': cropX = s.cropX + dx; cropY = s.cropY + dy; cropW = Math.max(MIN, s.cropW - dx); cropH = Math.max(MIN, s.cropH - dy); break;
-        case 'tc': cropY = s.cropY + dy; cropH = Math.max(MIN, s.cropH - dy); break;
-        case 'tr': cropY = s.cropY + dy; cropW = Math.max(MIN, s.cropW + dx); cropH = Math.max(MIN, s.cropH - dy); break;
-        case 'ml': cropX = s.cropX + dx; cropW = Math.max(MIN, s.cropW - dx); break;
-        case 'mr': cropW = Math.max(MIN, s.cropW + dx); break;
-        case 'bl': cropX = s.cropX + dx; cropW = Math.max(MIN, s.cropW - dx); cropH = Math.max(MIN, s.cropH + dy); break;
-        case 'bc': cropH = Math.max(MIN, s.cropH + dy); break;
-        case 'br': cropW = Math.max(MIN, s.cropW + dx); cropH = Math.max(MIN, s.cropH + dy); break;
+        case 'body': sx = s.sx + dx; sy = s.sy + dy; break;
+        case 'tl': sx = s.sx + dx; sy = s.sy + dy; sw = Math.max(MIN, s.sw - dx); sh = Math.max(MIN, s.sh - dy); break;
+        case 'tc': sy = s.sy + dy; sh = Math.max(MIN, s.sh - dy); break;
+        case 'tr': sy = s.sy + dy; sw = Math.max(MIN, s.sw + dx); sh = Math.max(MIN, s.sh - dy); break;
+        case 'ml': sx = s.sx + dx; sw = Math.max(MIN, s.sw - dx); break;
+        case 'mr': sw = Math.max(MIN, s.sw + dx); break;
+        case 'bl': sx = s.sx + dx; sw = Math.max(MIN, s.sw - dx); sh = Math.max(MIN, s.sh + dy); break;
+        case 'bc': sh = Math.max(MIN, s.sh + dy); break;
+        case 'br': sw = Math.max(MIN, s.sw + dx); sh = Math.max(MIN, s.sh + dy); break;
       }
       updateRect();
     });
 
-    cropRect.addEventListener('pointerup', () => { drag = null; });
+    cropRect.addEventListener('pointerup',     () => { drag = null; });
     cropRect.addEventListener('pointercancel', () => { drag = null; });
 
-    // Fit to base layer
+    // Fit to base layer — snaps crop rect to image bounds in screen space
     document.getElementById('cropFitBase')?.addEventListener('click', () => {
       const inner = document.getElementById('baseLayer')?.firstElementChild;
       if (!inner) return;
       const r = inner.getBoundingClientRect();
-      const tl = window.Game.screenToWorld(r.left, r.top);
-      const br = window.Game.screenToWorld(r.right, r.bottom);
-      cropX = Math.round(tl.x);
-      cropY = Math.round(tl.y);
-      cropW = Math.max(50, Math.round(br.x - tl.x));
-      cropH = Math.max(50, Math.round(br.y - tl.y));
+      if (r.width < 1 || r.height < 1) return;
+      sx = r.left; sy = r.top; sw = r.width; sh = r.height;
       updateRect();
     });
 
-    // Apply crop
+    // Apply crop — convert screen rect to world, shift everything, resize doc
     document.getElementById('cropApply')?.addEventListener('click', () => {
       if (!project) return;
+
+      // Convert screen crop corners to world coordinates
+      const tl = window.Game.screenToWorld(sx,      sy);
+      const br = window.Game.screenToWorld(sx + sw, sy + sh);
+      const cropX = tl.x, cropY = tl.y;
+      const cropW = Math.max(1, br.x - tl.x);
+      const cropH = Math.max(1, br.y - tl.y);
       const dx = -cropX, dy = -cropY;
 
-      // Shift all game objects
+      // Shift all game objects into new coordinate space
       (project.items     || []).forEach(o => { o.x += dx; o.y += dy; });
       (project.surprises || []).forEach(o => { o.x += dx; o.y += dy; });
       (project.texts     || []).forEach(o => { o.x += dx; o.y += dy; });
       (project.sprites   || []).forEach(o => { o.x += dx; o.y += dy; });
 
-      // Shift drawings
+      // Shift pen strokes
       window.Draw.shiftStrokes(dx, dy);
 
       // Shift base layer
       project.baseX = (project.baseX || 0) + dx;
       project.baseY = (project.baseY || 0) + dy;
 
-      // New doc size
-      project.docWidth  = Math.max(50, Math.round(cropW));
-      project.docHeight = Math.max(50, Math.round(cropH));
+      // Set new document size
+      project.docWidth  = Math.round(cropW);
+      project.docHeight = Math.round(cropH);
 
       applyDocSize();
       applyBaseTransform();
-      renderHits();
+      window.Game.renderHits();
       renderTexts();
       renderSprites();
       window.Draw.render();

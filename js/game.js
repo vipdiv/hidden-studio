@@ -79,11 +79,12 @@ window.Game = (function() {
     const panelW = listPanelOpen() ? LIST_W : 0;
     const vw = window.innerWidth, vh = window.innerHeight;
     const sW = worldW() * scale, sH = worldH() * scale;
-    const availW = vw - panelW, availH = vh - HUD_H;
-    const minX = panelW + availW / 2 - sW + availW * 0.3;
-    const maxX = panelW + availW / 2 - availW * 0.3;
-    const minY = HUD_H + availH / 2 - sH + availH * 0.3;
-    const maxY = HUD_H + availH / 2 - availH * 0.3;
+    // Allow generous panning — keep at least 80px of the world on-screen
+    const MARGIN = 80;
+    const minX = panelW + MARGIN - sW;
+    const maxX = vw - MARGIN;
+    const minY = HUD_H + MARGIN - sH;
+    const maxY = vh - MARGIN;
     camX = Math.min(maxX, Math.max(minX, camX));
     camY = Math.min(maxY, Math.max(minY, camY));
   }
@@ -128,6 +129,9 @@ window.Game = (function() {
 
   function screenToWorld(sx, sy) {
     return { x: (sx - camX) / scale, y: (sy - camY) / scale };
+  }
+  function worldToScreen(wx, wy) {
+    return { x: wx * scale + camX, y: wy * scale + camY };
   }
 
   /* ————————————————————————————————————————
@@ -364,7 +368,7 @@ window.Game = (function() {
   return {
     init, setProject, restart,
     centerOnPlanet, applyCamera,
-    screenToWorld, handleTap,
+    screenToWorld, worldToScreen, handleTap,
     renderList, renderHits, renderSparkles, updateCounter,
     get camX() { return camX; }, set camX(v) { camX = v; },
     get camY() { return camY; }, set camY(v) { camY = v; },
