@@ -238,9 +238,12 @@ window.Game = (function() {
       }
       updateCounter(true);
     } else {
-      const misses = ['nope!', 'miss!', 'hmm', 'not there', 'nuh-uh'];
-      popAt(misses[Math.floor(Math.random() * misses.length)], w.x, w.y, 'miss');
-      window.SFX.play('miss');
+      const ms = project?.missStyle || {};
+      const texts = ms.texts?.length ? ms.texts : ['nope!', 'miss!', 'hmm', 'not there', 'nuh-uh'];
+      const text = texts[Math.floor(Math.random() * texts.length)];
+      popAt(text, w.x, w.y, 'miss', ms);
+      const snd = project?.missSound ?? 'miss';
+      if (snd !== 'none') window.SFX.play(snd);
       window.SFX.haptic(40);
     }
   }
@@ -312,13 +315,21 @@ window.Game = (function() {
     playLayer.appendChild(m);
   }
 
-  function popAt(text, wx, wy, kind) {
+  function popAt(text, wx, wy, kind, styleOverrides = {}) {
     const el = document.createElement('div');
     el.className = kind;
     el.style.position = 'absolute';
     el.textContent = text;
     el.style.left = `${wx}px`;
     el.style.top  = `${wy}px`;
+    if (styleOverrides.color)      el.style.color      = styleOverrides.color;
+    if (styleOverrides.fontSize)   el.style.fontSize   = styleOverrides.fontSize + 'px';
+    if (styleOverrides.fontFamily) el.style.fontFamily = styleOverrides.fontFamily;
+    if (styleOverrides.fontWeight) el.style.fontWeight = styleOverrides.fontWeight;
+    if (styleOverrides.stroke) {
+      el.style.webkitTextStroke = `2px ${styleOverrides.stroke}`;
+      el.style.textStroke = `2px ${styleOverrides.stroke}`;
+    }
     playLayer.appendChild(el);
     setTimeout(() => el.remove(), 1500);
   }

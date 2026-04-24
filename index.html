@@ -133,6 +133,7 @@
 
     <div class="hud-right">
       <button class="icon-btn" id="shortcutsBtn" title="Keyboard shortcuts (?)">?</button>
+      <button class="icon-btn" id="fullscreenBtn" title="Fullscreen (F11)">⛶</button>
       <button class="chip" id="soundToggle">🔊 sound</button>
       <div class="chip" id="counter">found <b>0</b> / <span id="total">0</span></div>
     </div>
@@ -234,6 +235,31 @@
       <ul class="layers-list" id="layersList"></ul>
     </div>
 
+    <!-- Miss tap settings -->
+    <div class="tool-section" id="missTapSection">
+      <h3>Miss tap</h3>
+      <label class="prop-label">Sound
+        <select id="missSoundSelect" class="prop-select"></select>
+      </label>
+      <label class="prop-label">Text color
+        <input type="color" id="missColor" value="#e6e0d4" class="prop-color">
+      </label>
+      <label class="prop-label">Stroke color
+        <input type="color" id="missStroke" value="#0b0d1f" class="prop-color">
+      </label>
+      <label class="prop-label">Font size
+        <input type="range" id="missFontSize" min="12" max="72" value="24" class="prop-range">
+        <span id="missFontSizeVal">24</span>px
+      </label>
+      <label class="prop-label">Font
+        <select id="missFontFamily" class="prop-select">
+          <option value="'Caveat', cursive">Caveat (handwriting)</option>
+          <option value="'Fraunces', serif">Fraunces (serif)</option>
+          <option value="'Source Sans 3', sans-serif">Source Sans (clean)</option>
+        </select>
+      </label>
+    </div>
+
     <!-- Project actions -->
     <div class="tool-section actions-section">
       <h3>Project</h3>
@@ -289,19 +315,19 @@
 </div>
 
 <!-- ═══ JS modules (load order matters) ═══ -->
-<script src="js/data/scene.svg.js?v=15"></script>
-<script src="js/data/presets.js?v=15"></script>
-<script src="js/transforms.js?v=15"></script>
-<script src="js/audio.js?v=15"></script>
-<script src="js/animations.js?v=15"></script>
-<script src="js/sprites.js?v=15"></script>
-<script src="js/draw.js?v=15"></script>
-<script src="js/projects.js?v=15"></script>
-<script src="js/game.js?v=15"></script>
-<script src="js/editor.js?v=15"></script>
-<script src="js/shortcuts.js?v=15"></script>
-<script src="js/menu.js?v=15"></script>
-<script src="js/app.js?v=15"></script>
+<script src="js/data/scene.svg.js?v=16"></script>
+<script src="js/data/presets.js?v=16"></script>
+<script src="js/transforms.js?v=16"></script>
+<script src="js/audio.js?v=16"></script>
+<script src="js/animations.js?v=16"></script>
+<script src="js/sprites.js?v=16"></script>
+<script src="js/draw.js?v=16"></script>
+<script src="js/projects.js?v=16"></script>
+<script src="js/game.js?v=16"></script>
+<script src="js/editor.js?v=16"></script>
+<script src="js/shortcuts.js?v=16"></script>
+<script src="js/menu.js?v=16"></script>
+<script src="js/app.js?v=16"></script>
 
 </body>
 </html>

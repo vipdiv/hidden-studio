@@ -129,6 +129,21 @@
       window.Shortcuts.showShortcutsModal();
     });
 
+    // Fullscreen toggle
+    const fsBtn = document.getElementById('fullscreenBtn');
+    if (fsBtn) {
+      const updateFsIcon = () => {
+        const inFs = !!document.fullscreenElement;
+        fsBtn.textContent = inFs ? '✕' : '⛶';
+        fsBtn.title = inFs ? 'Exit fullscreen' : 'Fullscreen (F11)';
+      };
+      fsBtn.addEventListener('click', () => {
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+      });
+      document.addEventListener('fullscreenchange', updateFsIcon);
+    }
+
     // Back button
     document.getElementById('backBtn').addEventListener('click', () => {
       if (currentProject) window.Projects.saveNow(currentProject);

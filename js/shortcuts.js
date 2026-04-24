@@ -179,6 +179,12 @@ window.Shortcuts = (function() {
         document.body.classList.toggle('panels-hidden', panelsHidden);
         e.preventDefault();
         break;
+
+      case 'F11':
+        if (!document.fullscreenElement) document.documentElement.requestFullscreen?.();
+        else document.exitFullscreen?.();
+        e.preventDefault();
+        break;
     }
   }
 

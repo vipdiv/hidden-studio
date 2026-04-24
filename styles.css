@@ -1057,6 +1057,36 @@ body.edit-mode .properties-panel { display: flex; }
   margin-bottom: 4px;
 }
 
+/* Inline form rows used in miss-tap and similar tool-sections */
+.prop-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--ui-text-dim);
+  margin-bottom: 7px;
+}
+.prop-label span { font-size: 11px; color: var(--ui-text-dim); }
+.prop-select {
+  flex: 1;
+  background: var(--panel-bg-2);
+  border: 1px solid var(--panel-border);
+  color: var(--ui-text);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+.prop-color {
+  width: 36px; height: 22px;
+  padding: 1px 2px;
+  border: 1px solid var(--panel-border);
+  border-radius: 3px;
+  background: var(--panel-bg-2);
+  cursor: pointer;
+}
+.prop-range { flex: 1; }
+
 .save-status {
   margin-top: 10px;
   font-style: italic;

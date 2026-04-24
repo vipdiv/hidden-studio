@@ -75,6 +75,44 @@ window.Editor = (function() {
     document.getElementById('addFolderBtn')?.addEventListener('click', _createGroup);
     document.getElementById('docSizeBtn')?.addEventListener('click', openDocSizeModal);
     document.getElementById('statsBtn')?.addEventListener('click', openStatsModal);
+
+    // Miss tap settings
+    const missSoundSel = document.getElementById('missSoundSelect');
+    if (missSoundSel) {
+      (window.SFX.PRESET_NAMES || []).forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = name; opt.textContent = name;
+        missSoundSel.appendChild(opt);
+      });
+      missSoundSel.addEventListener('change', () => {
+        if (!project) return;
+        project.missSound = missSoundSel.value;
+        window.SFX.ensure();
+        window.SFX.play(missSoundSel.value);
+        schedSave();
+      });
+    }
+    document.getElementById('missColor')?.addEventListener('input', (e) => {
+      if (!project) return;
+      project.missStyle = Object.assign({}, project.missStyle, { color: e.target.value });
+      schedSave();
+    });
+    document.getElementById('missStroke')?.addEventListener('input', (e) => {
+      if (!project) return;
+      project.missStyle = Object.assign({}, project.missStyle, { stroke: e.target.value });
+      schedSave();
+    });
+    document.getElementById('missFontSize')?.addEventListener('input', (e) => {
+      if (!project) return;
+      document.getElementById('missFontSizeVal').textContent = e.target.value;
+      project.missStyle = Object.assign({}, project.missStyle, { fontSize: parseInt(e.target.value) });
+      schedSave();
+    });
+    document.getElementById('missFontFamily')?.addEventListener('change', (e) => {
+      if (!project) return;
+      project.missStyle = Object.assign({}, project.missStyle, { fontFamily: e.target.value });
+      schedSave();
+    });
     document.getElementById('clearDrawingsBtn').addEventListener('click', () => {
       if (confirm('Clear all pen drawings? (Cannot be undone.)')) {
         window.Draw.clearAll();
@@ -139,6 +177,22 @@ window.Editor = (function() {
     applyDocSize();
     updateSelectedPanel();
     renderLayersPanel();
+    syncMissControls();
+  }
+
+  function syncMissControls() {
+    if (!project) return;
+    const ms = project.missStyle || {};
+    const sel = document.getElementById('missSoundSelect');
+    if (sel) sel.value = project.missSound ?? 'miss';
+    const colEl = document.getElementById('missColor');
+    if (colEl) colEl.value = ms.color || '#e6e0d4';
+    const strokeEl = document.getElementById('missStroke');
+    if (strokeEl) strokeEl.value = ms.stroke || '#0b0d1f';
+    const fsEl = document.getElementById('missFontSize');
+    if (fsEl) { fsEl.value = ms.fontSize || 24; document.getElementById('missFontSizeVal').textContent = fsEl.value; }
+    const ffEl = document.getElementById('missFontFamily');
+    if (ffEl) ffEl.value = ms.fontFamily || "'Caveat', cursive";
   }
 
   function getProject() { return project; }
