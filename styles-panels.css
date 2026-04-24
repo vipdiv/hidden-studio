@@ -379,3 +379,123 @@ body.edit-mode .tool-strip {
   height: calc(100vh - 94px) !important;
 }
 body.show-rulers.edit-mode .zoom-badge { bottom: 24px; left: 68px; }
+
+/* ── M8: Responsive ─────────────────────────────── */
+
+/* Shared FAB base (hidden on desktop) */
+.m8-fab {
+  display: none;
+  align-items: center; justify-content: center;
+  gap: 6px;
+  background: var(--ps-panel-header);
+  border: 1px solid var(--ps-border);
+  color: var(--ps-text);
+  border-radius: 24px;
+  font-size: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.45);
+  pointer-events: auto;
+  z-index: 120;
+  transition: background 0.12s, color 0.12s;
+}
+.m8-fab:hover { background: var(--ps-panel-bg); }
+.m8-tool-fab-wrap { display: none; position: fixed; right: 16px; bottom: 80px; z-index: 120; pointer-events: auto; }
+
+/* ── Tablet (641–1023px): collapsed icon strip ── */
+@media (min-width: 641px) and (max-width: 1023px) {
+
+  /* Collapse dock column to 44px */
+  .dock-col {
+    width: 44px !important;
+    overflow: visible !important;
+  }
+
+  /* Hide panel body content; keep only the tab header */
+  .dock-col .panel-body { display: none !important; }
+
+  /* Tab header: tighten up, hide tab text, show as compact slot */
+  .dock-col [data-panel-group] > [data-group-header] {
+    cursor: default !important;
+    min-height: 32px;
+    overflow: hidden;
+  }
+  /* Show only the first tab label, truncated */
+  .dock-col [data-panel-group] [data-group-header] > div:first-child > div {
+    max-width: 36px;
+    overflow: hidden;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+  /* Hide controls (minimize, close, dock buttons) */
+  .dock-col [data-panel-group] [data-group-header] > div:last-child {
+    display: none !important;
+  }
+
+  /* Adjust chrome right edges to match 44px dock */
+  .ruler-h   { right: 44px !important; }
+  .status-bar{ right: 44px !important; }
+
+  /* Tool strip height adjustment */
+  body.edit-mode .tool-strip { height: calc(100vh - 94px) !important; }
+}
+
+/* ── Phone (≤640px): hidden dock + mobile FABs ── */
+@media (max-width: 640px) {
+
+  /* Hide new dock column completely */
+  .dock-col { display: none !important; }
+
+  /* Chrome: full-width */
+  .ruler-h    { right: 0 !important; }
+  .status-bar { left: 0 !important; right: 0 !important; }
+  .zoom-badge { bottom: 72px; }
+
+  /* Show Panels FAB */
+  .m8-panels-fab {
+    display: flex !important;
+    position: fixed;
+    right: 16px; bottom: 16px;
+    padding: 10px 16px;
+  }
+
+  /* Show Tool FAB wrap */
+  .m8-tool-fab-wrap { display: block !important; }
+
+  .m8-tool-trigger {
+    display: flex !important;
+    width: 48px; height: 48px;
+    border-radius: 50%;
+    padding: 0;
+  }
+
+  /* Radial tool menu — hidden by default, shown when .open */
+  .m8-tool-radial {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: absolute;
+    bottom: 56px; right: 0;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.15s, transform 0.15s;
+    transform: translateY(8px);
+  }
+  .m8-tool-fab-wrap.open .m8-tool-radial {
+    opacity: 1; pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .m8-tool-opt {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    background: var(--ps-panel-header);
+    border: 1px solid var(--ps-border);
+    color: var(--ps-text);
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+  }
+  .m8-tool-opt:hover,
+  .m8-tool-opt.active { background: var(--ps-accent); color: #fff; border-color: var(--ps-accent); }
+
+  /* Tool strip already hidden at 640px via styles.css */
+}
