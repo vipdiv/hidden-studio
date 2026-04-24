@@ -22,6 +22,18 @@ window.Menu = (function() {
     if (!dd) return;
     dd.innerHTML = '';
 
+    // Theme section first — always visible regardless of how many panels exist
+    dd.appendChild(makeLabel('Theme'));
+    const currentTheme = window.Panels.getTheme();
+    THEMES.forEach(({ id, label }) => {
+      const li = makeLi('window-set-theme', { themeId: id });
+      li.innerHTML = `<span style="color:${id === currentTheme ? '#5aaa5a' : 'transparent'}">&#10003;</span> ${label}`;
+      dd.appendChild(li);
+    });
+
+    dd.appendChild(makeSep());
+
+    // Panels section below
     const regs = window.Panels._getRegs();
     const panelIds = Object.keys(regs);
 
@@ -38,15 +50,6 @@ window.Menu = (function() {
       resetLi.innerHTML = '<span style="color:transparent">&#10003;</span> Reset Panel Layout';
       dd.appendChild(resetLi);
     }
-
-    dd.appendChild(makeSep());
-    dd.appendChild(makeLabel('Theme'));
-    const currentTheme = window.Panels.getTheme();
-    THEMES.forEach(({ id, label }) => {
-      const li = makeLi('window-set-theme', { themeId: id });
-      li.innerHTML = `<span style="color:${id === currentTheme ? '#5aaa5a' : 'transparent'}">&#10003;</span> ${label}`;
-      dd.appendChild(li);
-    });
 
     // Wire clicks inside the freshly-built dropdown
     dd.querySelectorAll('[data-action]').forEach(li => {
