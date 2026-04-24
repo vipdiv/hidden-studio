@@ -210,6 +210,11 @@ window.Game = (function() {
       if (state.surprisesFound.has(s.id)) continue;
       const dx = w.x - s.x, dy = w.y - s.y;
       if (Math.sqrt(dx*dx + dy*dy) < s.r) {
+        // Easter egg check on surprises
+        if (s.easterEgg?.enabled && window.EasterEggs) {
+          window.EasterEggs.trigger(s.easterEgg);
+          return;
+        }
         triggerSurprise(s);
         return;
       }
@@ -224,6 +229,11 @@ window.Game = (function() {
     }
 
     if (hit) {
+      // Easter egg check on items — does NOT count as found
+      if (hit.easterEgg?.enabled && window.EasterEggs) {
+        window.EasterEggs.trigger(hit.easterEgg);
+        return;
+      }
       state.found.add(hit.id);
       addMark(hit);
       popAt('found!', hit.x, hit.y - hit.r - 8, 'pop');
