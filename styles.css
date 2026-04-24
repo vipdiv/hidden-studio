@@ -1613,32 +1613,33 @@ body.play-mode .hint-tip { display: none; }
 .play-empty {
   display: none;
   position: fixed;
-  top: 50%;
+  top: calc(50% + 36px); /* offset for 72px HUD */
   left: 50%;
   transform: translate(-50%, -50%);
-  max-width: 480px;
+  max-width: 340px;
+  width: 80%;
   text-align: center;
-  padding: 0 24px;
+  padding: 0 16px;
   pointer-events: none;
   z-index: 5;
 }
 body.play-mode .play-empty.visible { display: block; }
 .play-empty-quote {
   font-family: 'Fraunces', serif;
-  font-size: 22px;
+  font-size: 15px;
   font-weight: 300;
   font-style: italic;
-  color: rgba(245, 239, 226, 0.55);
-  line-height: 1.5;
-  margin: 0 0 14px;
+  color: rgba(245, 239, 226, 0.5);
+  line-height: 1.6;
+  margin: 0 0 10px;
 }
 .play-empty-sub {
-  font-size: 13px;
-  color: rgba(245, 239, 226, 0.25);
+  font-size: 11px;
+  color: rgba(245, 239, 226, 0.22);
   letter-spacing: 0.02em;
   margin: 0;
 }
-.play-empty-sub strong { color: rgba(245, 239, 226, 0.38); font-weight: 600; }
+.play-empty-sub strong { color: rgba(245, 239, 226, 0.32); font-weight: 600; }
 
 /* Modal */
 .modal-backdrop {
