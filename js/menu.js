@@ -36,6 +36,79 @@ window.Menu = (function() {
     });
   }
 
+  /* ── About modal with release notes drill-down ─── */
+  function openAbout() {
+    const changelog = window.CHANGELOG || [];
+    const rows = changelog.map(entry => `
+      <div class="about-ver-row" data-ver="${entry.version}" style="
+        display:flex;justify-content:space-between;align-items:center;
+        padding:10px 14px;margin-bottom:8px;border-radius:6px;cursor:pointer;
+        background:var(--panel-bg);border:1.5px solid var(--panel-border);
+        transition:border-color .15s;">
+        <div>
+          <div style="font-family:'Caveat',cursive;font-size:19px;font-weight:700;letter-spacing:.02em">${entry.label}</div>
+          <div style="font-size:11px;color:var(--ui-text-dim);margin-top:1px;font-style:italic">${entry.tagline}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:11px;color:var(--ui-text-dim)">${entry.date}</span>
+          <span style="color:var(--accent);font-size:16px">›</span>
+        </div>
+      </div>
+    `).join('');
+
+    const body = `
+      <div style="text-align:center;padding:4px 0 16px">
+        <div style="font-family:'Caveat',cursive;font-size:28px;font-weight:700;color:var(--accent);margin-bottom:4px">Hidden Studio</div>
+        <div style="font-size:12px;color:var(--ui-text-dim);font-style:italic">Make &amp; play your own hidden object games</div>
+      </div>
+      <hr style="border:none;border-top:1px solid var(--panel-border);margin:0 0 14px">
+      ${rows}
+      <p style="font-size:11px;color:var(--ui-text-dim);text-align:center;margin-top:6px;line-height:1.5">
+        All projects are saved locally in your browser.<br>No account, no server, no AI tokens.
+      </p>`;
+
+    window.Editor?.openModal?.('About Hidden Studio', body);
+
+    // Wire click handlers after DOM is updated
+    document.querySelectorAll('.about-ver-row').forEach(row => {
+      row.addEventListener('mouseenter', () => { row.style.borderColor = 'var(--accent)'; });
+      row.addEventListener('mouseleave', () => { row.style.borderColor = 'var(--panel-border)'; });
+      row.addEventListener('click', () => {
+        const ver = row.dataset.ver;
+        const entry = (window.CHANGELOG || []).find(e => e.version === ver);
+        if (entry) openReleaseNotes(entry);
+      });
+    });
+  }
+
+  function openReleaseNotes(entry) {
+    const sections = (entry.notes || []).map(s => `
+      <div style="font-family:'Caveat',cursive;font-size:16px;font-weight:700;color:var(--accent);margin:14px 0 5px">${s.section}</div>
+      <ul style="margin:0;padding-left:16px;list-style:disc">
+        ${s.items.map(item => `<li style="font-size:12px;color:var(--ui-text-dim);line-height:1.65;margin-bottom:2px">${item}</li>`).join('')}
+      </ul>
+    `).join('');
+
+    const body = `
+      <div style="margin-bottom:14px">
+        <button id="aboutBackBtn" style="background:none;border:none;cursor:pointer;color:var(--accent);font-size:13px;padding:0;display:flex;align-items:center;gap:4px">
+          ‹ Back
+        </button>
+      </div>
+      <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4px">
+        <span style="font-family:'Caveat',cursive;font-size:22px;font-weight:700">${entry.label}</span>
+        <span style="font-size:11px;color:var(--ui-text-dim)">${entry.date}</span>
+      </div>
+      <div style="font-size:12px;color:var(--ui-text-dim);font-style:italic;margin-bottom:12px">${entry.tagline}</div>
+      <hr style="border:none;border-top:1px solid var(--panel-border);margin:0 0 4px">
+      <div style="max-height:54vh;overflow-y:auto;padding-right:4px">
+        ${sections}
+      </div>`;
+
+    window.Editor?.openModal?.('Release Notes', body);
+    document.getElementById('aboutBackBtn')?.addEventListener('click', openAbout);
+  }
+
   function init() {
     const bar = document.getElementById('menuBar');
     if (!bar) return;
@@ -159,17 +232,7 @@ window.Menu = (function() {
         break;
 
       case 'about':
-        window.Editor?.openModal?.('About Hidden Studio', `
-          <div style="text-align:center;padding:8px 0 16px">
-            <div style="font-family:'Caveat',cursive;font-size:32px;font-weight:700;color:var(--accent);margin-bottom:4px">Hidden Studio</div>
-            <div style="font-size:13px;color:var(--ui-text-dim);margin-bottom:16px;font-style:italic">Make &amp; play your own hidden object games</div>
-            <div style="display:inline-block;background:var(--panel-bg);border:1.5px solid var(--panel-border);border-radius:20px;padding:5px 18px;font-family:'Caveat',cursive;font-size:18px;font-weight:700;letter-spacing:.04em">Version Beta</div>
-          </div>
-          <hr style="border:none;border-top:1px solid var(--panel-border);margin:8px 0 12px">
-          <p style="font-size:12px;color:var(--ui-text-dim);text-align:center;line-height:1.6">
-            All projects are saved locally in your browser.<br>No account, no server, no AI tokens.
-          </p>
-        `);
+        openAbout();
         break;
 
       // ── Panels menu ──────────────────────────────────

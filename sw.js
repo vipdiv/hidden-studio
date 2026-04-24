@@ -28,6 +28,7 @@ const PRECACHE = [
   './js/data/presets.js',
   './js/data/scene.svg.js',
   './js/data/easter-eggs.js',
+  './js/data/changelog.js',
   './assets/scene.jpg',
 ];
 
