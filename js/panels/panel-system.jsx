@@ -33,6 +33,7 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
     zIndex: 1000 + (group.zIndex || 0),
     boxShadow: '0 8px 28px rgba(0,0,0,0.72)',
     borderRadius: 3,
+    pointerEvents: 'auto',
   } : { position: 'relative', width: '100%' };
 
   const CtrlBtn = ({ title, onClick, children }) => (
