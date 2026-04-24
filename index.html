@@ -51,6 +51,44 @@
 ═══════════════════════════════════════════════════ -->
 <div class="app hidden" id="app">
 
+  <!-- Slim menu bar -->
+  <nav class="menu-bar" id="menuBar">
+    <div class="menu-item" data-menu="file">File
+      <ul class="menu-dropdown">
+        <li data-action="back">Back to Projects</li>
+        <li class="menu-sep"></li>
+        <li data-action="save">Save <span class="menu-shortcut">Ctrl+S</span></li>
+        <li data-action="export-html">Export HTML <span class="menu-shortcut">Ctrl+E</span></li>
+        <li data-action="export-json">Export JSON</li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="edit">Edit
+      <ul class="menu-dropdown">
+        <li class="menu-disabled" data-action="undo">Undo <span class="menu-shortcut">Ctrl+Z</span></li>
+        <li class="menu-disabled" data-action="redo">Redo <span class="menu-shortcut">Ctrl+Shift+Z</span></li>
+        <li class="menu-sep"></li>
+        <li data-action="duplicate">Duplicate <span class="menu-shortcut">Ctrl+D</span></li>
+        <li data-action="delete">Delete <span class="menu-shortcut">Del</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="view">View
+      <ul class="menu-dropdown">
+        <li data-action="zoom-in">Zoom In <span class="menu-shortcut">Z</span></li>
+        <li data-action="zoom-out">Zoom Out <span class="menu-shortcut">Alt+Z</span></li>
+        <li data-action="zoom-fit">Fit to Screen <span class="menu-shortcut">Ctrl+0</span></li>
+        <li data-action="zoom-100">100% <span class="menu-shortcut">Ctrl+1</span></li>
+        <li class="menu-sep"></li>
+        <li data-action="toggle-panels">Toggle Panels <span class="menu-shortcut">Tab</span></li>
+        <li data-action="toggle-mode">Toggle Play / Edit <span class="menu-shortcut">F</span></li>
+      </ul>
+    </div>
+    <div class="menu-item" data-menu="help">Help
+      <ul class="menu-dropdown">
+        <li data-action="shortcuts">Keyboard Shortcuts <span class="menu-shortcut">?</span></li>
+      </ul>
+    </div>
+  </nav>
+
   <!-- Top bar — shared between play/edit modes -->
   <header class="hud-top">
     <div class="hud-left">
@@ -228,6 +266,7 @@
 <script src="js/game.js?v=10"></script>
 <script src="js/editor.js?v=10"></script>
 <script src="js/shortcuts.js?v=10"></script>
+<script src="js/menu.js?v=10"></script>
 <script src="js/app.js?v=10"></script>
 
 </body>

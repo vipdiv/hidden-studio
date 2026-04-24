@@ -253,6 +253,11 @@ window.Shortcuts = (function() {
     document.addEventListener('keyup',   onKeyUp);
   }
 
-  return { init, showShortcutsModal };
+  function togglePanels() {
+    panelsHidden = !panelsHidden;
+    document.body.classList.toggle('panels-hidden', panelsHidden);
+  }
+
+  return { init, showShortcutsModal, zoomAt, togglePanels };
 
 })();

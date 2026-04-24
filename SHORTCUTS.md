@@ -56,6 +56,7 @@ Adobe/Photoshop-style shortcuts. All shortcuts are handled by `js/shortcuts.js`.
 | `Alt+Z` | Zoom out |
 | `Ctrl+=` | Zoom in |
 | `Ctrl+-` | Zoom out |
+| `Scroll wheel` | Zoom in/out, cursor-centred (trackpad pinch works too) |
 | `Ctrl+0` | Zoom to fit (center on scene) |
 | `Ctrl+1` | Zoom to 100% |
 | `Tab` | Toggle all panels (distraction-free canvas view) |
@@ -79,6 +80,12 @@ Adobe/Photoshop-style shortcuts. All shortcuts are handled by `js/shortcuts.js`.
 | Shortcut | Action |
 |----------|--------|
 | `?` | Open keyboard shortcuts modal |
+
+---
+
+## Menu bar
+
+The **File / Edit / View / Help** menu bar at the very top of the screen (`js/menu.js`) mirrors the most common actions. Clicking a menu item is equivalent to the keyboard shortcut shown in the same row.
 
 ---
 
