@@ -253,6 +253,21 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .drawings{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .sprite{position:absolute;pointer-events:none}
 .sprite img{width:100%;height:auto}
+@keyframes egBob{0%,100%{transform:translate(-50%,-50%) rotate(-2deg)}50%{transform:translate(-50%,-54%) rotate(2deg)}}
+@keyframes egFade{from{opacity:0;transform:translate(-50%,-50%) scale(.85)}to{opacity:1;transform:translate(-50%,-50%) scale(1)}}
+@keyframes egShk{0%{transform:translateX(0)}10%{transform:translateX(-8px) rotate(-1deg)}20%{transform:translateX(8px) rotate(1deg)}30%{transform:translateX(-10px)}40%{transform:translateX(10px)}50%{transform:translateX(-7px)}65%{transform:translateX(7px)}80%{transform:translateX(-3px)}100%{transform:translateX(0)}}
+@keyframes egTxt{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}30%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-60%)}}
+.egg-fl{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;max-width:min(380px,85vw);animation:egBob 2s ease-in-out infinite;filter:drop-shadow(0 8px 32px rgba(0,0,0,.7))}
+.egg-fl img{max-width:100%;display:block;border-radius:6px}
+.egg-fl .eg-txt{margin-top:8px;font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--paper);text-align:center;text-shadow:0 2px 8px rgba(0,0,0,.8)}
+.egg-fs{position:fixed;inset:0;background:rgba(11,13,31,.88);backdrop-filter:blur(8px);z-index:800;display:grid;place-items:center}
+.egg-in{position:relative;max-width:min(500px,90vw);text-align:center;animation:egFade .3s ease-out}
+.egg-in img{max-width:100%;max-height:70vh;border-radius:6px;display:block;margin:0 auto}
+.egg-in .eg-txt{margin-top:16px;font-family:'Caveat',cursive;font-size:26px;font-weight:700;color:var(--paper)}
+.egg-x{position:absolute;top:-14px;right:-14px;width:30px;height:30px;border-radius:50%;background:rgba(11,13,31,.9);border:1.5px solid rgba(245,239,226,.25);color:var(--paper);font-size:14px;cursor:pointer;display:grid;place-items:center}
+.egg-fl .egg-x{top:-12px;right:-12px}
+.egg-st{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;font-family:'Caveat',cursive;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:var(--paper);text-align:center;max-width:min(500px,85vw);text-shadow:0 2px 12px rgba(0,0,0,.9);pointer-events:none;animation:egTxt 2.2s ease-out forwards}
+.egg-shake{animation:egShk .85s ease-out}
 </style>
 </head><body>
 <div class="hud">
@@ -370,7 +385,15 @@ const stage=document.getElementById('stage');
 function pt(e){if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY};if(e.changedTouches&&e.changedTouches[0])return{x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};return{x:e.clientX,y:e.clientY}}
 function pd(e){const p=pt(e);drg=true;sx=p.x;sy=p.y;scX=camX;scY=camY;dd=0;cx=p.x;cy=p.y;stage.classList.add('grabbing')}
 function pm(e){if(!drg)return;const p=pt(e),dx=p.x-sx,dy=p.y-sy;dd+=Math.abs(dx)+Math.abs(dy);camX=scX+dx;camY=scY+dy;applyC()}
-function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('grabbing');if(tap){const wx=(cx-camX)/scale,wy=(cy-camY)/scale;let h=null;for(const it of D.items){if(found.has(it.id))continue;const dx=wx-it.x,dy=wy-it.y;if(Math.sqrt(dx*dx+dy*dy)<it.r){h=it;break}}if(h){found.add(h.id);addMark(h);pop('found!',h.x,h.y-h.r-8,'pop');sfxFound();if(navigator.vibrate)navigator.vibrate([30,40,60]);document.getElementById('l-'+h.id)?.classList.add('found');updateCtr()}else{const m=['nope!','miss!','hmm'];pop(m[Math.floor(Math.random()*m.length)],wx,wy,'miss');sfxMiss();if(navigator.vibrate)navigator.vibrate(40)}}}
+// Easter egg runtime
+let egAudio=null,egOverlay=null,egEsc=null;
+function egDismiss(){if(egAudio){egAudio.pause();egAudio.currentTime=0;egAudio=null}if(egOverlay){egOverlay.remove();egOverlay=null}if(egEsc){document.removeEventListener('keydown',egEsc);egEsc=null}document.removeEventListener('click',egDismiss)}
+function egTrigger(egg){if(!egg||!egg.enabled)return;egDismiss();if(egg.audio){try{egAudio=new Audio(egg.audio);egAudio.loop=!!egg.loop;egAudio.volume=.85;egAudio.play().catch(()=>{})}catch(_){}}const vt=egg.visualType||'none';if(vt==='floating')egShowFloat(egg);else if(vt==='fullscreen')egShowFull(egg);else if(vt==='shake')egDoShake(egg);if(egg.dismissable&&vt!=='shake'){egEsc=(e)=>{if(e.key==='Escape')egDismiss()};document.addEventListener('keydown',egEsc)}}
+function egClose(e){e.stopPropagation();egDismiss()}
+function egShowFloat(egg){const vc=egg.visualContent||{};const el=document.createElement('div');el.className='egg-fl';let h='';if(egg.dismissable)h+='<button class="egg-x" onclick="egDismiss()">✕</button>';if(vc.image)h+='<img src="'+vc.image+'" draggable="false">';if(vc.text)h+='<div class="eg-txt">'+vc.text.replace(/</g,'&lt;')+'</div>';el.innerHTML=h;const pos=vc.position||'center';if(pos==='bottom-right'){el.style.left='';el.style.top='';el.style.right='24px';el.style.bottom='24px';el.style.transform='none'}else if(pos==='random'){el.style.left=(10+Math.random()*55)+'%';el.style.top=(10+Math.random()*55)+'%'}document.body.appendChild(el);egOverlay=el;if(egg.dismissable)setTimeout(()=>document.addEventListener('click',(e)=>{if(!el.contains(e.target))egDismiss()},{once:true}),200)}
+function egShowFull(egg){const vc=egg.visualContent||{};const el=document.createElement('div');el.className='egg-fs';let h='<div class="egg-in">';if(egg.dismissable)h+='<button class="egg-x" onclick="egDismiss()">✕</button>';if(vc.image)h+='<img src="'+vc.image+'" draggable="false">';if(vc.text)h+='<div class="eg-txt">'+vc.text.replace(/</g,'&lt;')+'</div>';h+='</div>';el.innerHTML=h;el.addEventListener('click',(e)=>{if(e.target===el)egDismiss()});document.body.appendChild(el);egOverlay=el}
+function egDoShake(egg){const vc=egg.visualContent||{};stage.classList.add('egg-shake');setTimeout(()=>stage.classList.remove('egg-shake'),850);if(vc.text){const el=document.createElement('div');el.className='egg-st';el.textContent=vc.text;document.body.appendChild(el);egOverlay=el;setTimeout(()=>{if(egOverlay===el){el.remove();egOverlay=null}},2200)}if(egAudio&&!egg.loop)egAudio.addEventListener('ended',()=>{egAudio=null},{once:true})}
+function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('grabbing');if(tap){const wx=(cx-camX)/scale,wy=(cy-camY)/scale;let h=null;for(const it of D.items){if(found.has(it.id))continue;const dx=wx-it.x,dy=wy-it.y;if(Math.sqrt(dx*dx+dy*dy)<it.r){h=it;break}}if(h){if(h.easterEgg&&h.easterEgg.enabled){egTrigger(h.easterEgg);return}found.add(h.id);addMark(h);pop('found!',h.x,h.y-h.r-8,'pop');sfxFound();if(navigator.vibrate)navigator.vibrate([30,40,60]);document.getElementById('l-'+h.id)?.classList.add('found');updateCtr()}else{const m=['nope!','miss!','hmm'];pop(m[Math.floor(Math.random()*m.length)],wx,wy,'miss');sfxMiss();if(navigator.vibrate)navigator.vibrate(40)}}}
 stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEventListener('mouseup',pu);
 stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
 document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
