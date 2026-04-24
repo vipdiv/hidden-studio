@@ -81,13 +81,13 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
         {/* Tabs */}
         <div style={{ display: 'flex', flex: 1, overflowX: 'hidden' }}>
           {group.tabs.map((tabId, i) => {
-            const active = group.activeTab === i && !group.minimized;
+            const active = group.activeTab === i;
             return (
               <div
                 key={tabId}
                 data-no-drag="1"
                 onMouseDown={e => onTabDrag(group.id, tabId, e)}
-                onClick={() => onUpdate({ ...group, activeTab: i, minimized: false })}
+                onClick={() => onUpdate({ ...group, activeTab: i })}
                 style={{
                   background: active ? 'var(--ps-panel-bg)' : 'transparent',
                   borderRight: '1px solid var(--ps-border)',
@@ -116,12 +116,6 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
               </svg>
             </CtrlBtn>
           )}
-          <CtrlBtn
-            title={group.minimized ? 'Expand panel' : 'Collapse panel'}
-            onClick={() => onUpdate({ ...group, minimized: !group.minimized })}
-          >
-            {group.minimized ? '»' : '«'}
-          </CtrlBtn>
           <CtrlBtn title="Close panel" onClick={() => onRemove(group.id)}>
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <line x1="1" y1="1" x2="9" y2="9" stroke="currentColor" strokeWidth="1.2"/>
@@ -132,11 +126,10 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
       </div>
 
       {/* Panel content */}
-      {!group.minimized && (
+      {(
         <div className="panel-body" style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: group.floating ? (group.height || 520) : undefined }}>
           <PanelContent panelId={group.tabs[group.activeTab]} />
         </div>
-      )}
 
       {/* Drop-to-merge hint */}
       {isDropTarget && (
