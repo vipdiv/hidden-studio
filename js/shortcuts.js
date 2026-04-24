@@ -98,6 +98,21 @@ window.Shortcuts = (function() {
           e.preventDefault();
           return;
 
+        case 'r': case 'R':
+          toggleRulers();
+          e.preventDefault();
+          return;
+
+        case "'":
+          toggleGrid();
+          e.preventDefault();
+          return;
+
+        case 'y': case 'Y':
+          toggleOutlineMode();
+          e.preventDefault();
+          return;
+
         case '0':
           window.Game.centerOnPlanet();
           e.preventDefault();
@@ -277,6 +292,75 @@ window.Shortcuts = (function() {
     document.body.classList.remove('panels-hidden');
   }
 
-  return { init, showShortcutsModal, zoomAt, togglePanels, resetPanels };
+  /* ── M6: Canvas chrome toggles ──────────────── */
+
+  function toggleRulers() {
+    document.body.classList.toggle('show-rulers');
+  }
+
+  function toggleGrid() {
+    document.body.classList.toggle('show-grid');
+  }
+
+  function toggleOutlineMode() {
+    document.body.classList.toggle('outline-mode');
+  }
+
+  /* ── M6: Zoom badge polling ─────────────────── */
+
+  function startZoomBadge() {
+    const badge = document.getElementById('zoomBadge');
+    if (!badge) return;
+    setInterval(() => {
+      const z = window.Game?.scale;
+      if (z != null) badge.textContent = Math.round(z * 100) + '%';
+    }, 200);
+  }
+
+  /* ── M6: Status bar cursor coords ───────────── */
+
+  function startStatusBar() {
+    const coords = document.getElementById('statusCoords');
+    if (!coords) return;
+    document.getElementById('stage')?.addEventListener('mousemove', e => {
+      if (!window.Game) return;
+      const wp = window.Game.screenToWorld(e.clientX, e.clientY);
+      coords.textContent = `${Math.round(wp.x)}, ${Math.round(wp.y)}`;
+    });
+  }
+
+  /* ── M7 stubs — filled in next milestone ────── */
+
+  function showDocsModal() {
+    window.Editor?.openModal?.('Documentation', `
+      <p style="color:var(--ui-text-dim);font-size:13px;line-height:1.7">
+        Full documentation coming in M7.<br>
+        For now, press <strong>?</strong> for keyboard shortcuts.
+      </p>`);
+  }
+
+  function showSettingsModal() {
+    window.Editor?.openModal?.('Settings', `
+      <p style="color:var(--ui-text-dim);font-size:13px;line-height:1.7">
+        Settings panel coming in M7.
+      </p>`);
+  }
+
+  /* ── init ───────────────────────────────────── */
+
+  function init() {
+    document.addEventListener('keydown', onKeyDown);
+    document.addEventListener('keyup',   onKeyUp);
+    startZoomBadge();
+    startStatusBar();
+  }
+
+  return {
+    init,
+    showShortcutsModal, showDocsModal, showSettingsModal,
+    zoomAt,
+    togglePanels, resetPanels,
+    toggleRulers, toggleGrid, toggleOutlineMode,
+  };
 
 })();

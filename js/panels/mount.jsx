@@ -294,8 +294,11 @@ const PanelIsland = () => {
       {/* Dock drop overlay — shows when dragging near right edge */}
       {nearDock && <DockDropOverlay active />}
 
-      {/* Floating panels */}
-      {floatingGroups.map(g => <PanelGroup key={g.id} group={g} {...pgProps} />)}
+      {/* Floating panels — portalled to body so #panel-root pointer-events:none doesn't block drags */}
+      {floatingGroups.map(g => ReactDOM.createPortal(
+        <PanelGroup key={g.id} group={g} {...pgProps} />,
+        document.body
+      ))}
 
       {/* Tab drag ghost */}
       {tabDrag && (

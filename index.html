@@ -447,6 +447,21 @@
     <button class="ghost-btn" id="cropCancel">✕ Cancel</button>
   </div>
 
+  <!-- ═══ M6: CANVAS CHROME ═══ -->
+  <!-- Rulers (shown when body.show-rulers) -->
+  <div id="rulerCorner" class="ruler-corner"></div>
+  <div id="rulerTop"    class="ruler-h"></div>
+  <div id="rulerLeft"   class="ruler-v"></div>
+  <!-- Zoom badge -->
+  <div id="zoomBadge" class="zoom-badge">100%</div>
+  <!-- Status bar -->
+  <footer id="statusBar" class="status-bar">
+    <span id="statusMsg">Ready</span>
+    <span class="status-right">
+      <span id="statusCoords">0, 0</span>
+    </span>
+  </footer>
+
   <!-- ═══ PANEL ROOT — React island mounts here ═══ -->
   <div id="panel-root"></div>
 
