@@ -1030,6 +1030,47 @@ body.edit-mode .tool-strip { display: flex; }
   flex-shrink: 0;
 }
 
+/* Panel collapse button at the bottom of tool strip */
+.tool-strip-spacer { flex: 1; min-height: 4px; }
+#editPanelCollapseBtn { font-size: 12px; opacity: 0.55; }
+#editPanelCollapseBtn:hover { opacity: 1; }
+
+/* ─── Collapsible edit-panel sections ─── */
+#editPanel .tool-section > h3 {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+}
+#editPanel .tool-section > h3::after {
+  content: '▾';
+  font-size: 9px;
+  color: rgba(245,239,226,0.35);
+  margin-left: auto;
+  transition: transform 0.15s;
+  display: inline-block;
+  flex-shrink: 0;
+  padding-left: 6px;
+}
+#editPanel .tool-section.sec-collapsed > h3::after {
+  transform: rotate(-90deg);
+}
+#editPanel .tool-section.sec-collapsed > *:not(h3) {
+  display: none !important;
+}
+/* Layers section has a .layers-header div instead of h3 */
+.layers-header { cursor: pointer; user-select: none; }
+.layers-header-title::after {
+  content: ' ▾';
+  font-size: 9px;
+  color: rgba(245,239,226,0.35);
+  transition: transform 0.15s;
+  display: inline-block;
+}
+#layersSection.sec-collapsed .layers-header-title::after { transform: rotate(-90deg); }
+#layersSection.sec-collapsed .layers-list,
+#layersSection.sec-collapsed .layers-add-folder-btn { display: none !important; }
+
 .edit-panel {
   position: fixed;
   top: 72px;

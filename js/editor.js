@@ -130,6 +130,9 @@ window.Editor = (function() {
       if (e.target === modalBackdrop) closeModal();
     });
 
+    // Collapsible panel sections + panel-level collapse button
+    initCollapsibleSections();
+
     // Click on hit zones to select
     hitsLayer.addEventListener('pointerdown', onHitPointerDown);
     // Click on base layer to select (edit mode only; handler checks mode+tool)
@@ -2219,6 +2222,60 @@ window.Editor = (function() {
 
   function schedSave() {
     window.Projects.scheduleAutosave(project);
+  }
+
+  /* ————————————————————————————————————————
+     COLLAPSIBLE PANEL SECTIONS
+  ———————————————————————————————————————— */
+  function initCollapsibleSections() {
+    const KEY = 'hs_panelState';
+    const state = JSON.parse(localStorage.getItem(KEY) || '{}');
+
+    // Wire each .tool-section > h3 in the edit panel
+    document.querySelectorAll('#editPanel .tool-section > h3').forEach(h3 => {
+      const sec = h3.parentElement;
+      const key = sec.id || h3.textContent.trim().replace(/\s+/g, '_').toLowerCase();
+      if (state[key]) sec.classList.add('sec-collapsed');
+      h3.addEventListener('click', () => {
+        sec.classList.toggle('sec-collapsed');
+        state[key] = sec.classList.contains('sec-collapsed');
+        localStorage.setItem(KEY, JSON.stringify(state));
+      });
+    });
+
+    // Layers section uses .layers-header, not h3
+    const layersSec = document.getElementById('layersSection');
+    const layersHdr = layersSec?.querySelector('.layers-header');
+    if (layersSec && layersHdr) {
+      const key = 'layerssection';
+      if (state[key]) layersSec.classList.add('sec-collapsed');
+      layersHdr.addEventListener('click', (e) => {
+        if (e.target.closest('#addFolderBtn')) return;
+        layersSec.classList.toggle('sec-collapsed');
+        state[key] = layersSec.classList.contains('sec-collapsed');
+        localStorage.setItem(KEY, JSON.stringify(state));
+      });
+    }
+
+    // Panel-level collapse button (bottom of tool strip)
+    const collapseBtn = document.getElementById('editPanelCollapseBtn');
+    const editPanelEl = document.getElementById('editPanel');
+    function syncCollapseBtn() {
+      if (!collapseBtn || !editPanelEl) return;
+      const collapsed = editPanelEl.classList.contains('collapsed');
+      collapseBtn.textContent = collapsed ? '▷' : '◁';
+      collapseBtn.title = collapsed ? 'Show panel' : 'Hide panel';
+    }
+    if (collapseBtn && editPanelEl) {
+      if (state.panelCollapsed) editPanelEl.classList.add('collapsed');
+      syncCollapseBtn();
+      collapseBtn.addEventListener('click', () => {
+        editPanelEl.classList.toggle('collapsed');
+        state.panelCollapsed = editPanelEl.classList.contains('collapsed');
+        localStorage.setItem(KEY, JSON.stringify(state));
+        syncCollapseBtn();
+      });
+    }
   }
 
   /* Draw stroke handling — called from app.js with world coordinates */
