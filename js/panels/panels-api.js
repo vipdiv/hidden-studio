@@ -43,9 +43,8 @@ window.Panels = (function () {
     _getRegs() { return _regs; },
     _connect(api) {
       _api = api;
-      // Apply persisted theme to React island
-      const saved = document.body.dataset.theme;
-      if (saved) _api.setTheme(saved);
+      // body[data-theme] is already set before React mounts (see IIFE above),
+      // so CSS vars are correct at first paint — no extra setTheme call needed.
     },
 
     /* ── Visibility ──────────────────────────────── */

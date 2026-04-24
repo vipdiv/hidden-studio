@@ -125,9 +125,9 @@ const PanelIsland = () => {
         return groupsRef.current.some(g => g.tabs.includes(panelId));
       },
       setTheme(_name) {
-        // CSS vars handle theme; React re-reads them automatically
-        // Force a re-render so panels pick up new var() values
-        setGroups(prev => [...prev]);
+        // CSS custom properties resolve at paint-time — when body[data-theme]
+        // changes, the browser recalculates all var(--ps-*) inline styles
+        // automatically. No React re-render needed.
       },
       onSelectionChange(_sel) {},
       onZoomChange(_z) {},
