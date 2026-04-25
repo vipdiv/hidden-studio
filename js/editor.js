@@ -183,6 +183,17 @@ window.Editor = (function() {
     updateSelectedPanel();
     renderLayersPanel();
     syncMissControls();
+
+    // Show base image size in the panel when loading a project with an uploaded image
+    const infoEl = document.getElementById('baseImageInfo');
+    if (infoEl) {
+      if (p.baseType === 'image' && p.baseContent?.startsWith('data:image')) {
+        const bytes = Math.round((p.baseContent.length - p.baseContent.indexOf(',') - 1) * 0.75);
+        _showBaseImageInfo(bytes, bytes);
+      } else {
+        infoEl.style.display = 'none';
+      }
+    }
   }
 
   function syncMissControls() {
@@ -1833,6 +1844,8 @@ window.Editor = (function() {
     delete project.baseImgW; delete project.baseImgH;
     renderBaseLayer();
     schedSave();
+    const el = document.getElementById('baseImageInfo');
+    if (el) el.style.display = 'none';
   }
   function setBaseScan() {
     project.baseType = 'image';
@@ -1840,20 +1853,86 @@ window.Editor = (function() {
     delete project.baseImgW; delete project.baseImgH;
     renderBaseLayer();
     schedSave();
+    const el = document.getElementById('baseImageInfo');
+    if (el) el.style.display = 'none';
   }
+  function _fmtBytes(b) {
+    if (b >= 1024 * 1024) return (b / 1024 / 1024).toFixed(1) + ' MB';
+    if (b >= 1024) return Math.round(b / 1024) + ' KB';
+    return b + ' B';
+  }
+
+  function _showBaseImageInfo(origBytes, finalBytes) {
+    const el = document.getElementById('baseImageInfo');
+    if (!el) return;
+    const TARGET = 500 * 1024;
+    const compressed = finalBytes !== origBytes;
+    const stillLarge = finalBytes > TARGET;
+    const color = stillLarge ? '#e8931a' : 'var(--ui-text-dim)';
+    el.style.display = 'block';
+    if (compressed) {
+      el.innerHTML = `<span style="color:var(--ui-blue)">↓ Compressed</span>: ${_fmtBytes(origBytes)} → <span style="color:${color}">${_fmtBytes(finalBytes)}</span>${stillLarge ? ' — <em>still large, try a smaller source</em>' : ' ✓'}`;
+    } else {
+      el.innerHTML = `<span style="color:${color}">${_fmtBytes(finalBytes)}</span>${stillLarge ? ' — <em>large image, will use significant storage</em>' : ''}`;
+    }
+  }
+
+  function _applyBaseImage(dataUrl, origBytes) {
+    project.baseType = 'image';
+    project.baseContent = dataUrl;
+    delete project.baseImgW; delete project.baseImgH;
+    renderBaseLayer();
+    schedSave();
+    const storedBytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+    _showBaseImageInfo(origBytes, storedBytes);
+  }
+
   function onBaseUpload(e) {
     const file = e.target.files?.[0];
     if (!file) return;
+    e.target.value = '';
+    const origBytes = file.size;
+
+    // SVGs: pass through as-is (canvas can't meaningfully re-encode them)
+    if (file.type === 'image/svg+xml') {
+      const reader = new FileReader();
+      reader.onload = (ev) => _applyBaseImage(ev.target.result, origBytes);
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    // Raster images: resize to max 1600px then JPEG-encode, reducing quality
+    // until stored size < 500 KB or quality floor (0.30) is reached.
     const reader = new FileReader();
     reader.onload = (ev) => {
-      project.baseType = 'image';
-      project.baseContent = ev.target.result;
-      delete project.baseImgW; delete project.baseImgH;
-      renderBaseLayer();
-      schedSave();
+      const img = new Image();
+      img.onload = () => {
+        const MAX_DIM = 1600, TARGET = 500 * 1024;
+        let w = img.naturalWidth, h = img.naturalHeight;
+        if (w > MAX_DIM || h > MAX_DIM) {
+          const s = MAX_DIM / Math.max(w, h);
+          w = Math.round(w * s); h = Math.round(h * s);
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+
+        let quality = 0.85;
+        const tryEncode = () => {
+          const result = canvas.toDataURL('image/jpeg', quality);
+          const bytes = Math.round((result.length - result.indexOf(',') - 1) * 0.75);
+          if (bytes <= TARGET || quality <= 0.30) {
+            _applyBaseImage(result, origBytes);
+          } else {
+            quality = Math.round((quality - 0.10) * 100) / 100;
+            tryEncode();
+          }
+        };
+        tryEncode();
+      };
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
-    e.target.value = '';
   }
 
   function renderBaseLayer() {
