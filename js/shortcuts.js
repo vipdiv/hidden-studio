@@ -528,6 +528,75 @@ window.Shortcuts = (function() {
     startZoomBadge();
     startStatusBar();
     document.body.classList.add('rulers-enabled', 'grid-enabled', 'outline-enabled');
+    initRulers();
+  }
+
+  /* ── M6: Rulers — labels + click-to-toggle units ── */
+
+  let rulerUnit = (typeof localStorage !== 'undefined' && localStorage.getItem('hs-ruler-unit')) || 'in';
+  function pxPerUnit() { return rulerUnit === 'cm' ? 96 / 2.54 : 96; }
+
+  function renderRulers() {
+    const top    = document.getElementById('rulerTop');
+    const left   = document.getElementById('rulerLeft');
+    const corner = document.getElementById('rulerCorner');
+    if (!top || !left || !corner) return;
+
+    corner.textContent = rulerUnit;
+
+    const major = pxPerUnit();
+    const minor = major / (rulerUnit === 'cm' ? 2 : 4); // 0.5cm or 0.25in
+
+    // Top ruler
+    const tw = top.offsetWidth;
+    let html = '';
+    for (let x = minor; x < tw; x += minor) {
+      const isMajor = Math.abs(x % major) < 0.5 || Math.abs((x % major) - major) < 0.5;
+      const h = isMajor ? 8 : 4;
+      html += `<span class="ruler-tick" style="left:${x}px;height:${h}px"></span>`;
+    }
+    for (let i = 1, x = major; x < tw; i++, x = i * major) {
+      html += `<span class="ruler-label" style="left:${x}px">${i}</span>`;
+    }
+    top.innerHTML = html;
+
+    // Left ruler
+    const lh = left.offsetHeight;
+    html = '';
+    for (let y = minor; y < lh; y += minor) {
+      const isMajor = Math.abs(y % major) < 0.5 || Math.abs((y % major) - major) < 0.5;
+      const w = isMajor ? 8 : 4;
+      html += `<span class="ruler-tick" style="top:${y}px;width:${w}px"></span>`;
+    }
+    for (let i = 1, y = major; y < lh; i++, y = i * major) {
+      html += `<span class="ruler-label" style="top:${y}px">${i}</span>`;
+    }
+    left.innerHTML = html;
+  }
+
+  function setRulerUnit(u) {
+    rulerUnit = (u === 'cm') ? 'cm' : 'in';
+    try { localStorage.setItem('hs-ruler-unit', rulerUnit); } catch {}
+    renderRulers();
+  }
+
+  function toggleRulerUnit() {
+    setRulerUnit(rulerUnit === 'in' ? 'cm' : 'in');
+  }
+
+  function initRulers() {
+    const top    = document.getElementById('rulerTop');
+    const left   = document.getElementById('rulerLeft');
+    const corner = document.getElementById('rulerCorner');
+    if (!top || !left || !corner) return;
+    [top, left, corner].forEach(el => el.addEventListener('click', toggleRulerUnit));
+    renderRulers();
+    window.addEventListener('resize', () => renderRulers());
+    // Re-render when rulers become visible (offsetWidth/Height was 0 while hidden)
+    const obs = new MutationObserver(() => {
+      if (document.body.classList.contains('show-rulers')) renderRulers();
+    });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
 
   function togglePanels() {
