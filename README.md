@@ -12,7 +12,25 @@ No account, no server, no build step. Everything saves locally.
 
 Hidden Studio is a browser-based game maker for hidden object games (think Where's Waldo). Draw or import a scene, place circular hit zones over the things you want players to find, then share the game as a single standalone HTML file.
 
-**Current version:** Beta — see Help → About Hidden Studio inside the app for full release notes.
+**Current version:** 1.0 — see Help → About Hidden Studio inside the app for full release notes.
+
+---
+
+## What's new in 1.0
+
+- **Layer renaming** — double-click any layer (items, sprites, text, strokes, shapes) to rename it inline
+- **Smart shape labels** — shapes are now labeled by type ("Star 1", "Rectangle 2", "Ellipse 3") with chronological per-kind numbering
+- **Image auto-compression** — uploaded base images are resized and JPEG-encoded down to under 500 KB; before/after sizes shown
+- **Numbered rulers** — rulers display measurement labels with major/minor ticks; click any ruler to toggle inches ↔ centimetres
+- **Mode-aware UI** — every editor-only chrome element disappears in play mode (back, ?, FABs, panel dock); the find checklist disappears in edit mode
+- **Right-side dock collapse** — the panel dock has its own «/» toggle, mirroring the editor panel; state persists
+- **Standalone HTML export polish**
+  - Find panel is collapsible (◁ / 📋 toggle) and the camera centers in the available area instead of being hidden behind the panel
+  - Mouse wheel and trackpad zoom around the cursor; works anywhere on the page
+  - Mobile (< 640 px): panel becomes a bottom sheet with a "📋 Find list" pill
+  - Auto-collapses on narrow desktop windows (640–900 px)
+- **Better modals** — Documentation and Release Notes are now capped at 85 vh with internal scroll instead of stretching off-screen
+- **Storage clarity** — project list size column shows MB for files ≥ 1 MB
 
 ---
 
@@ -57,7 +75,7 @@ No dependencies, no build step. Plain HTML + CSS + vanilla JS.
 - Fit canvas to imported image automatically
 
 ### Base layer
-- Built-in Planet SVG, Original Scan texture, or any uploaded image
+- Upload any image (PNG/JPG/SVG); large rasters are auto-compressed to under 500 KB
 - Position, rotation, scale, flip, and full filter controls
 - Crop preserves pixel dimensions so the image never shrinks unexpectedly
 
@@ -116,7 +134,8 @@ No dependencies, no build step. Plain HTML + CSS + vanilla JS.
 
 ```
 index.html          — app shell and markup
-styles.css          — all styles
+styles.css          — main styles
+styles-panels.css   — panel system + canvas chrome (rulers, grid)
 sw.js               — service worker (offline/PWA)
 manifest.json       — PWA manifest
 js/
@@ -124,14 +143,18 @@ js/
   editor.js         — all editor tools, panels, modals
   game.js           — play mode, camera, pan/zoom
   menu.js           — menu bar actions, About modal
-  projects.js       — localStorage CRUD, import/export
-  shortcuts.js      — keyboard shortcut handling
+  projects.js       — localStorage CRUD, import/export, standalone HTML export
+  shortcuts.js      — keyboard shortcuts, rulers, status bar
   draw.js           — pen, eraser, shape tools
   sprites.js        — built-in SVG sprite library
   audio.js          — Web Audio sound engine
   animations.js     — CSS animation system
   transforms.js     — transform/filter controls
   easter-eggs.js    — Easter egg runtime (editor + play)
+  panels/
+    panels-api.js   — panel registration bridge
+    panel-system.jsx — dockable / floating panel system
+    mount.jsx       — panel dock + collapse state
   data/
     presets.js      — starter project templates
     scene.svg.js    — built-in planet SVG data

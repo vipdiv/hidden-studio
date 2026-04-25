@@ -2,6 +2,84 @@
 
 window.CHANGELOG = [
   {
+    version: '1.0',
+    label: 'Version 1.0',
+    date: 'April 2026',
+    tagline: 'Polish, responsiveness, and play-mode cleanup',
+    notes: [
+      {
+        section: 'Layer Renaming',
+        items: [
+          'Double-click any layer to rename it inline — items, sprites, text labels, strokes, and shapes (base layer remains non-renamable)',
+          'Layer tooltip now reads "<name> — double-click to rename" for renamable layers',
+          'Shapes are labeled by type ("Star 1", "Rectangle 2", "Ellipse 3") instead of generic "Stroke N", with chronological per-kind numbering',
+          'Stroke "kind" metadata is preserved through save/load and JSON export/import',
+        ]
+      },
+      {
+        section: 'Image Upload & Storage',
+        items: [
+          'Uploaded base images now auto-compress: canvas resize to max 1600 px, then JPEG re-encode at 0.85 quality stepping down to 0.30 until file is under 500 KB',
+          'Before/after size shown under the upload button ("Compressed: 4.1 MB → 312 KB ✓")',
+          'SVG uploads pass through unchanged (already compact)',
+          'Project list size column displays MB for files ≥ 1 MB instead of cramped KB numbers',
+          'Removed "Planet SVG" and "Original scan" buttons from the Base Layer panel — only Upload Image remains',
+        ]
+      },
+      {
+        section: 'Rulers, Grid, Outline',
+        items: [
+          'Rulers now render numbered measurement labels with major and minor tick marks (was an empty CSS gradient before)',
+          'Default unit is inches (96 px/in); click any ruler or the corner square to toggle to centimetres (37.8 px/cm)',
+          'Corner square displays the current unit ("in" / "cm"); preference persists across sessions',
+          'View menu now built dynamically each open with green checkmarks for active state (matching the Window menu style)',
+          'Rulers / Grid / Outline disappear from the View menu when their master toggle is OFF in Settings',
+          'View menu labels right-aligned with shortcut keys far right',
+          'Lower ruler z-index so menu dropdowns render correctly above',
+        ]
+      },
+      {
+        section: 'Modals',
+        items: [
+          'Modals now cap at 85vh with the header pinned and the body scrolling internally — Documentation and Release Notes no longer stretch off-screen on tall content',
+          'Thin styled scrollbar inside the modal body',
+          'Backdrop uses safe-center alignment so very tall content still scrolls accessibly on small viewports',
+        ]
+      },
+      {
+        section: 'Editor Panel Chrome',
+        items: [
+          'Editor panel sits flush against the 36 px tool strip (no gap)',
+          'Collapsed-editor reopen button is now 26 × 56 px with red accent outline, positioned below the rulers (was a tiny grey rectangle camouflaged behind the ruler corner)',
+          'Hover state expands the toggle to 30 px wide with a filled accent background',
+          'Right-side panel dock now has its own «/» collapse toggle, mirroring the editor panel',
+          'Dock collapse state persists in localStorage',
+        ]
+      },
+      {
+        section: 'Play / Edit Mode Cleanup',
+        items: [
+          'Play mode now hides every editor-only chrome element: back arrow, help (?) button, edit-panel toggle, mobile pencil/panels FABs, and the entire right-side panel dock',
+          'Edit mode hides the "Find These" checklist panel and its clipboard (📋) toggle — the find list belongs to play only',
+          'Lowered the editor-toggle button z-index so the menu bar dropdowns render above it',
+          'Hit-zone outlines disappear in play mode; outlines and labels return when you switch back to Edit',
+        ]
+      },
+      {
+        section: 'Standalone HTML Export',
+        items: [
+          'Find panel is now collapsible: ◁ button on the panel header hides it, floating 📋 button at the left edge brings it back',
+          'Camera centers in the available area (excluding the panel) instead of the full window — canvas no longer sits half-hidden',
+          'Auto-collapse panel on narrow desktop windows (640–900 px) so the canvas gets full width by default',
+          'Mobile (< 640 px): panel becomes a bottom-sheet with a "📋 Find list" pill-button toggle in the bottom-left',
+          'Mouse wheel and trackpad zoom around the cursor position (clamped 0.5×–6× the fit-to-window scale)',
+          'Wheel listener attached to the document so scrolling anywhere on the page triggers zoom; scrolling over the find panel still scrolls its list naturally',
+          'Resize handler recenters the canvas on window resize and orientation change',
+        ]
+      },
+    ]
+  },
+  {
     version: 'Beta',
     label: 'Version Beta',
     date: 'April 2025',
