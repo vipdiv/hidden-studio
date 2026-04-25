@@ -101,11 +101,46 @@ window.Projects = (function() {
     }
   }
 
+  let _storageFullShown = false;
   function markSaveFailed() {
     if (statusEl) {
-      statusEl.textContent = 'save failed — storage full?';
-      statusEl.classList.add('unsaved');
+      statusEl.textContent = 'Save failed — storage full';
+      statusEl.classList.add('unsaved', 'save-failed');
     }
+    // Show the explainer modal once per session — autosave runs every few
+    // seconds so we don't want to keep popping it up.
+    if (!_storageFullShown) {
+      _storageFullShown = true;
+      showStorageFullModal();
+    }
+  }
+
+  function showStorageFullModal() {
+    const body = `
+      <div style="font-size:13px;line-height:1.6;color:var(--ui-text)">
+        <p style="margin:0 0 12px"><strong>Your browser's storage for this app is full.</strong></p>
+        <p style="margin:0 0 12px;color:var(--ui-text-dim)">
+          Hidden Studio saves every project locally in your browser (no server, no
+          account). Browsers cap that storage at around 5–10&nbsp;MB per site, and
+          you've hit the limit — usually because of large imported images.
+        </p>
+        <p style="margin:0 0 8px"><strong>How to fix it:</strong></p>
+        <ol style="margin:0 0 12px 20px;padding:0;color:var(--ui-text-dim)">
+          <li style="margin-bottom:6px"><strong>Export this project</strong> as JSON or HTML
+            (File → Export) so you don't lose it.</li>
+          <li style="margin-bottom:6px"><strong>Go back</strong> to the start screen
+            (← in the top-left) and <strong>delete old projects</strong> you no longer need.</li>
+          <li style="margin-bottom:6px"><strong>Compress your base image</strong> before
+            uploading — large PNGs/JPEGs eat most of the budget. A 1600&nbsp;px-wide JPEG
+            at 80% quality is usually plenty.</li>
+          <li>If you really need more space, you can re-import the JSON later into
+            a fresh browser profile.</li>
+        </ol>
+        <p style="margin:0;font-size:11px;color:var(--ui-text-dim);font-style:italic">
+          Until you free up space, your latest changes will not persist when you close the tab.
+        </p>
+      </div>`;
+    window.Editor?.openModal?.('Save failed — storage full', body);
   }
 
   function scheduleAutosave(data) {
