@@ -779,7 +779,7 @@ button.chip.off { opacity: 0.45; }
   position: fixed;
   top: 80px;
   left: 0;
-  z-index: 21;
+  z-index: 36;
   width: 28px; height: 40px;
   font-size: 14px;
   border: 1.5px solid var(--panel-border);
@@ -788,16 +788,28 @@ button.chip.off { opacity: 0.45; }
   color: var(--paper);
   border-radius: 0 6px 6px 0;
   display: none;
+  cursor: pointer;
 }
 .edit-panel-toggle {
-  top: 80px;
+  top: 110px;
   left: 36px;
-  width: 22px;
-  height: 36px;
-  border-radius: 0 6px 6px 0;
-  font-size: 12px;
+  width: 26px;
+  height: 56px;
+  border-radius: 0 8px 8px 0;
+  font-size: 16px;
+  font-weight: 700;
+  border: 1.5px solid var(--accent, #ff8c6b);
   border-left: none;
+  background: var(--panel-bg-2, #2a2a2a);
+  color: var(--accent, #ff8c6b);
+  box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
 }
+.edit-panel-toggle:hover {
+  background: var(--accent, #ff8c6b);
+  color: #fff;
+  width: 30px;
+}
+body.show-rulers .edit-panel-toggle { left: 52px; }
 .list-panel.collapsed ~ .panel-toggle { display: block; }
 body.edit-mode .edit-panel.collapsed ~ .edit-panel-toggle { display: block; }
 
