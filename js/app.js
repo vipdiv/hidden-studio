@@ -236,7 +236,7 @@
     const emptyEl = document.getElementById('explorerEmpty');
     if (emptyEl) emptyEl.classList.toggle('hidden', projects.length > 0);
 
-    const fmtBytes = (b) => b >= 1024 ? (b / 1024).toFixed(0) + ' KB' : b + ' B';
+    const fmtBytes = (b) => b >= 1024 * 1024 ? (b / 1024 / 1024).toFixed(1) + ' MB' : b >= 1024 ? (b / 1024).toFixed(0) + ' KB' : b + ' B';
     const fmtDate = (ts) => {
       if (!ts) return '—';
       const d = new Date(ts);
