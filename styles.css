@@ -485,13 +485,14 @@ button.chip.off { opacity: 0.45; }
 .stage.erase-cursor      { cursor: not-allowed; }
 .stage.add-cursor        { cursor: cell; }
 .stage.crosshair-cursor  { cursor: crosshair; }
-/* Pan tool: force grab cursor on all child elements so sprites/text don't override it */
-.stage.pan-active .sprite,
-.stage.pan-active .hit,
-.stage.pan-active .text-el,
-.stage.pan-active .stroke-el { cursor: grab; }
-.stage.grabbing .sprite,
-.stage.grabbing .hit { cursor: grabbing; }
+/* Select tool: arrow cursor everywhere on canvas */
+.stage.select-active,
+.stage.select-active * { cursor: default !important; }
+/* Pan tool: grab cursor everywhere on canvas */
+.stage.pan-active,
+.stage.pan-active * { cursor: grab !important; }
+.stage.pan-active.grabbing,
+.stage.pan-active.grabbing * { cursor: grabbing !important; }
 
 .world {
   position: absolute;

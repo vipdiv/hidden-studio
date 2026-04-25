@@ -300,13 +300,14 @@ window.Editor = (function() {
     tool = t;
     toolBtns.forEach(b => b.classList.toggle('active', b.dataset.tool === t));
     // Cursor hints
-    stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor', 'crosshair-cursor', 'pan-active');
+    stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor', 'crosshair-cursor', 'pan-active', 'select-active');
     if (t === 'pen')                              stage.classList.add('pen-cursor');
     else if (t === 'eraser')                      stage.classList.add('erase-cursor');
     else if (t === 'addItem' || t === 'addSurprise' || t === 'text') stage.classList.add('add-cursor');
     else if (t === 'rect' || t === 'ellipse' || t === 'star') stage.classList.add('crosshair-cursor');
     else if (t === 'crop') stage.classList.add('crosshair-cursor');
-    else if (t === 'pan')  stage.classList.add('pan-active');
+    else if (t === 'pan')    stage.classList.add('pan-active');
+    else if (t === 'select') stage.classList.add('select-active');
     // Show/hide crop overlay
     if (t === 'crop') { document.body.classList.add('crop-active'); }
     else              { document.body.classList.remove('crop-active'); }
