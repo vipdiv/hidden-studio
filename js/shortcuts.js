@@ -393,6 +393,8 @@ window.Shortcuts = (function() {
         const rulers = document.body.classList.contains('rulers-enabled');
         const grid   = document.body.classList.contains('grid-enabled');
         const outline = document.body.classList.contains('outline-enabled');
+        const zoneColor     = localStorage.getItem('hs_zone_color')     || '#1473e6';
+        const surpriseColor = localStorage.getItem('hs_surprise_color') || '#e07b39';
         content = `
           ${row('Theme', `<select onchange="window._settingsTheme(this.value)" style="background:var(--panel-bg-2);border:1px solid var(--panel-border);color:var(--ui-text);border-radius:3px;padding:2px 6px;font-size:12px">
             <option value="classic" ${theme==='classic'?'selected':''}>Classic</option>
@@ -403,6 +405,8 @@ window.Shortcuts = (function() {
           ${toggle('Rulers (Ctrl+R)', rulers,   "window._settingsToggle('rulers')")}
           ${toggle('Grid (Ctrl+\')',  grid,     "window._settingsToggle('grid')")}
           ${toggle('Outline mode',    outline,  "window._settingsToggle('outline')")}
+          ${row('Hit zone color',    `<input type="color" value="${zoneColor}"     onchange="window._settingsZoneColor(this.value)"    style="width:32px;height:24px;border:1px solid var(--panel-border);border-radius:3px;padding:1px;background:none;cursor:pointer">`)}
+          ${row('Surprise color',    `<input type="color" value="${surpriseColor}" onchange="window._settingsSurpriseColor(this.value)" style="width:32px;height:24px;border:1px solid var(--panel-border);border-radius:3px;padding:1px;background:none;cursor:pointer">`)}
         `;
       } else if (activeTab === 'panels') {
         const regs = window.Panels?._getRegs() || {};
@@ -483,6 +487,8 @@ window.Shortcuts = (function() {
       renderTab();
     };
     window._settingsTheme = (v) => { window.Panels?.setTheme(v); };
+    window._settingsZoneColor = (v) => { localStorage.setItem('hs_zone_color', v); applyZoneColors(); };
+    window._settingsSurpriseColor = (v) => { localStorage.setItem('hs_surprise_color', v); applyZoneColors(); };
     window._settingsToggle = (key) => {
       if (key === 'rulers') {
         const on = document.body.classList.toggle('rulers-enabled');
@@ -528,6 +534,26 @@ window.Shortcuts = (function() {
     }
   }
 
+  /* ── Hit zone / surprise colors ─────────────── */
+
+  function hexToRgb(hex) {
+    const r = parseInt(hex.slice(1,3), 16);
+    const g = parseInt(hex.slice(3,5), 16);
+    const b = parseInt(hex.slice(5,7), 16);
+    return { r, g, b };
+  }
+
+  function applyZoneColors() {
+    const zHex = localStorage.getItem('hs_zone_color')     || '#1473e6';
+    const sHex = localStorage.getItem('hs_surprise_color') || '#e07b39';
+    const z = hexToRgb(zHex), s = hexToRgb(sHex);
+    const root = document.documentElement;
+    root.style.setProperty('--edit-zone',          `rgba(${z.r},${z.g},${z.b},0.55)`);
+    root.style.setProperty('--edit-zone-fill',     `rgba(${z.r},${z.g},${z.b},0.10)`);
+    root.style.setProperty('--edit-surprise',      `rgba(${s.r},${s.g},${s.b},0.65)`);
+    root.style.setProperty('--edit-surprise-fill', `rgba(${s.r},${s.g},${s.b},0.12)`);
+  }
+
   /* ── init ───────────────────────────────────── */
 
   function init() {
@@ -536,6 +562,7 @@ window.Shortcuts = (function() {
     startZoomBadge();
     startStatusBar();
     document.body.classList.add('rulers-enabled', 'grid-enabled', 'outline-enabled');
+    applyZoneColors();
     initRulers();
   }
 
