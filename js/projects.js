@@ -456,8 +456,11 @@ function isMob(){return innerWidth<=640}
 document.getElementById('pc').addEventListener('click',()=>{if(isMob()){lp.classList.remove('open')}else{lp.classList.add('hidden')}center()});
 document.getElementById('po').addEventListener('click',()=>{if(isMob()){lp.classList.add('open')}else{lp.classList.remove('hidden')}center()});
 if(innerWidth<900&&!isMob())lp.classList.add('hidden');
-// Mouse wheel / trackpad zoom — keep world point under cursor fixed
-stage.addEventListener('wheel',(e)=>{
+// Mouse wheel / trackpad zoom — listen on document so the full window
+// triggers zoom, but skip events that originate inside the find panel
+// (so the panel can still scroll its list normally).
+document.addEventListener('wheel',(e)=>{
+  if(e.target.closest('#list-p'))return;
   e.preventDefault();
   const lineH=16,raw=e.deltaY*(e.deltaMode===1?lineH:e.deltaMode===2?innerHeight:1);
   const factor=Math.pow(1.001,-raw);
@@ -466,6 +469,7 @@ stage.addEventListener('wheel',(e)=>{
   const wx=(e.clientX-camX)/scale,wy=(e.clientY-camY)/scale;
   scale=ns;camX=e.clientX-wx*scale;camY=e.clientY-wy*scale;applyC();
 },{passive:false});
+// Recenter whenever the window resizes (covers orientation changes too)
 addEventListener('resize',()=>{center()});
 function R(){found=new Set();document.querySelectorAll('.mark,.pop,.miss').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr()}
 window.R=R;

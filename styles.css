@@ -597,6 +597,18 @@ button.chip.off { opacity: 0.45; }
 .play-mode .hit { border: none; background: transparent; cursor: pointer; pointer-events: none; }
 .play-mode .hit .label, .play-mode .hit .resize { display: none; }
 
+/* Hide editor-only chrome in play mode */
+body.play-mode #backBtn,
+body.play-mode #shortcutsBtn,
+body.play-mode .edit-panel-toggle,
+body.play-mode .panel-toggle,
+body.play-mode .m8-tool-fab-wrap,
+body.play-mode .m8-panels-fab,
+body.play-mode .dock-reexpand-btn { display: none !important; }
+
+/* Find list is only for play mode — hide in edit mode */
+body.edit-mode .list-panel { display: none !important; }
+
 /* 5. PLAY MODE UI ─────────────────────────────────── */
 /* Mark (red circle drawn around found items) */
 .mark {

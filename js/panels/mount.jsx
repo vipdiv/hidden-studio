@@ -317,6 +317,7 @@ const PanelIsland = () => {
       {/* Re-expand button — fixed at right edge when dock is collapsed */}
       {dockCollapsed && dockedGroups.length > 0 && (
         <button
+          className="dock-reexpand-btn"
           title="Show panels"
           onClick={() => setDockCollapsed(false)}
           style={{
