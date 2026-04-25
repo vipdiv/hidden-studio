@@ -295,7 +295,7 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .panel li.found{color:var(--found)}
 .panel li.found .label{text-decoration:line-through;text-decoration-color:var(--accent)}
 .panel li.found .box::after{content:"✓";color:var(--accent);font-size:16px;line-height:.5}
-@media (max-width:640px){.panel{left:0;right:0;top:auto;bottom:0;width:100%;max-height:50vh;border-radius:6px 6px 0 0;transform:translateY(100%)}.panel.hidden{transform:translateY(100%)}.panel.open{transform:translateY(0)}.popen{top:auto;bottom:14px;left:14px;border-radius:6px;border-left:1.5px solid rgba(245,239,226,.25)}.panel.open ~ .popen{display:none}}
+@media (max-width:640px){.panel{left:0;right:0;top:auto;bottom:0;width:100%;max-height:50vh;border-radius:6px 6px 0 0;transform:translateY(100%)}.panel.open{transform:translateY(0)}.popen{display:block;top:auto;bottom:14px;left:14px;width:auto;height:auto;padding:8px 14px;font-size:13px;font-family:'Caveat',cursive;border-radius:20px;border:1.5px solid rgba(245,239,226,.25)}.popen::after{content:" Find list"}.panel.open ~ .popen{display:none}}
 .win{position:fixed;inset:0;background:rgba(11,13,31,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .5s}
 .win.show{opacity:1;pointer-events:auto}
 .win-card{background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:6px;padding:28px 40px;text-align:center;box-shadow:4px 6px 0 var(--accent);max-width:380px}
@@ -452,9 +452,20 @@ stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEvent
 stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
 document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
 const lp=document.getElementById('list-p');
-document.getElementById('pc').addEventListener('click',()=>{if(innerWidth<=640){lp.classList.remove('open')}else{lp.classList.add('hidden')}center()});
-document.getElementById('po').addEventListener('click',()=>{if(innerWidth<=640){lp.classList.add('open')}else{lp.classList.remove('hidden')}center()});
-if(innerWidth<900&&innerWidth>640)lp.classList.add('hidden');
+function isMob(){return innerWidth<=640}
+document.getElementById('pc').addEventListener('click',()=>{if(isMob()){lp.classList.remove('open')}else{lp.classList.add('hidden')}center()});
+document.getElementById('po').addEventListener('click',()=>{if(isMob()){lp.classList.add('open')}else{lp.classList.remove('hidden')}center()});
+if(innerWidth<900&&!isMob())lp.classList.add('hidden');
+// Mouse wheel / trackpad zoom — keep world point under cursor fixed
+stage.addEventListener('wheel',(e)=>{
+  e.preventDefault();
+  const lineH=16,raw=e.deltaY*(e.deltaMode===1?lineH:e.deltaMode===2?innerHeight:1);
+  const factor=Math.pow(1.001,-raw);
+  const ns=Math.max(cScale()*0.5,Math.min(cScale()*6,scale*factor));
+  if(ns===scale)return;
+  const wx=(e.clientX-camX)/scale,wy=(e.clientY-camY)/scale;
+  scale=ns;camX=e.clientX-wx*scale;camY=e.clientY-wy*scale;applyC();
+},{passive:false});
 addEventListener('resize',()=>{center()});
 function R(){found=new Set();document.querySelectorAll('.mark,.pop,.miss').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr()}
 window.R=R;
