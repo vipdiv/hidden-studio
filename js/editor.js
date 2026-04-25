@@ -73,7 +73,6 @@ window.Editor = (function() {
     document.getElementById('exportHtmlBtn').addEventListener('click', () => {
       if (project) window.Projects.exportHtml(project);
     });
-    document.getElementById('addFolderBtn')?.addEventListener('click', _createGroup);
     document.getElementById('docSizeBtn')?.addEventListener('click', openDocSizeModal);
     document.getElementById('statsBtn')?.addEventListener('click', openStatsModal);
 
@@ -2502,20 +2501,6 @@ window.Editor = (function() {
       });
     });
 
-    // Layers section uses .layers-header, not h3
-    const layersSec = document.getElementById('layersSection');
-    const layersHdr = layersSec?.querySelector('.layers-header');
-    if (layersSec && layersHdr) {
-      const key = 'layerssection';
-      if (state[key]) layersSec.classList.add('sec-collapsed');
-      layersHdr.addEventListener('click', (e) => {
-        if (e.target.closest('#addFolderBtn')) return;
-        layersSec.classList.toggle('sec-collapsed');
-        state[key] = layersSec.classList.contains('sec-collapsed');
-        localStorage.setItem(KEY, JSON.stringify(state));
-      });
-    }
-
     // Panel-level collapse/expand
     const collapseBtn = document.getElementById('editPanelCollapseBtn');
     const expandBtn   = document.getElementById('editPanelToggle');
@@ -2750,7 +2735,7 @@ window.Editor = (function() {
     onStageTap,
     onDrawStart, onDrawMove, onDrawEnd, onDrawMoveRecord,
     renderBaseLayer, applyBaseTransform, renderBaseTransformPanel,
-    renderSprites, renderLayersPanel,
+    renderSprites, renderLayersPanel, createLayerGroup: _createGroup,
     selectSprite, selectBase, selectStroke,
     get selectedBase() { return selectedBase; },
     get selectedStroke() { return selectedStroke; },
