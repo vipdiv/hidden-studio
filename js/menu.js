@@ -22,12 +22,11 @@ window.Menu = (function() {
     if (!dd) return;
     dd.innerHTML = '';
 
-    const check = (on) => `<span style="color:${on ? '#5aaa5a' : 'transparent'}">&#10003;</span> `;
-    const noCheck = () => `<span style="color:transparent">&#10003;</span> `;
+    const check = (on) => `<span style="color:${on ? '#5aaa5a' : 'transparent'};flex-shrink:0">&#10003;</span>`;
 
     const addItem = (action, label, shortcut, active) => {
       const li = makeLi(action, {});
-      li.innerHTML = `${check(active)}<span style="margin-left:auto">${label}</span><span class="menu-shortcut">${shortcut}</span>`;
+      li.innerHTML = `${check(active)}<span style="flex:1;text-align:right">${label}</span><span class="menu-shortcut">${shortcut}</span>`;
       dd.appendChild(li);
     };
 
