@@ -56,9 +56,10 @@ window.Editor = (function() {
     const dashSpacing = document.getElementById('dashSpacing');
     if (dashSpacing) dashSpacing.addEventListener('input', () => window.Draw.setGap(parseInt(dashSpacing.value)));
 
-    // Base layer controls
-    document.getElementById('setBasePlanet').addEventListener('click', () => setBasePlanet());
-    document.getElementById('setBaseScan').addEventListener('click',   () => setBaseScan());
+    // Base layer controls (Planet SVG / Original scan buttons were removed
+    // — those base types are still set during project creation in app.js)
+    document.getElementById('setBasePlanet')?.addEventListener('click', () => setBasePlanet());
+    document.getElementById('setBaseScan')?.addEventListener('click',   () => setBaseScan());
     document.getElementById('setBaseUpload').addEventListener('click', () => {
       document.getElementById('baseUploadInput').click();
     });
@@ -1231,6 +1232,18 @@ window.Editor = (function() {
     const groupedKeys = new Set();
     groups.forEach(g => g.memberIds.forEach(k => groupedKeys.add(k)));
 
+    // Per-kind chronological index for stroke naming (Star 1, Star 2, ...)
+    const STROKE_LABEL = { pen: 'Stroke', rect: 'Rectangle', ellipse: 'Ellipse', star: 'Star' };
+    const strokeKindIdx = new Map();
+    {
+      const counts = {};
+      strokes.forEach(s => {
+        const k = s.kind || 'pen';
+        counts[k] = (counts[k] || 0) + 1;
+        strokeKindIdx.set(s.id, counts[k]);
+      });
+    }
+
     // ── helpers ──────────────────────────────────────────────
     function isActive(type, id) {
       if (type === 'item')     return selected?.id === id && selected?.kind === 'item';
@@ -1267,13 +1280,15 @@ window.Editor = (function() {
         nameHtml = obj.name ? escapeHtmlInner(obj.name) : `Sprite ${arrIdx + 1}`;
       } else if (type === 'stroke') {
         iconHtml = `<span class="layer-icon" style="display:inline-block;width:10px;height:10px;background:${obj.color};border-radius:50%;flex-shrink:0"></span>`;
-        nameHtml = `Stroke ${arrIdx + 1}`;
+        const kind = obj.kind || 'pen';
+        const label = STROKE_LABEL[kind] || 'Stroke';
+        nameHtml = escapeHtmlInner(obj.name || `${label} ${strokeKindIdx.get(obj.id) || (arrIdx + 1)}`);
       } else if (type === 'text') {
         iconHtml = `<span class="layer-icon" style="font-family:'Caveat',cursive;font-size:13px;font-weight:700;color:${obj.color}">A</span>`;
         nameHtml = escapeHtmlInner(obj.text.length > 20 ? obj.text.slice(0,20)+'…' : obj.text);
       }
       const handleHtml = hasHandle ? `<span class="layer-drag-handle" title="Drag to reorder">⠿</span>` : '';
-      const renamable = type !== 'stroke' && type !== 'base';
+      const renamable = type !== 'base';
       const nameTitle = renamable
         ? `${escapeAttr(obj.name||obj.text||'')} — double-click to rename`
         : escapeAttr(obj.name||obj.text||'');
@@ -1363,24 +1378,24 @@ window.Editor = (function() {
       });
     });
 
-    // Folder name dblclick → inline rename (delegation, wired once)
+    // Inline rename via dblclick — delegated on listEl, wired once.
+    // Pointer capture during single-click drag/select can redirect mouse
+    // events to the row, so e.target may be the <li>, not the .layer-name
+    // child. Find the row first, then query the name span from within it.
     if (!listEl._dblclickWired) {
       listEl._dblclickWired = true;
       listEl.addEventListener('dblclick', (e) => {
+        if (e.target.closest('.layer-del, .layer-vis, .layer-lock, .layer-drag-handle')) return;
+        const row = e.target.closest('[data-layer-type]');
+        if (!row) return;
         e.stopPropagation();
-        const nameEl = e.target.closest('.layer-name');
-        if (nameEl) {
-          const row = nameEl.closest('[data-layer-type]');
-          if (row && !row.classList.contains('layer-folder-row')) {
-            _inlineRenameLayer(nameEl, row.dataset.layerType, row.dataset.layerId);
-            return;
-          }
+        if (row.classList.contains('layer-folder-row')) {
+          const folderNameEl = row.querySelector('.layer-folder-name');
+          if (folderNameEl) _inlineRenameGroup(folderNameEl, row.dataset.layerId);
+          return;
         }
-        const folderNameEl = e.target.closest('.layer-folder-name');
-        if (folderNameEl) {
-          const row = folderNameEl.closest('.layer-folder-row');
-          if (row) _inlineRenameGroup(folderNameEl, row.dataset.layerId);
-        }
+        const nameEl = row.querySelector('.layer-name');
+        if (nameEl) _inlineRenameLayer(nameEl, row.dataset.layerType, row.dataset.layerId);
       });
     }
 
@@ -1596,8 +1611,22 @@ window.Editor = (function() {
 
   function _inlineRenameLayer(nameSpan, type, id) {
     const obj = _findObject(type, id);
-    if (!obj || type === 'base' || type === 'stroke') return;
-    const current = obj.name || obj.text || '';
+    if (!obj || type === 'base') return;
+    // For strokes the displayed name is auto-generated; pre-fill the input
+    // with the auto label so the user can edit it instead of starting blank.
+    let current = obj.name || obj.text || '';
+    if (!current && type === 'stroke') {
+      const STROKE_LABEL = { pen: 'Stroke', rect: 'Rectangle', ellipse: 'Ellipse', star: 'Star' };
+      const strokes = window.Draw.getStrokes();
+      const counts = {};
+      let mine = 1;
+      for (const s of strokes) {
+        const k = s.kind || 'pen';
+        counts[k] = (counts[k] || 0) + 1;
+        if (s.id === id) { mine = counts[k]; break; }
+      }
+      current = `${STROKE_LABEL[obj.kind || 'pen'] || 'Stroke'} ${mine}`;
+    }
     const input = document.createElement('input');
     input.type = 'text';
     input.value = current;
@@ -1609,6 +1638,7 @@ window.Editor = (function() {
       const val = input.value.trim() || current;
       if (type === 'text') obj.text = val;
       else obj.name = val;
+      if (type === 'stroke') project.drawings = window.Draw.getStrokes();
       schedSave();
       if (type === 'item' || type === 'surprise') {
         window.Game.renderList();
