@@ -98,6 +98,7 @@ window.Draw = (function() {
       gap:   currentGap,
       tx:    0,
       ty:    0,
+      kind:  'pen',
     };
     strokes.push(stroke);
     cursorLayer.innerHTML = '';
@@ -252,6 +253,8 @@ window.Draw = (function() {
       gap:   s.gap   != null ? s.gap : 8,
       tx:    s.tx || 0,
       ty:    s.ty || 0,
+      kind:  s.kind  || 'pen',
+      ...(s.name ? { name: s.name } : {}),
     })) : [];
     selectedId = null;
     render();
@@ -377,12 +380,13 @@ window.Draw = (function() {
 
   function commitShape(wx, wy, constrain = false) {
     if (!shapeOrigin) return null;
+    const kind = shapeType;
     const d = _shapePath(shapeType, shapeOrigin.x, shapeOrigin.y, wx, wy, constrain);
     shapeOrigin = null;
     shapeType   = null;
     cursorLayer.innerHTML = '';
     if (!d) return null;
-    const stroke = { id: _id(), d, color: currentColor, width: currentWidth, dash: currentDash, gap: currentGap, tx: 0, ty: 0 };
+    const stroke = { id: _id(), d, color: currentColor, width: currentWidth, dash: currentDash, gap: currentGap, tx: 0, ty: 0, kind };
     strokes.push(stroke);
     render();
     return stroke;
