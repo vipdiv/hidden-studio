@@ -355,11 +355,11 @@ window.Shortcuts = (function() {
                .replace(/<h4>/g, '<h4 style="margin:10px 0 4px;font-size:12px;color:var(--ui-text)">')
                .replace(/<li>/g, '<li style="margin-bottom:3px">');
 
-      const html = `<div style="display:flex;gap:14px;height:340px">
+      const html = `<div style="display:flex;gap:14px">
         <div style="width:130px;flex-shrink:0;border-right:1px solid var(--panel-border);padding-right:10px">
           ${nav}
         </div>
-        <div style="flex:1;overflow-y:auto;padding-right:4px">${content}</div>
+        <div style="flex:1;padding-right:4px">${content}</div>
       </div>`;
 
       document.getElementById('modalBody').innerHTML = html;
