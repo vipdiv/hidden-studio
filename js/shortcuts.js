@@ -435,13 +435,12 @@ window.Shortcuts = (function() {
       </div>`;
     }
 
-    function toggle(label, checked, onchange) {
-      return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--panel-border)">
-        <span style="font-size:12px;color:var(--ui-text)">${label}</span>
-        <label class="hs-sw">
-          <input type="checkbox" ${checked?'checked':''} onchange="${onchange}">
-          <span class="hs-sw-track"><span class="hs-sw-knob"></span></span>
-        </label>
+    function toggle(label, checked, action) {
+      return `<div onclick="${action}" style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--panel-border);cursor:pointer;user-select:none">
+        <span style="font-size:12px;color:var(--ui-text);pointer-events:none">${label}</span>
+        <div style="position:relative;width:34px;height:18px;border-radius:9px;background:${checked?'var(--ui-blue)':'var(--panel-border)'};transition:background .2s;pointer-events:none;flex-shrink:0">
+          <div style="position:absolute;top:2px;left:${checked?'18px':'2px'};width:14px;height:14px;border-radius:50%;background:#fff;transition:left .2s"></div>
+        </div>
       </div>`;
     }
 
@@ -462,14 +461,6 @@ window.Shortcuts = (function() {
     ).join('');
 
     const html = `
-      <style>
-        .hs-sw { position:relative; display:inline-block; width:34px; height:18px; cursor:pointer; flex-shrink:0; }
-        .hs-sw input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:1; }
-        .hs-sw-track { position:absolute; inset:0; border-radius:9px; background:var(--panel-border); transition:.2s; pointer-events:none; }
-        .hs-sw-knob  { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:.2s; }
-        .hs-sw input:checked + .hs-sw-track { background:var(--ui-blue); }
-        .hs-sw input:checked + .hs-sw-track .hs-sw-knob { left:18px; }
-      </style>
       <div style="display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--panel-border)">${tabBar}</div>
       <div id="settingsContent"></div>`;
 
