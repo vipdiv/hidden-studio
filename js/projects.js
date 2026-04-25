@@ -374,8 +374,8 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 const D = __PROJECT_DATA__;
 const B = __BASE_LAYER__;
 // Sanitize untrusted URLs from project data — allow data:image/*, http(s)://, blob:
-// (\\/ instead of \/ because this is inside a template literal, where \/ collapses to /.)
-function safeUrl(u){if(!u)return '';const s=String(u).trim();return /^(data:image\\/|https?:\\/\\/|blob:)/i.test(s)?s:''}
+const SAFE_IMAGE_URL_RE = new RegExp('^(data:image/|https?://|blob:)', 'i');
+function safeUrl(u){if(!u)return '';return SAFE_IMAGE_URL_RE.test(String(u).trim())?String(u).trim():''}
 // Apply document size
 const W=D.docWidth||1600,H=D.docHeight||1600;
 (function(){const w=document.getElementById('world');if(w){w.style.width=W+'px';w.style.height=H+'px';}
