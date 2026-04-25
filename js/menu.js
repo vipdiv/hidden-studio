@@ -220,7 +220,7 @@ window.Menu = (function() {
       </div>
       <div style="font-size:12px;color:var(--ui-text-dim);font-style:italic;margin-bottom:12px">${entry.tagline}</div>
       <hr style="border:none;border-top:1px solid var(--panel-border);margin:0 0 4px">
-      <div style="max-height:54vh;overflow-y:auto;padding-right:4px">${sections}</div>`;
+      <div>${sections}</div>`;
 
     window.Editor?.openModal?.('Release Notes', body);
     document.getElementById('aboutBackBtn')?.addEventListener('click', openAbout);
