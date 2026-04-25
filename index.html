@@ -106,19 +106,9 @@
         <li data-action="delete">Delete <span class="menu-shortcut">Del</span></li>
       </ul>
     </div>
+    <!-- View menu — dynamically populated by menu.js -->
     <div class="menu-item" data-menu="view">View
-      <ul class="menu-dropdown">
-        <li data-action="zoom-in">Zoom In <span class="menu-shortcut">Z</span></li>
-        <li data-action="zoom-out">Zoom Out <span class="menu-shortcut">Alt+Z</span></li>
-        <li data-action="zoom-fit">Fit to Screen <span class="menu-shortcut">Ctrl+0</span></li>
-        <li data-action="zoom-100">100% <span class="menu-shortcut">Ctrl+1</span></li>
-        <li class="menu-sep"></li>
-        <li data-action="toggle-rulers">Rulers <span class="menu-shortcut">Ctrl+R</span></li>
-        <li data-action="toggle-grid">Grid <span class="menu-shortcut">Ctrl+'</span></li>
-        <li data-action="outline-mode">Outline Mode <span class="menu-shortcut">Ctrl+Y</span></li>
-        <li class="menu-sep"></li>
-        <li data-action="toggle-mode">Toggle Play / Edit <span class="menu-shortcut">F</span></li>
-      </ul>
+      <ul class="menu-dropdown" id="viewMenuDropdown"></ul>
     </div>
     <!-- Window menu — dynamically populated by menu.js -->
     <div class="menu-item" data-menu="window">Window

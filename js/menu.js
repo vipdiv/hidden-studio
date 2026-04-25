@@ -16,6 +16,48 @@ window.Menu = (function() {
     { id: 'paper',   label: 'Paper (Light)' },
   ];
 
+  /* Build View menu dynamically each time it opens */
+  function buildViewMenu() {
+    const dd = document.getElementById('viewMenuDropdown');
+    if (!dd) return;
+    dd.innerHTML = '';
+
+    const check = (on) => `<span style="color:${on ? '#5aaa5a' : 'transparent'}">&#10003;</span> `;
+    const noCheck = () => `<span style="color:transparent">&#10003;</span> `;
+
+    const addItem = (action, label, shortcut, active) => {
+      const li = makeLi(action, {});
+      li.innerHTML = `${check(active)}${label} <span class="menu-shortcut">${shortcut}</span>`;
+      dd.appendChild(li);
+    };
+
+    addItem('zoom-in',   'Zoom In',       'Z',       false);
+    addItem('zoom-out',  'Zoom Out',       'Alt+Z',   false);
+    addItem('zoom-fit',  'Fit to Screen',  'Ctrl+0',  false);
+    addItem('zoom-100',  '100%',           'Ctrl+1',  false);
+    dd.appendChild(makeSep());
+
+    const rulersEnabled  = document.body.classList.contains('rulers-enabled');
+    const gridEnabled    = document.body.classList.contains('grid-enabled');
+    const outlineEnabled = document.body.classList.contains('outline-enabled');
+
+    if (rulersEnabled)  addItem('toggle-rulers', 'Rulers',       "Ctrl+R",  document.body.classList.contains('show-rulers'));
+    if (gridEnabled)    addItem('toggle-grid',   'Grid',         "Ctrl+'",  document.body.classList.contains('show-grid'));
+    if (outlineEnabled) addItem('outline-mode',  'Outline Mode', 'Ctrl+Y',  document.body.classList.contains('outline-mode'));
+
+    if (rulersEnabled || gridEnabled || outlineEnabled) dd.appendChild(makeSep());
+
+    addItem('toggle-mode', 'Toggle Play / Edit', 'F', false);
+
+    dd.querySelectorAll('[data-action]').forEach(li => {
+      li.addEventListener('mousedown', e => {
+        e.preventDefault(); e.stopPropagation();
+        closeAll();
+        handleAction(li.dataset.action, li.dataset);
+      });
+    });
+  }
+
   /* Build Window menu dynamically each time it opens */
   function buildWindowMenu() {
     const dd = document.getElementById('windowMenuDropdown');
@@ -202,6 +244,7 @@ window.Menu = (function() {
           item.classList.add('open');
           anyOpen = true;
           if (item.dataset.menu === 'window') buildWindowMenu();
+          if (item.dataset.menu === 'view')   buildViewMenu();
         }
       });
       item.addEventListener('mouseenter', () => {
@@ -210,6 +253,7 @@ window.Menu = (function() {
           item.classList.add('open');
           anyOpen = true;
           if (item.dataset.menu === 'window') buildWindowMenu();
+          if (item.dataset.menu === 'view')   buildViewMenu();
         }
       });
     });

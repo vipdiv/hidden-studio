@@ -382,9 +382,9 @@ window.Shortcuts = (function() {
       let content = '';
       if (activeTab === 'general') {
         const theme = window.Panels?.getTheme() || 'classic';
-        const rulers = document.body.classList.contains('show-rulers');
-        const grid   = document.body.classList.contains('show-grid');
-        const outline = document.body.classList.contains('outline-mode');
+        const rulers = document.body.classList.contains('rulers-enabled');
+        const grid   = document.body.classList.contains('grid-enabled');
+        const outline = document.body.classList.contains('outline-enabled');
         content = `
           ${row('Theme', `<select onchange="window._settingsTheme(this.value)" style="background:var(--panel-bg-2);border:1px solid var(--panel-border);color:var(--ui-text);border-radius:3px;padding:2px 6px;font-size:12px">
             <option value="classic" ${theme==='classic'?'selected':''}>Classic</option>
@@ -476,9 +476,18 @@ window.Shortcuts = (function() {
     };
     window._settingsTheme = (v) => { window.Panels?.setTheme(v); };
     window._settingsToggle = (key) => {
-      if (key === 'rulers')  toggleRulers();
-      if (key === 'grid')    toggleGrid();
-      if (key === 'outline') toggleOutlineMode();
+      if (key === 'rulers') {
+        const on = document.body.classList.toggle('rulers-enabled');
+        document.body.classList.toggle('show-rulers', on);
+      }
+      if (key === 'grid') {
+        const on = document.body.classList.toggle('grid-enabled');
+        document.body.classList.toggle('show-grid', on);
+      }
+      if (key === 'outline') {
+        const on = document.body.classList.toggle('outline-enabled');
+        document.body.classList.toggle('outline-mode', on);
+      }
       renderTab();
     };
     // Panel toggle goes through React state — defer renderTab to next tick
@@ -518,6 +527,7 @@ window.Shortcuts = (function() {
     document.addEventListener('keyup',   onKeyUp);
     startZoomBadge();
     startStatusBar();
+    document.body.classList.add('rulers-enabled', 'grid-enabled', 'outline-enabled');
   }
 
   function togglePanels() {
