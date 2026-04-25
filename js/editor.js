@@ -1372,8 +1372,9 @@ window.Editor = (function() {
       }
       const handleHtml = hasHandle ? `<span class="layer-drag-handle" title="Drag to reorder">⠿</span>` : '';
       const renamable = type !== 'base';
+      const renameTip = type === 'text' ? 'double-click to edit text' : 'double-click to rename';
       const nameTitle = renamable
-        ? `${escapeAttr(obj.name||obj.text||'')} — double-click to rename`
+        ? `${escapeAttr(obj.name||obj.text||'')} — ${renameTip}`
         : escapeAttr(obj.name||obj.text||'');
       return `<li class="layer-row${active?' active':''}${obj.hidden?' layer-hidden':''}${memberCls}" data-layer-type="${type}" data-layer-id="${obj.id}" data-arr-idx="${arrIdx}">
         ${visBtns(obj, type)}${handleHtml}${iconHtml}
@@ -1631,17 +1632,17 @@ window.Editor = (function() {
         }
       });
 
-      // If not over a folder, allow same-type reorder
+      // If not over a folder, allow same-type reorder — snap to nearest row center
       if (!targetIsFolder) {
+        let bestRow = null, bestDist = Infinity;
         document.querySelectorAll('#layersList .layer-row').forEach(r => {
           if (r === row || r.classList.contains('layer-folder-row')) return;
           if (r.dataset.layerType !== type) return;
           const rect = r.getBoundingClientRect();
-          if (ev.clientY >= rect.top && ev.clientY <= rect.bottom) {
-            r.classList.add('drag-over');
-            currentTarget = r;
-          }
+          const dist = Math.abs(ev.clientY - (rect.top + rect.bottom) / 2);
+          if (dist < bestDist) { bestDist = dist; bestRow = r; }
         });
+        if (bestRow && bestDist < 80) { bestRow.classList.add('drag-over'); currentTarget = bestRow; }
       }
     }
 
@@ -1731,7 +1732,7 @@ window.Editor = (function() {
     input.select();
     const commit = () => {
       const val = input.value.trim() || current;
-      if (type === 'text') obj.text = val;
+      if (type === 'text') { obj.text = val; renderTexts(); }
       else obj.name = val;
       if (type === 'stroke') project.drawings = window.Draw.getStrokes();
       schedSave();

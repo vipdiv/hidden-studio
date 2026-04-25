@@ -1,7 +1,11 @@
 /* Layers panel — provides #layersList container and delegates rendering to editor.js */
 
+console.log("LAYERS_PANEL_CONTENT_LOADED");
+
 (function () {
   function render() {
+    console.log("LAYERS_PANEL_RENDERED");
+
     const root = document.createElement('div');
     root.style.cssText = 'display:flex;flex-direction:column;height:100%;';
 
@@ -29,8 +33,8 @@
     root.appendChild(header);
     root.appendChild(list);
 
-    // Populate with current project layers
-    window.Editor?.renderLayersPanel?.();
+    // Defer until after the node is appended to the document by PanelContent
+    setTimeout(() => window.Editor?.renderLayersPanel?.(), 0);
 
     return root;
   }
@@ -41,4 +45,6 @@
     defaultSide: 'right',
     defaultOrder: 0,
   });
+
+  console.log("LAYERS_PANEL_REGISTERED");
 })();
