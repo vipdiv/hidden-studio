@@ -77,8 +77,8 @@ const PanelIsland = () => {
           setClosedPanels(cp => cp.filter(t => t !== panelId));
           return [...prev, {
             id: `g${Date.now()}`, tabs: [panelId], activeTab: 0,
-            minimized: false, floating: true,
-            x: 300, y: 160, width: 264, height: 420, zIndex: ++zRef.current,
+            minimized: false, floating: false,
+            x: 0, y: 60, width: 264, height: 320, zIndex: 0,
           }];
         });
       },
@@ -110,8 +110,8 @@ const PanelIsland = () => {
             setClosedPanels(cp => cp.filter(t => t !== panelId));
             return [...prev, {
               id: `g${Date.now()}`, tabs: [panelId], activeTab: 0,
-              minimized: false, floating: true,
-              x: 300, y: 160, width: 264, height: 420, zIndex: ++zRef.current,
+              minimized: false, floating: false,
+              x: 0, y: 60, width: 264, height: 320, zIndex: 0,
             }];
           });
         }

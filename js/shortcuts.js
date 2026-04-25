@@ -481,7 +481,9 @@ window.Shortcuts = (function() {
       if (key === 'outline') toggleOutlineMode();
       renderTab();
     };
-    window._settingsPanel = (id) => { window.Panels?.toggle(id); renderTab(); };
+    // Panel toggle goes through React state — defer renderTab to next tick
+    // so the new groups array is in groupsRef when isVisible() is read.
+    window._settingsPanel = (id) => { window.Panels?.toggle(id); setTimeout(renderTab, 0); };
     window._settingsCanvasApply = () => {
       const w = parseInt(document.getElementById('settingsW')?.value) || 1600;
       const h = parseInt(document.getElementById('settingsH')?.value) || 1600;
