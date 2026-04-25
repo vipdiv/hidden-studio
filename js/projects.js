@@ -279,15 +279,23 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .miss{position:absolute;font-family:'Caveat',cursive;font-size:22px;font-weight:700;color:var(--miss);pointer-events:none;z-index:7;text-shadow:0 0 6px var(--space);animation:m .5s ease-out forwards}
 @keyframes p{0%{opacity:0;transform:translate(-50%,0) scale(.6)}20%{opacity:1;transform:translate(-50%,-14px) scale(1.1)}80%{opacity:1;transform:translate(-50%,-36px) scale(1)}100%{opacity:0;transform:translate(-50%,-58px) scale(1)}}
 @keyframes m{0%{opacity:0;transform:translate(-50%,-50%) scale(.7)}60%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-60%)}}
-.panel{position:fixed;top:58px;left:14px;width:220px;max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(11,13,31,.9);border:1.5px solid rgba(245,239,226,.25);border-radius:4px 6px 3px 5px;padding:14px 16px;z-index:20;backdrop-filter:blur(6px)}
+.panel{position:fixed;top:58px;left:14px;width:220px;max-height:calc(100vh - 140px);overflow-y:auto;background:rgba(11,13,31,.9);border:1.5px solid rgba(245,239,226,.25);border-radius:4px 6px 3px 5px;padding:14px 16px;z-index:20;backdrop-filter:blur(6px);transition:transform .3s ease}
+.panel.hidden{transform:translateX(calc(-100% - 30px))}
+.phead{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px}
+.phead h2{margin:0}
+.pclose{background:none;border:none;color:rgba(245,239,226,.55);font-size:13px;cursor:pointer;padding:2px 6px;border-radius:3px;font-family:'Fraunces',serif;line-height:1}
+.pclose:hover{color:var(--paper);background:rgba(245,239,226,.08)}
+.popen{position:fixed;top:80px;left:0;z-index:21;width:28px;height:40px;font-size:14px;border:1.5px solid rgba(245,239,226,.25);border-left:none;background:rgba(11,13,31,.9);color:var(--paper);border-radius:0 6px 6px 0;cursor:pointer;display:none;backdrop-filter:blur(6px)}
+.panel.hidden ~ .popen{display:block}
 .panel h2{font-family:'Caveat',cursive;font-weight:700;font-size:22px;margin-bottom:4px}
 .panel .hint{font-style:italic;font-size:12px;color:rgba(245,239,226,.7);margin-bottom:10px;padding-bottom:10px;border-bottom:1px dashed rgba(245,239,226,.3)}
 .panel ul{list-style:none}
 .panel li{font-family:'Caveat',cursive;font-size:17px;padding:3px 0;display:flex;align-items:center;gap:8px}
-.panel li .box{width:14px;height:14px;border:1.2px solid var(--paper);border-radius:2px;display:grid;place-items:center}
+.panel li .box{width:14px;height:14px;border:1.2px solid var(--paper);border-radius:2px;display:grid;place-items:center;flex-shrink:0}
 .panel li.found{color:var(--found)}
 .panel li.found .label{text-decoration:line-through;text-decoration-color:var(--accent)}
 .panel li.found .box::after{content:"✓";color:var(--accent);font-size:16px;line-height:.5}
+@media (max-width:640px){.panel{left:0;right:0;top:auto;bottom:0;width:100%;max-height:50vh;border-radius:6px 6px 0 0;transform:translateY(100%)}.panel.hidden{transform:translateY(100%)}.panel.open{transform:translateY(0)}.popen{top:auto;bottom:14px;left:14px;border-radius:6px;border-left:1.5px solid rgba(245,239,226,.25)}.panel.open ~ .popen{display:none}}
 .win{position:fixed;inset:0;background:rgba(11,13,31,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .5s}
 .win.show{opacity:1;pointer-events:auto}
 .win-card{background:var(--paper);color:var(--ink);border:2px solid var(--ink);border-radius:6px;padding:28px 40px;text-align:center;box-shadow:4px 6px 0 var(--accent);max-width:380px}
@@ -329,10 +337,11 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
   </div>
 </div>
 <aside class="panel" id="list-p">
-  <h2>Find These</h2>
+  <div class="phead"><h2>Find These</h2><button class="pclose" id="pc" title="Hide panel" aria-label="Hide panel">◁</button></div>
   <p class="hint">Drag to pan. Tap to find.</p>
   <ul id="lst"></ul>
 </aside>
+<button class="popen" id="po" title="Show find list" aria-label="Show find list">📋</button>
 <div class="win" id="w"><div class="win-card"><h2>You found them all!</h2><button onclick="R()">play again</button></div></div>
 <script>
 const D = __PROJECT_DATA__;
@@ -418,10 +427,12 @@ function addMark(it){const m=document.createElement('div');m.className='mark';m.
 function pop(t,x,y,cls){const p=document.createElement('div');p.className=cls;p.textContent=t;p.style.left=x+'px';p.style.top=y+'px';document.getElementById('world').appendChild(p);setTimeout(()=>p.remove(),1500)}
 // Camera
 let camX=0,camY=0,scale=1;
-function cScale(){return Math.min(innerWidth*.85/W,innerHeight*.85/H)}
-function clampC(){const sW=W*scale,sH=H*scale;camX=Math.max(innerWidth/2-sW+innerWidth*.3,Math.min(innerWidth/2-innerWidth*.3,camX));camY=Math.max(innerHeight/2-sH+innerHeight*.3,Math.min(innerHeight/2-innerHeight*.3,camY))}
+function panelOpen(){const lp=document.getElementById('list-p');return lp&&!lp.classList.contains('hidden')&&innerWidth>640}
+function panelW(){return panelOpen()?248:0}
+function cScale(){const aw=innerWidth-panelW();return Math.min(aw*.92/W,(innerHeight-72)*.92/H)}
+function clampC(){const pw=panelW(),sW=W*scale,sH=H*scale,aw=innerWidth-pw;camX=Math.max(pw+aw/2-sW+aw*.3,Math.min(pw+aw/2-aw*.3,camX));camY=Math.max(innerHeight/2-sH+innerHeight*.3,Math.min(innerHeight/2-innerHeight*.3,camY))}
 function applyC(){clampC();document.getElementById('world').style.transform='translate('+camX+'px,'+camY+'px) scale('+scale+')'}
-function center(){scale=cScale();camX=innerWidth/2-W/2*scale;camY=innerHeight/2-H/2*scale;applyC()}
+function center(){scale=cScale();const pw=panelW(),aw=innerWidth-pw;camX=pw+aw/2-W/2*scale;camY=innerHeight/2-H/2*scale;applyC()}
 // Input
 let drg=false,sx=0,sy=0,scX=0,scY=0,dd=0,cx=0,cy=0;
 const stage=document.getElementById('stage');
@@ -440,6 +451,10 @@ function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('g
 stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEventListener('mouseup',pu);
 stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
 document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
+const lp=document.getElementById('list-p');
+document.getElementById('pc').addEventListener('click',()=>{if(innerWidth<=640){lp.classList.remove('open')}else{lp.classList.add('hidden')}center()});
+document.getElementById('po').addEventListener('click',()=>{if(innerWidth<=640){lp.classList.add('open')}else{lp.classList.remove('hidden')}center()});
+if(innerWidth<900&&innerWidth>640)lp.classList.add('hidden');
 addEventListener('resize',()=>{center()});
 function R(){found=new Set();document.querySelectorAll('.mark,.pop,.miss').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr()}
 window.R=R;
