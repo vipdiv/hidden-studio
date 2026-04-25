@@ -5,7 +5,7 @@
    newest version is always available offline next visit.
 ═══════════════════════════════════════════════════ */
 
-const CACHE = 'hidden-studio-shell-v15';
+const CACHE = 'hidden-studio-shell-v16';
 
 // Core app shell — pre-cached on SW install so the app
 // works even on the very first offline visit after install.

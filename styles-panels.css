@@ -137,6 +137,10 @@ body[data-theme="paper"] .tool-strip .tool-btn.active {
 }
 .dock-col::-webkit-scrollbar { display: none; }
 
+/* ── Dock collapsed: canvas chrome extends to right edge ── */
+body.dock-collapsed .ruler-h    { right: 0 !important; }
+body.dock-collapsed .status-bar { right: 0 !important; }
+
 /* ── Keep panel root visible in fullscreen ──────── */
 :-webkit-full-screen #panel-root,
 :-moz-full-screen    #panel-root,
