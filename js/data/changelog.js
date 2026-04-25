@@ -61,6 +61,7 @@ window.CHANGELOG = [
         items: [
           'Play mode now hides every editor-only chrome element: back arrow, help (?) button, edit-panel toggle, mobile pencil/panels FABs, and the entire right-side panel dock',
           'Edit mode hides the "Find These" checklist panel and its clipboard (📋) toggle — the find list belongs to play only',
+          'Window menu Panels section is hidden in play mode (panels themselves are hidden, so toggling them is just clutter)',
           'Lowered the editor-toggle button z-index so the menu bar dropdowns render above it',
           'Hit-zone outlines disappear in play mode; outlines and labels return when you switch back to Edit',
         ]
