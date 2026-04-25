@@ -499,7 +499,8 @@
           lastTapTime = now;
           if (isDoubleTap) {
             const proj = window.Editor?.getProject?.();
-            if (proj && !proj.baseType) {
+            const hasBase = proj?.baseType === 'svg' || proj?.baseType === 'image';
+            if (proj && !hasBase) {
               document.getElementById('baseUploadInput')?.click();
               return;
             }
