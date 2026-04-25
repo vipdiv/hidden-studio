@@ -2,6 +2,46 @@
 
 window.CHANGELOG = [
   {
+    version: '1.1',
+    label: 'Version 1.1',
+    date: 'April 2026',
+    tagline: 'Hit zone controls, layer reordering, cursor fixes, and export reliability',
+    notes: [
+      {
+        section: 'Hit Zone Appearance',
+        items: [
+          'Settings → General: color pickers for hit zone border color and surprise zone border color — changes apply instantly and persist across sessions',
+          'Settings → General: stroke weight control (1–10 px) for all hit zone borders in both edit and preview modes',
+          'Hit zone preview overlay (Ctrl+Shift+H) — toggle visible dashed outlines on all zones while in play mode, so you can inspect placement without switching back to edit mode; works from either mode',
+        ]
+      },
+      {
+        section: 'Canvas & Tools',
+        items: [
+          'Select tool now shows an arrow cursor across the entire canvas, including when hovering over sprites, text, and hit zones',
+          'Hand/Pan tool now shows a grab cursor consistently across the entire canvas — no longer switches to a move cursor when hovering over elements',
+          'Double-click (or double-tap on mobile) an empty canvas to open the base image file picker — same as the Upload button, just faster',
+          'Zoom badge shows "· snap" suffix when the grid is active (e.g. "150% · snap")',
+        ]
+      },
+      {
+        section: 'Layers Panel',
+        items: [
+          'Text layers, hit zone layers, and surprise layers now show a drag handle and can be reordered by dragging — previously only sprites and drawing strokes were reorderable',
+        ]
+      },
+      {
+        section: 'Bug Fixes',
+        items: [
+          'Exported game HTML no longer crashes with "Invalid regular expression" on load — the safeUrl regex inside the export template was rebuilt using the RegExp constructor to avoid slash-escaping issues inside template literals',
+          'Exporting a project with zero hit zones no longer immediately shows the "You found them all!" win screen',
+          'Document Size modal — clicking a preset or unit button now highlights the selection in blue; previously there was no visual confirmation of which option was active',
+          'Empty projects show "No hidden spots added yet." in the find list panel of the exported game instead of an empty list',
+        ]
+      },
+    ]
+  },
+  {
     version: '1.0',
     label: 'Version 1.0',
     date: 'April 2026',
