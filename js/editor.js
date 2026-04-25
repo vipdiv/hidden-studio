@@ -1981,12 +1981,20 @@ window.Editor = (function() {
   function renderBaseLayer() {
     const el = document.getElementById('baseLayer');
     if (!el || !project) return;
+    el.innerHTML = '';
     if (project.baseType === 'svg' && project.baseContent === 'PLANET_SVG') {
+      // Trusted bundled content — safe to inject as markup so it can be styled
       el.innerHTML = window.PLANET_SVG;
     } else if (project.baseType === 'image' && project.baseContent) {
-      el.innerHTML = `<img src="${project.baseContent}" alt="" draggable="false">`;
-    } else {
-      el.innerHTML = '';
+      // baseContent comes from project data which can be tampered via JSON import.
+      // Build the <img> imperatively and validate the URL protocol so a poisoned
+      // entry like `" onerror="..."` can't break out of an attribute.
+      const safe = /^(data:image\/|https?:\/\/|blob:)/i.test(project.baseContent) ? project.baseContent : '';
+      const img = document.createElement('img');
+      img.src = safe;
+      img.alt = '';
+      img.draggable = false;
+      el.appendChild(img);
     }
     applyBaseTransform();
   }

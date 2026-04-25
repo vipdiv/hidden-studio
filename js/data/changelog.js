@@ -74,8 +74,20 @@ window.CHANGELOG = [
           'Auto-collapse panel on narrow desktop windows (640–900 px) so the canvas gets full width by default',
           'Mobile (< 640 px): panel becomes a bottom-sheet with a "📋 Find list" pill-button toggle in the bottom-left',
           'Mouse wheel and trackpad zoom around the cursor position (clamped 0.5×–6× the fit-to-window scale)',
-          'Wheel listener attached to the document so scrolling anywhere on the page triggers zoom; scrolling over the find panel still scrolls its list naturally',
+          'Wheel listener attached to the document so scrolling anywhere on the page triggers zoom; scrolls find list naturally over the panel',
           'Resize handler recenters the canvas on window resize and orientation change',
+          'Subtle "made with Hidden Studio" attribution links to the GitHub repo, plus a "Make your own" link inside the win card',
+        ]
+      },
+      {
+        section: 'Security Hardening',
+        items: [
+          'Item names in exported HTML now rendered via textContent (was string-concatenated into innerHTML — a malicious project file with item name like `<img onerror=…>` could execute code in the recipient\'s browser)',
+          'Easter-egg image URLs validated against a strict allow-list (data:image/*, http(s)://, blob:) — blocks javascript: URLs and attribute-breakout payloads',
+          'Easter-egg text rendered via textContent everywhere (was a partial < → &lt; replace in the standalone export)',
+          'Sprite image data and base-image data built imperatively with createElement + URL validation instead of string-concatenated innerHTML',
+          'Outbound links in the export use rel="noopener noreferrer" to block tabnabbing',
+          'Defense-in-depth: editor\'s base-layer renderer now also validates baseContent before setting <img src>, so a poisoned imported JSON can\'t break out of the attribute',
         ]
       },
     ]
