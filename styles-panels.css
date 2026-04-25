@@ -276,9 +276,8 @@ body.dock-collapsed .status-bar { right: 0 !important; }
   position: fixed;
   background: var(--ps-panel-header);
   border-color: var(--ps-border);
-  z-index: 90;
+  z-index: 22;
   display: none;
-  pointer-events: none;
   font-size: 9px;
   color: var(--ps-dim-text);
   overflow: hidden;
@@ -287,28 +286,27 @@ body.show-rulers .ruler-corner,
 body.show-rulers .ruler-h,
 body.show-rulers .ruler-v { display: block; }
 
+.ruler-h, .ruler-v, .ruler-corner { cursor: pointer; user-select: none; }
+
 /* Corner square */
 .ruler-corner {
   left: 36px; top: 74px;
   width: 16px; height: 16px;
   border-right: 1px solid var(--ps-border);
   border-bottom: 1px solid var(--ps-border);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  text-transform: lowercase;
 }
+body.show-rulers .ruler-corner { display: flex; }
 
 /* Horizontal ruler (top) */
 .ruler-h {
   left: 52px; top: 74px;
   right: 266px; height: 16px;
   border-bottom: 1px solid var(--ps-border);
-  background-image: repeating-linear-gradient(
-    90deg,
-    var(--ps-border) 0px, var(--ps-border) 1px,
-    transparent 1px, transparent 9px,
-    var(--ps-border) 9px, var(--ps-border) 10px,
-    transparent 10px, transparent 49px,
-    var(--ps-border) 49px, var(--ps-border) 50px,
-    transparent 50px, transparent 99px
-  );
 }
 
 /* Vertical ruler (left) */
@@ -316,16 +314,21 @@ body.show-rulers .ruler-v { display: block; }
   left: 36px; top: 90px;
   width: 16px; bottom: 20px;
   border-right: 1px solid var(--ps-border);
-  background-image: repeating-linear-gradient(
-    180deg,
-    var(--ps-border) 0px, var(--ps-border) 1px,
-    transparent 1px, transparent 9px,
-    var(--ps-border) 9px, var(--ps-border) 10px,
-    transparent 10px, transparent 49px,
-    var(--ps-border) 49px, var(--ps-border) 50px,
-    transparent 50px, transparent 99px
-  );
 }
+
+/* Tick + label children rendered by JS */
+.ruler-tick { position: absolute; background: var(--ps-border); }
+.ruler-h .ruler-tick { bottom: 0; width: 1px; }
+.ruler-v .ruler-tick { right: 0; height: 1px; }
+.ruler-label {
+  position: absolute;
+  font-size: 9px;
+  color: var(--ps-dim-text);
+  line-height: 1;
+  pointer-events: none;
+}
+.ruler-h .ruler-label { top: 2px; transform: translateX(-50%); }
+.ruler-v .ruler-label { left: 1px; transform: translateY(-50%); width: 14px; text-align: center; }
 
 /* Shift stage content right when rulers visible */
 body.show-rulers .stage { left: 52px !important; }
