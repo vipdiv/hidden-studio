@@ -149,13 +149,86 @@ window.SFX = (function() {
       o.frequency.exponentialRampToValueAtTime(60, t + 0.1);
       envelope(o, g, t, 0.005, 0.3, 0.15);
     },
+    bark: () => {
+      if (!on || !ensure()) return;
+      playNoise(0.18, 600, 'bandpass', 0.3);
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(220, t);
+      o.frequency.exponentialRampToValueAtTime(120, t + 0.1);
+      envelope(o, g, t, 0.005, 0.18, 0.12);
+    },
+    meow: () => {
+      if (!on || !ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(420, t);
+      o.frequency.exponentialRampToValueAtTime(720, t + 0.18);
+      o.frequency.exponentialRampToValueAtTime(380, t + 0.36);
+      envelope(o, g, t, 0.02, 0.18, 0.4);
+    },
+    laugh: () => {
+      if (!on || !ensure()) return;
+      const t0 = ctx.currentTime;
+      [0, 0.09, 0.18, 0.27].forEach((dt, i) => {
+        const t = t0 + dt;
+        const o = ctx.createOscillator(); const g = ctx.createGain();
+        o.type = 'triangle';
+        const f = 380 + i * 60;
+        o.frequency.setValueAtTime(f, t);
+        o.frequency.exponentialRampToValueAtTime(f * 0.7, t + 0.06);
+        envelope(o, g, t, 0.005, 0.18, 0.07);
+      });
+    },
+    oof: () => {
+      if (!on || !ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(220, t);
+      o.frequency.exponentialRampToValueAtTime(110, t + 0.18);
+      envelope(o, g, t, 0.01, 0.28, 0.22);
+      playNoise(0.22, 400, 'lowpass', 0.12);
+    },
+    zap: () => {
+      if (!on || !ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'sawtooth';
+      o.frequency.setValueAtTime(1800, t);
+      o.frequency.exponentialRampToValueAtTime(120, t + 0.18);
+      envelope(o, g, t, 0.002, 0.22, 0.18);
+    },
+    drip: () => {
+      if (!on || !ensure()) return;
+      const t = ctx.currentTime;
+      const o = ctx.createOscillator(); const g = ctx.createGain();
+      o.type = 'sine';
+      o.frequency.setValueAtTime(2200, t);
+      o.frequency.exponentialRampToValueAtTime(900, t + 0.12);
+      envelope(o, g, t, 0.002, 0.18, 0.18);
+    },
     none: () => { /* silent */ },
   };
 
   /* List of presets for UI dropdowns */
   const PRESET_NAMES = [
     'found', 'pop', 'ding', 'chirp', 'splash',
-    'puff', 'squeak', 'thud', 'miss', 'win', 'none'
+    'puff', 'squeak', 'thud', 'miss', 'win',
+    'bark', 'meow', 'laugh', 'oof', 'zap', 'drip',
+    'none'
+  ];
+
+  /* Categorized library for the picker UI */
+  const PRESET_CATEGORIES = [
+    { label: 'Game feedback', sounds: ['found', 'miss', 'win', 'pop', 'ding'] },
+    { label: 'Animal',        sounds: ['chirp', 'squeak', 'bark', 'meow'] },
+    { label: 'Human',         sounds: ['laugh', 'oof'] },
+    { label: 'Nature',        sounds: ['splash', 'puff', 'drip'] },
+    { label: 'Sound FX',      sounds: ['thud', 'zap'] },
+    { label: 'Silent',        sounds: ['none'] },
   ];
 
   /* ————————————————————————————————————————
@@ -202,6 +275,84 @@ window.SFX = (function() {
     return `https://freesound.org/search/?q=${encodeURIComponent(query)}`;
   }
 
+  /* ————————————————————————————————————————
+     Compress an uploaded audio file into a tiny WAV data URL.
+     Decodes → trims → mixes to mono → downsamples → 16-bit PCM.
+     Defaults: max 1.2 s, 16 kHz mono ≈ 38 KB max.
+  ———————————————————————————————————————— */
+  async function compressAudio(file, opts = {}) {
+    const maxDuration = opts.maxDuration ?? 1.2;
+    const targetRate  = opts.targetRate  ?? 16000;
+    if (!ensure()) throw new Error('AudioContext not available');
+
+    const arrBuf = await file.arrayBuffer();
+    const decoded = await ctx.decodeAudioData(arrBuf.slice(0));
+
+    // Trim and mix to mono
+    const trimSec = Math.min(maxDuration, decoded.duration);
+    const trimSamples = Math.floor(trimSec * decoded.sampleRate);
+    const numCh = decoded.numberOfChannels;
+    const monoData = new Float32Array(trimSamples);
+    for (let c = 0; c < numCh; c++) {
+      const ch = decoded.getChannelData(c);
+      for (let i = 0; i < trimSamples; i++) monoData[i] += (ch[i] || 0) / numCh;
+    }
+
+    // Downsample to targetRate (linear interpolation)
+    const ratio = decoded.sampleRate / targetRate;
+    const outLen = Math.max(1, Math.floor(monoData.length / ratio));
+    const out = new Float32Array(outLen);
+    for (let i = 0; i < outLen; i++) {
+      const srcIdx = i * ratio;
+      const i0 = Math.floor(srcIdx);
+      const i1 = Math.min(i0 + 1, monoData.length - 1);
+      const frac = srcIdx - i0;
+      out[i] = monoData[i0] * (1 - frac) + monoData[i1] * frac;
+    }
+
+    const wavBytes = encodeWav16(out, targetRate);
+    const blob = new Blob([wavBytes], { type: 'audio/wav' });
+    const dataUrl = await new Promise((res, rej) => {
+      const fr = new FileReader();
+      fr.onload = () => res(fr.result);
+      fr.onerror = () => rej(fr.error);
+      fr.readAsDataURL(blob);
+    });
+    return {
+      dataUrl,
+      sizeBytes: wavBytes.byteLength,
+      durationSec: trimSec,
+      originalDurationSec: decoded.duration,
+      originalSizeBytes: file.size,
+    };
+  }
+
+  function encodeWav16(samples, sampleRate) {
+    const numCh = 1, bps = 2;
+    const dataLen = samples.length * bps;
+    const buf = new ArrayBuffer(44 + dataLen);
+    const v = new DataView(buf);
+    const setStr = (off, s) => { for (let i = 0; i < s.length; i++) v.setUint8(off + i, s.charCodeAt(i)); };
+    setStr(0, 'RIFF');
+    v.setUint32(4, 36 + dataLen, true);
+    setStr(8, 'WAVE');
+    setStr(12, 'fmt ');
+    v.setUint32(16, 16, true);
+    v.setUint16(20, 1, true);                     // PCM
+    v.setUint16(22, numCh, true);
+    v.setUint32(24, sampleRate, true);
+    v.setUint32(28, sampleRate * numCh * bps, true);
+    v.setUint16(32, numCh * bps, true);
+    v.setUint16(34, 16, true);
+    setStr(36, 'data');
+    v.setUint32(40, dataLen, true);
+    for (let i = 0, off = 44; i < samples.length; i++, off += 2) {
+      const s = Math.max(-1, Math.min(1, samples[i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+    }
+    return new Uint8Array(buf);
+  }
+
   /* Haptic (phone vibration) — co-located with audio for convenience */
   function haptic(pattern) {
     if (navigator.vibrate) navigator.vibrate(pattern);
@@ -213,6 +364,8 @@ window.SFX = (function() {
     loadCustomSound,
     playCustom,
     PRESET_NAMES,
+    PRESET_CATEGORIES,
+    compressAudio,
     freesoundSearchUrl,
     haptic,
     SFX,

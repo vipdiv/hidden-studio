@@ -366,8 +366,16 @@
     <div class="tool-section" id="missTapSection">
       <h3>Miss tap</h3>
       <label class="prop-label">Sound
-        <select id="missSoundSelect" class="prop-select"></select>
+        <select id="missSoundSelect" class="prop-select" title="Pick from the built-in library, or upload your own."></select>
       </label>
+      <button class="ghost-btn sm" id="missSoundUploadBtn"
+        title="Upload a short MP3/WAV. Recommended: under 1 second, &lt; 100 KB. Auto-compressed to ~16 kHz mono so it stays small (≈ 2–40 KB).">⬆ Upload custom sound</button>
+      <p id="missSoundInfo" style="display:none;font-size:11px;margin:4px 0 0;line-height:1.5"></p>
+      <p style="font-size:11px;margin:6px 0 0;line-height:1.5;color:rgba(212,212,212,.55)">
+        Tip: keep it short (&lt; 1 s). Need free sounds?
+        <a href="https://freemusicarchive.org/" target="_blank" rel="noopener noreferrer" style="color:var(--accent,#ff8c6b)">freemusicarchive.org</a>
+        and <a href="https://freesound.org/" target="_blank" rel="noopener noreferrer" style="color:var(--accent,#ff8c6b)">freesound.org</a> are great places to start.
+      </p>
       <label class="prop-label">Text color
         <input type="color" id="missColor" value="#e6e0d4" class="prop-color">
       </label>

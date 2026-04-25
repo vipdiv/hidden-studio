@@ -1737,6 +1737,44 @@ body.play-mode .play-empty.visible { display: block; }
   border-radius: 4px;
 }
 .modal-body::-webkit-scrollbar-thumb:hover { background: var(--ui-text-dim); }
+
+/* ── Minimal dark scrollbars across editor panels (matches modal-body) ── */
+.edit-panel,
+.properties-panel,
+.list-panel,
+.egg-inner,
+.layer-list,
+.modal-backdrop {
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-border) transparent;
+}
+.edit-panel::-webkit-scrollbar,
+.properties-panel::-webkit-scrollbar,
+.list-panel::-webkit-scrollbar,
+.egg-inner::-webkit-scrollbar,
+.layer-list::-webkit-scrollbar,
+.modal-backdrop::-webkit-scrollbar { width: 8px; }
+.edit-panel::-webkit-scrollbar-track,
+.properties-panel::-webkit-scrollbar-track,
+.list-panel::-webkit-scrollbar-track,
+.egg-inner::-webkit-scrollbar-track,
+.layer-list::-webkit-scrollbar-track,
+.modal-backdrop::-webkit-scrollbar-track { background: transparent; }
+.edit-panel::-webkit-scrollbar-thumb,
+.properties-panel::-webkit-scrollbar-thumb,
+.list-panel::-webkit-scrollbar-thumb,
+.egg-inner::-webkit-scrollbar-thumb,
+.layer-list::-webkit-scrollbar-thumb,
+.modal-backdrop::-webkit-scrollbar-thumb {
+  background: var(--panel-border);
+  border-radius: 4px;
+}
+.edit-panel::-webkit-scrollbar-thumb:hover,
+.properties-panel::-webkit-scrollbar-thumb:hover,
+.list-panel::-webkit-scrollbar-thumb:hover,
+.egg-inner::-webkit-scrollbar-thumb:hover,
+.layer-list::-webkit-scrollbar-thumb:hover,
+.modal-backdrop::-webkit-scrollbar-thumb:hover { background: var(--ui-text-dim); }
 .modal-body label {
   display: block;
   font-size: 15px;

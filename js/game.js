@@ -298,7 +298,7 @@ window.Game = (function() {
       const text = texts[Math.floor(Math.random() * texts.length)];
       popAt(text, w.x, w.y, 'miss', ms);
       const snd = project?.missSound ?? 'miss';
-      if (snd !== 'none') window.SFX.play(snd);
+      if (snd !== 'none') window.SFX.play(snd === '__custom__' ? '__miss__' : snd);
       window.SFX.haptic(40);
     }
   }

@@ -80,19 +80,27 @@ window.Editor = (function() {
     // Miss tap settings
     const missSoundSel = document.getElementById('missSoundSelect');
     if (missSoundSel) {
-      (window.SFX.PRESET_NAMES || []).forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name; opt.textContent = name;
-        missSoundSel.appendChild(opt);
+      (window.SFX.PRESET_CATEGORIES || []).forEach(cat => {
+        const og = document.createElement('optgroup');
+        og.label = cat.label;
+        cat.sounds.forEach(name => {
+          const opt = document.createElement('option');
+          opt.value = name; opt.textContent = name;
+          og.appendChild(opt);
+        });
+        missSoundSel.appendChild(og);
       });
+      // Custom-upload group is appended on demand once a file is loaded.
       missSoundSel.addEventListener('change', () => {
         if (!project) return;
-        project.missSound = missSoundSel.value;
+        const v = missSoundSel.value;
+        project.missSound = v;
         window.SFX.ensure();
-        window.SFX.play(missSoundSel.value);
+        window.SFX.play(v === '__custom__' ? '__miss__' : v);
         schedSave();
       });
     }
+    document.getElementById('missSoundUploadBtn')?.addEventListener('click', uploadCustomMissSound);
     document.getElementById('missColor')?.addEventListener('input', (e) => {
       if (!project) return;
       project.missStyle = Object.assign({}, project.missStyle, { color: e.target.value });
@@ -201,7 +209,10 @@ window.Editor = (function() {
     if (!project) return;
     const ms = project.missStyle || {};
     const sel = document.getElementById('missSoundSelect');
-    if (sel) sel.value = project.missSound ?? 'miss';
+    if (sel) {
+      _ensureCustomMissOption(sel, !!project.missSoundData);
+      sel.value = project.missSound ?? 'miss';
+    }
     const colEl = document.getElementById('missColor');
     if (colEl) colEl.value = ms.color || '#e6e0d4';
     const strokeEl = document.getElementById('missStroke');
@@ -210,6 +221,77 @@ window.Editor = (function() {
     if (fsEl) { fsEl.value = ms.fontSize || 24; document.getElementById('missFontSizeVal').textContent = fsEl.value; }
     const ffEl = document.getElementById('missFontFamily');
     if (ffEl) ffEl.value = ms.fontFamily || "'Caveat', cursive";
+    _showMissSoundInfo(project.missSoundData);
+  }
+
+  /* Add (or remove) the "(custom upload)" option in the miss-sound dropdown. */
+  function _ensureCustomMissOption(sel, present) {
+    let og = sel.querySelector('optgroup[data-custom="1"]');
+    if (present && !og) {
+      og = document.createElement('optgroup');
+      og.label = 'Custom';
+      og.dataset.custom = '1';
+      const o = document.createElement('option');
+      o.value = '__custom__';
+      o.textContent = 'your uploaded sound';
+      og.appendChild(o);
+      sel.appendChild(og);
+    } else if (!present && og) {
+      og.remove();
+    }
+  }
+
+  /* Display compressed-size info under the upload button. */
+  function _showMissSoundInfo(dataUrl) {
+    const el = document.getElementById('missSoundInfo');
+    if (!el) return;
+    if (!dataUrl) { el.style.display = 'none'; el.textContent = ''; return; }
+    const bytes = Math.round((dataUrl.length - dataUrl.indexOf(',') - 1) * 0.75);
+    el.style.display = 'block';
+    el.textContent = `Custom sound loaded (${_fmtKb(bytes)})`;
+  }
+
+  function _fmtKb(b) {
+    if (b < 1024) return `${b} B`;
+    if (b < 1024 * 1024) return `${Math.round(b / 1024)} KB`;
+    return `${(b / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  /* ————————————————————————————————————————
+     CUSTOM MISS-TAP SOUND UPLOAD (with compression)
+  ———————————————————————————————————————— */
+  async function uploadCustomMissSound() {
+    if (!project) return;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'audio/*';
+    input.addEventListener('change', async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const infoEl = document.getElementById('missSoundInfo');
+      if (infoEl) { infoEl.style.display = 'block'; infoEl.textContent = 'Compressing…'; }
+      try {
+        const result = await window.SFX.compressAudio(file, { maxDuration: 1.2, targetRate: 16000 });
+        project.missSoundData = result.dataUrl;
+        project.missSound = '__custom__';
+        await window.SFX.loadCustomSound('__miss__', result.dataUrl);
+        const sel = document.getElementById('missSoundSelect');
+        if (sel) {
+          _ensureCustomMissOption(sel, true);
+          sel.value = '__custom__';
+        }
+        if (infoEl) {
+          infoEl.style.display = 'block';
+          infoEl.textContent = `Compressed: ${_fmtKb(result.originalSizeBytes)} → ${_fmtKb(result.sizeBytes)} ✓ (${result.durationSec.toFixed(2)}s)`;
+        }
+        window.SFX.play('__miss__');
+        schedSave();
+      } catch (err) {
+        if (infoEl) infoEl.textContent = 'Could not load that file. Try MP3 or WAV.';
+        console.warn('Miss sound upload failed', err);
+      }
+    });
+    input.click();
   }
 
   function getProject() { return project; }
@@ -2371,6 +2453,9 @@ window.Editor = (function() {
       for (const key of Object.keys(p.customSounds)) {
         await window.SFX.loadCustomSound(key, p.customSounds[key]);
       }
+    }
+    if (p.missSoundData) {
+      await window.SFX.loadCustomSound('__miss__', p.missSoundData);
     }
   }
 
