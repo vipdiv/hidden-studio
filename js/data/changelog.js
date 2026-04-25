@@ -80,6 +80,32 @@ window.CHANGELOG = [
         ]
       },
       {
+        section: 'Sounds — Library & Custom Upload',
+        items: [
+          'Miss-tap sound dropdown is now grouped by category: Game feedback, Animal, Human, Nature, Sound FX, Silent',
+          'Six new built-in sounds added: bark, meow, laugh, oof, zap, drip — synthesized live (no audio files bundled), so the app stays small',
+          'New "⬆ Upload custom sound" button on the Miss tap panel — pick any short MP3/WAV',
+          'Uploads are auto-decoded → trimmed to 1.2 s max → mixed to mono → downsampled to 16 kHz → re-encoded as 16-bit PCM WAV; typical result is 2–40 KB',
+          'Before/after status shown after upload ("Compressed: 350 KB → 38 KB ✓ (1.20 s)")',
+          'Hint text under the panel links to freemusicarchive.org and freesound.org for free legal sounds',
+          'Standalone HTML export now honors the chosen miss sound — every preset (including the new ones) plays in the exported game, and custom uploaded sounds are embedded as data URLs',
+        ]
+      },
+      {
+        section: 'Scrollbar UI',
+        items: [
+          'Editor side panels (left edit panel, right properties panel, find list, layer list) now use a thin minimal dark scrollbar matching the Documentation / Release Notes modal style',
+          '8 px wide thumb in panel-border grey on a transparent track; brightens to text-dim on hover',
+          'Replaces the wide default OS scrollbar that clashed with the dark editor chrome',
+        ]
+      },
+      {
+        section: 'Bug Fixes',
+        items: [
+          'Standalone HTML export: canvas/base image was blank for projects using the Original Scan preset because its baseContent is a relative path (assets/scene.jpg) that fails the security URL allow-list — fixed by fetching and inlining the file as a data URL at export time',
+        ]
+      },
+      {
         section: 'Security Hardening',
         items: [
           'Item names in exported HTML now rendered via textContent (was string-concatenated into innerHTML — a malicious project file with item name like `<img onerror=…>` could execute code in the recipient\'s browser)',

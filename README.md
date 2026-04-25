@@ -33,6 +33,9 @@ Hidden Studio is a browser-based game maker for hidden object games (think Where
 - **Storage clarity** — project list size column shows MB for files ≥ 1 MB
 - **"Make your own" attribution** — exported HTML files include a subtle link back to the [Hidden Studio repo](https://github.com/vipdiv/hidden-studio) and a prominent invite inside the win card
 - **Security hardening** — item names, easter-egg image URLs, sprite image data, and base image data in exported HTML are now rendered via `createElement` + URL allow-list (was string-concatenated into `innerHTML`); a malicious imported JSON can no longer cause script execution in a recipient's browser when they open a shared HTML file
+- **Miss-tap sound library + custom upload** — the Miss tap dropdown is grouped by category (Game feedback, Animal, Human, Nature, Sound FX, Silent) with six new synthesized sounds (bark, meow, laugh, oof, zap, drip). A new ⬆ Upload custom sound button accepts any MP3/WAV; uploads are auto-decoded → trimmed to 1.2 s → 16 kHz mono → 16-bit PCM WAV (typical result 2–40 KB) with before/after size displayed. Hint text links to [freemusicarchive.org](https://freemusicarchive.org/) and [freesound.org](https://freesound.org/). Custom sounds embed in the standalone HTML export.
+- **Minimal dark scrollbars** — editor panels (edit panel, properties panel, find list, layer list) now use the same thin dark scrollbar as the Documentation / Release Notes modals
+- **Original Scan export fix** — projects using the Original Scan preset now export correctly; the relative `assets/scene.jpg` path is fetched and inlined as a data URL at export time so the standalone HTML is truly self-contained
 
 ---
 
