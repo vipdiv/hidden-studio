@@ -1143,7 +1143,7 @@ body.edit-mode .tool-strip { display: flex; }
 .edit-panel {
   position: fixed;
   top: 72px;
-  left: 46px; /* pushed right by the tool strip */
+  left: 36px; /* flush with the 36px tool strip */
   width: 240px;
   max-height: calc(100vh - 72px);
   overflow-y: auto;
@@ -1154,7 +1154,7 @@ body.edit-mode .tool-strip { display: flex; }
   z-index: 25;
   transition: transform 0.3s ease;
 }
-.edit-panel.collapsed { transform: translateX(calc(-100% - 46px)); }
+.edit-panel.collapsed { transform: translateX(calc(-100% - 36px)); }
 
 /* ── Right-side Properties Panel ── */
 .properties-panel {
