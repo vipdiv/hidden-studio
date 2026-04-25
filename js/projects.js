@@ -210,8 +210,8 @@ window.Projects = (function() {
      Export as standalone playable HTML
      Creates a single-file game from the project, no editor.
   ———————————————————————————————————————— */
-  function exportHtml(data) {
-    const sceneInline = getInlineBaseLayer(data);
+  async function exportHtml(data) {
+    const sceneInline = await getInlineBaseLayer(data);
     const html = buildStandaloneHtml(data, sceneInline);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
@@ -225,12 +225,29 @@ window.Projects = (function() {
     URL.revokeObjectURL(url);
   }
 
-  function getInlineBaseLayer(data) {
+  async function getInlineBaseLayer(data) {
     if (data.baseType === 'svg' && data.baseContent === 'PLANET_SVG') {
       return { type: 'svg', content: window.PLANET_SVG };
     }
     if (data.baseType === 'image' && data.baseContent) {
-      return { type: 'image', content: data.baseContent };
+      let content = data.baseContent;
+      // Relative paths (e.g. 'assets/scene.jpg' from the Original Scan preset) won't
+      // survive as a standalone file — fetch and inline them as data URLs now.
+      if (!/^(data:|https?:|blob:)/i.test(content)) {
+        try {
+          const resp = await fetch(content);
+          const blob = await resp.blob();
+          content = await new Promise((res, rej) => {
+            const fr = new FileReader();
+            fr.onload = () => res(fr.result);
+            fr.onerror = () => rej(fr.error);
+            fr.readAsDataURL(blob);
+          });
+        } catch (_) {
+          content = '';
+        }
+      }
+      return { type: 'image', content };
     }
     return { type: 'empty', content: '' };
   }
