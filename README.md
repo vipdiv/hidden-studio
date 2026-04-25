@@ -31,6 +31,8 @@ Hidden Studio is a browser-based game maker for hidden object games (think Where
   - Auto-collapses on narrow desktop windows (640–900 px)
 - **Better modals** — Documentation and Release Notes are now capped at 85 vh with internal scroll instead of stretching off-screen
 - **Storage clarity** — project list size column shows MB for files ≥ 1 MB
+- **"Make your own" attribution** — exported HTML files include a subtle link back to the [Hidden Studio repo](https://github.com/vipdiv/hidden-studio) and a prominent invite inside the win card
+- **Security hardening** — item names, easter-egg image URLs, sprite image data, and base image data in exported HTML are now rendered via `createElement` + URL allow-list (was string-concatenated into `innerHTML`); a malicious imported JSON can no longer cause script execution in a recipient's browser when they open a shared HTML file
 
 ---
 

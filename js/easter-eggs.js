@@ -84,11 +84,9 @@ window.EasterEggs = (function () {
     el.className = 'egg-floating';
     el.id = 'egg-overlay';
 
-    let inner = '';
-    if (egg.dismissable) inner += `<button class="egg-close" aria-label="Close">✕</button>`;
-    if (vc.image) inner += `<img src="${vc.image}" class="egg-img" draggable="false" alt="">`;
-    if (vc.text)  inner += `<div class="egg-text">${_esc(vc.text)}</div>`;
-    el.innerHTML = inner;
+    if (egg.dismissable) el.appendChild(_makeCloseBtn());
+    if (vc.image)        el.appendChild(_makeImg(vc.image));
+    if (vc.text)         el.appendChild(_makeText(vc.text));
 
     // Position
     const pos = vc.position || 'center';
@@ -126,12 +124,12 @@ window.EasterEggs = (function () {
     el.className = 'egg-fullscreen';
     el.id = 'egg-overlay';
 
-    let inner = `<div class="egg-inner">`;
-    if (egg.dismissable) inner += `<button class="egg-close" aria-label="Close">✕</button>`;
-    if (vc.image) inner += `<img src="${vc.image}" class="egg-img" draggable="false" alt="">`;
-    if (vc.text)  inner += `<div class="egg-text">${_esc(vc.text)}</div>`;
-    inner += `</div>`;
-    el.innerHTML = inner;
+    const innerEl = document.createElement('div');
+    innerEl.className = 'egg-inner';
+    if (egg.dismissable) innerEl.appendChild(_makeCloseBtn());
+    if (vc.image)        innerEl.appendChild(_makeImg(vc.image));
+    if (vc.text)         innerEl.appendChild(_makeText(vc.text));
+    el.appendChild(innerEl);
 
     document.body.appendChild(el);
     activeOverlay = el;
@@ -192,6 +190,36 @@ window.EasterEggs = (function () {
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
       .replace(/"/g, '&quot;');
+  }
+
+  // Allow only data:image/*, http(s)://, and blob: URLs — block javascript:
+  // and other injection vectors that could come from a malicious imported project.
+  function _safeUrl(u) {
+    if (!u) return '';
+    const s = String(u).trim();
+    return /^(data:image\/|https?:\/\/|blob:)/i.test(s) ? s : '';
+  }
+
+  function _makeCloseBtn() {
+    const b = document.createElement('button');
+    b.className = 'egg-close';
+    b.setAttribute('aria-label', 'Close');
+    b.textContent = '✕';
+    return b;
+  }
+  function _makeImg(url) {
+    const img = document.createElement('img');
+    img.className = 'egg-img';
+    img.src = _safeUrl(url);
+    img.draggable = false;
+    img.alt = '';
+    return img;
+  }
+  function _makeText(text) {
+    const d = document.createElement('div');
+    d.className = 'egg-text';
+    d.textContent = text;
+    return d;
   }
 
   return { trigger, dismiss, isActive };
