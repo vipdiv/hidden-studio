@@ -27,7 +27,7 @@ window.Menu = (function() {
 
     const addItem = (action, label, shortcut, active) => {
       const li = makeLi(action, {});
-      li.innerHTML = `${check(active)}${label} <span class="menu-shortcut">${shortcut}</span>`;
+      li.innerHTML = `${check(active)}<span style="margin-left:auto">${label}</span><span class="menu-shortcut">${shortcut}</span>`;
       dd.appendChild(li);
     };
 
