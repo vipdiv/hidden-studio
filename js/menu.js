@@ -72,24 +72,28 @@ window.Menu = (function() {
       dd.appendChild(li);
     });
 
-    dd.appendChild(makeSep());
-
-    // Panels section below
-    const regs = window.Panels._getRegs();
-    const panelIds = Object.keys(regs);
-
-    if (panelIds.length > 0) {
-      dd.appendChild(makeLabel('Panels'));
-      panelIds.forEach(id => {
-        const visible = window.Panels.isVisible(id);
-        const li = makeLi('window-panel-toggle', { panelId: id });
-        li.innerHTML = `<span style="color:${visible ? '#5aaa5a' : 'transparent'}">&#10003;</span> ${regs[id].title}`;
-        dd.appendChild(li);
-      });
+    // Panels section is editor-only — panels themselves are hidden in play mode,
+    // so showing their toggles would just be visual clutter
+    const inPlayMode = document.body.classList.contains('play-mode');
+    if (!inPlayMode) {
       dd.appendChild(makeSep());
-      const resetLi = makeLi('window-reset-layout', {});
-      resetLi.innerHTML = '<span style="color:transparent">&#10003;</span> Reset Panel Layout';
-      dd.appendChild(resetLi);
+
+      const regs = window.Panels._getRegs();
+      const panelIds = Object.keys(regs);
+
+      if (panelIds.length > 0) {
+        dd.appendChild(makeLabel('Panels'));
+        panelIds.forEach(id => {
+          const visible = window.Panels.isVisible(id);
+          const li = makeLi('window-panel-toggle', { panelId: id });
+          li.innerHTML = `<span style="color:${visible ? '#5aaa5a' : 'transparent'}">&#10003;</span> ${regs[id].title}`;
+          dd.appendChild(li);
+        });
+        dd.appendChild(makeSep());
+        const resetLi = makeLi('window-reset-layout', {});
+        resetLi.innerHTML = '<span style="color:transparent">&#10003;</span> Reset Panel Layout';
+        dd.appendChild(resetLi);
+      }
     }
 
     // Wire clicks inside the freshly-built dropdown

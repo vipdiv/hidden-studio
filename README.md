@@ -22,7 +22,7 @@ Hidden Studio is a browser-based game maker for hidden object games (think Where
 - **Smart shape labels** — shapes are now labeled by type ("Star 1", "Rectangle 2", "Ellipse 3") with chronological per-kind numbering
 - **Image auto-compression** — uploaded base images are resized and JPEG-encoded down to under 500 KB; before/after sizes shown
 - **Numbered rulers** — rulers display measurement labels with major/minor ticks; click any ruler to toggle inches ↔ centimetres
-- **Mode-aware UI** — every editor-only chrome element disappears in play mode (back, ?, FABs, panel dock); the find checklist disappears in edit mode
+- **Mode-aware UI** — every editor-only chrome element disappears in play mode (back, ?, FABs, panel dock, Window > Panels list); the find checklist disappears in edit mode
 - **Right-side dock collapse** — the panel dock has its own «/» toggle, mirroring the editor panel; state persists
 - **Standalone HTML export polish**
   - Find panel is collapsible (◁ / 📋 toggle) and the camera centers in the available area instead of being hidden behind the panel
