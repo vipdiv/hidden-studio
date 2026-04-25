@@ -1273,9 +1273,13 @@ window.Editor = (function() {
         nameHtml = escapeHtmlInner(obj.text.length > 20 ? obj.text.slice(0,20)+'…' : obj.text);
       }
       const handleHtml = hasHandle ? `<span class="layer-drag-handle" title="Drag to reorder">⠿</span>` : '';
+      const renamable = type !== 'stroke' && type !== 'base';
+      const nameTitle = renamable
+        ? `${escapeAttr(obj.name||obj.text||'')} — double-click to rename`
+        : escapeAttr(obj.name||obj.text||'');
       return `<li class="layer-row${active?' active':''}${obj.hidden?' layer-hidden':''}${memberCls}" data-layer-type="${type}" data-layer-id="${obj.id}" data-arr-idx="${arrIdx}">
         ${visBtns(obj, type)}${handleHtml}${iconHtml}
-        <span class="layer-name" title="${escapeAttr(obj.name||obj.text||'')}">${nameHtml}</span>
+        <span class="layer-name" title="${nameTitle}">${nameHtml}</span>
         <span class="layer-actions"><button class="layer-del" data-del-type="${type}" data-del-id="${obj.id}" title="Delete">×</button></span>
       </li>`;
     }
@@ -1359,25 +1363,34 @@ window.Editor = (function() {
       });
     });
 
-    // Folder name dblclick → inline rename
-    listEl.querySelectorAll('.layer-folder-name').forEach(nameEl => {
-      nameEl.addEventListener('dblclick', (e) => {
+    // Folder name dblclick → inline rename (delegation, wired once)
+    if (!listEl._dblclickWired) {
+      listEl._dblclickWired = true;
+      listEl.addEventListener('dblclick', (e) => {
         e.stopPropagation();
-        _inlineRenameGroup(nameEl, nameEl.closest('.layer-folder-row').dataset.layerId);
+        const nameEl = e.target.closest('.layer-name');
+        if (nameEl) {
+          const row = nameEl.closest('[data-layer-type]');
+          if (row && !row.classList.contains('layer-folder-row')) {
+            _inlineRenameLayer(nameEl, row.dataset.layerType, row.dataset.layerId);
+            return;
+          }
+        }
+        const folderNameEl = e.target.closest('.layer-folder-name');
+        if (folderNameEl) {
+          const row = folderNameEl.closest('.layer-folder-row');
+          if (row) _inlineRenameGroup(folderNameEl, row.dataset.layerId);
+        }
       });
-    });
+    }
 
-    // Layer rows: pointer (drag/select) + dblclick rename
+    // Layer rows: pointer (drag/select)
     listEl.querySelectorAll('.layer-row:not(.layer-folder-row)').forEach(row => {
       row.addEventListener('pointerdown', (e) => {
         if (e.target.classList.contains('layer-del') ||
             e.target.classList.contains('layer-vis') ||
             e.target.classList.contains('layer-lock')) return;
         _startLayerDragOrClick(e, row);
-      });
-      row.querySelector('.layer-name')?.addEventListener('dblclick', (e) => {
-        e.stopPropagation();
-        _inlineRenameLayer(e.target, row.dataset.layerType, row.dataset.layerId);
       });
     });
 
