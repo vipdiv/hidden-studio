@@ -392,9 +392,9 @@ window.Shortcuts = (function() {
             <option value="warm"    ${theme==='warm'   ?'selected':''}>Warm Studio</option>
             <option value="paper"   ${theme==='paper'  ?'selected':''}>Paper (Light)</option>
           </select>`)}
-          ${toggle('Rulers (Ctrl+R)', rulers,   'window._settingsToggle("rulers")')}
-          ${toggle('Grid (Ctrl+\')',  grid,     'window._settingsToggle("grid")')}
-          ${toggle('Outline mode',    outline,  'window._settingsToggle("outline")')}
+          ${toggle('Rulers (Ctrl+R)', rulers,   "window._settingsToggle('rulers')")}
+          ${toggle('Grid (Ctrl+\')',  grid,     "window._settingsToggle('grid')")}
+          ${toggle('Outline mode',    outline,  "window._settingsToggle('outline')")}
         `;
       } else if (activeTab === 'panels') {
         const regs = window.Panels?._getRegs() || {};
