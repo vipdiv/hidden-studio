@@ -137,11 +137,6 @@ body[data-theme="paper"] .tool-strip .tool-btn.active {
 }
 .dock-col::-webkit-scrollbar { display: none; }
 
-/* ── View menu: hide entries whose feature is off in Settings ── */
-body:not(.show-rulers)   [data-action="toggle-rulers"] { display: none !important; }
-body:not(.show-grid)     [data-action="toggle-grid"]   { display: none !important; }
-body:not(.outline-mode)  [data-action="outline-mode"]  { display: none !important; }
-
 /* ── Keep panel root visible in fullscreen ──────── */
 :-webkit-full-screen #panel-root,
 :-moz-full-screen    #panel-root,
