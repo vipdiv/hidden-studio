@@ -79,7 +79,7 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
         }}
       >
         {/* Tabs */}
-        <div style={{ display: 'flex', flex: 1, overflowX: 'hidden' }}>
+        <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
           {group.tabs.map((tabId, i) => {
             const active = group.activeTab === i;
             return (
@@ -126,7 +126,7 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
       </div>
 
       {/* Panel content */}
-      <div className="panel-body" style={{ overflowY: group.floating ? 'auto' : 'hidden', overflowX: 'hidden', maxHeight: group.floating ? (group.height || 520) : undefined }}>
+      <div className="panel-body" style={{ overflowX: 'hidden', overflowY: group.floating ? 'auto' : 'hidden', maxHeight: group.floating ? (group.height || 520) : undefined }}>
         <PanelContent panelId={group.tabs[group.activeTab]} />
       </div>
 
