@@ -286,7 +286,7 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .world{position:absolute;top:0;left:0;transform-origin:0 0;width:1600px;height:1600px}
 .base{position:absolute;inset:0;pointer-events:none}
 .base img,.base svg{width:100%;height:100%;display:block;object-fit:contain}
-.hit{position:absolute;border-radius:50%;cursor:pointer}
+.hit{position:absolute;border-radius:50%;cursor:inherit}
 .mark{position:absolute;pointer-events:none;z-index:6;opacity:0;animation:di .6s ease-out forwards}
 .mark svg{width:100%;height:100%;overflow:visible}
 .mark circle{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-dasharray:300;stroke-dashoffset:300;animation:dc .6s ease-out forwards}
