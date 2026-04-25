@@ -601,13 +601,14 @@ button.chip.off { opacity: 0.45; }
 body.play-mode #backBtn,
 body.play-mode #shortcutsBtn,
 body.play-mode .edit-panel-toggle,
-body.play-mode .panel-toggle,
 body.play-mode .m8-tool-fab-wrap,
 body.play-mode .m8-panels-fab,
-body.play-mode .dock-reexpand-btn { display: none !important; }
+body.play-mode .dock-reexpand-btn,
+body.play-mode #panel-root { display: none !important; }
 
-/* Find list is only for play mode — hide in edit mode */
-body.edit-mode .list-panel { display: none !important; }
+/* Find list (and its toggle) are only for play mode — hide in edit mode */
+body.edit-mode .list-panel,
+body.edit-mode .panel-toggle { display: none !important; }
 
 /* 5. PLAY MODE UI ─────────────────────────────────── */
 /* Mark (red circle drawn around found items) */
@@ -791,7 +792,7 @@ body.edit-mode .list-panel { display: none !important; }
   position: fixed;
   top: 80px;
   left: 0;
-  z-index: 36;
+  z-index: 24;
   width: 28px; height: 40px;
   font-size: 14px;
   border: 1.5px solid var(--panel-border);
