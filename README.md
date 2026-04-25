@@ -25,7 +25,7 @@ Hidden Studio is a browser-based game maker for hidden object games (think Where
 - **Layer reordering for all types** — text, hit zone, and surprise layers now have drag handles in the layers panel and can be reordered by dragging. Previously only sprites and strokes were reorderable.
 - **Snap indicator on zoom badge** — the zoom badge shows "· snap" when the grid is active (e.g. "100% · snap").
 - **Document Size modal active states** — clicking a preset or unit button now highlights it in blue.
-- **Export fixes** — exported game HTML no longer crashes with an "Invalid regular expression" error; zero-item projects no longer show the win screen immediately on load.
+- **Export fixes** — exported game HTML no longer crashes with an "Invalid regular expression" error; zero-item projects no longer show the win screen immediately on load; hit zones no longer reveal their location by changing the cursor to a finger pointer.
 
 ---
 

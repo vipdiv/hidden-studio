@@ -37,6 +37,7 @@ window.CHANGELOG = [
           'Exporting a project with zero hit zones no longer immediately shows the "You found them all!" win screen',
           'Document Size modal — clicking a preset or unit button now highlights the selection in blue; previously there was no visual confirmation of which option was active',
           'Empty projects show "No hidden spots added yet." in the find list panel of the exported game instead of an empty list',
+          'Hit zones in exported games no longer reveal their location via a finger-pointer cursor — the cursor now stays as the drag hand so hovering over a hidden zone is indistinguishable from empty canvas',
         ]
       },
     ]
