@@ -291,7 +291,7 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .world{position:absolute;top:0;left:0;transform-origin:0 0;width:1600px;height:1600px}
 .base{position:absolute;inset:0;pointer-events:none}
 .base img,.base svg{width:100%;height:100%;display:block;object-fit:contain}
-.hit{position:absolute;border-radius:50%;cursor:pointer}
+.hit{position:absolute;border-radius:50%;cursor:inherit}
 .mark{position:absolute;pointer-events:none;z-index:6;opacity:0;animation:di .6s ease-out forwards}
 .mark svg{width:100%;height:100%;overflow:visible}
 .mark circle{fill:none;stroke:var(--accent);stroke-width:3;stroke-linecap:round;stroke-dasharray:300;stroke-dashoffset:300;animation:dc .6s ease-out forwards}
@@ -375,7 +375,7 @@ const D = __PROJECT_DATA__;
 const B = __BASE_LAYER__;
 // Sanitize untrusted URLs from project data — allow data:image/*, http(s)://, blob:
 const SAFE_IMAGE_URL_RE = new RegExp('^(data:image/|https?://|blob:)', 'i');
-function safeUrl(u){if(!u)return '';return SAFE_IMAGE_URL_RE.test(String(u).trim())?String(u).trim():''}
+function safeUrl(u){if(!u)return '';const s=String(u).trim();return SAFE_IMAGE_URL_RE.test(s)?s:''}
 // Apply document size
 const W=D.docWidth||1600,H=D.docHeight||1600;
 (function(){const w=document.getElementById('world');if(w){w.style.width=W+'px';w.style.height=H+'px';}
@@ -471,8 +471,8 @@ none:()=>{}
 };
 function sfxMiss(){if(!soundOn)return;if(D.missSound==='__custom__'&&D.missSoundData){try{const a=new Audio(D.missSoundData);a.volume=.85;a.play().catch(()=>{});return}catch(_){}}const c=aud();if(!c)return;(SFXP[D.missSound]||SFXP.miss)(c)}
 function sfxWin(){if(!soundOn)return;const c=aud();if(!c)return;[523,659,784,1047].forEach((f,i)=>{const t=c.currentTime+i*.12,o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.4)})}
-function buildList(){const ul=document.getElementById('lst');ul.innerHTML='';D.items.forEach(it=>{const li=document.createElement('li');li.id='l-'+it.id;const box=document.createElement('span');box.className='box';const lbl=document.createElement('span');lbl.className='label';lbl.textContent=it.name||'';li.appendChild(box);li.appendChild(lbl);if(found.has(it.id))li.classList.add('found');ul.appendChild(li)})}
-function updateCtr(){document.getElementById('ctr').innerHTML='found <b>'+found.size+'</b> / '+D.items.length;if(found.size===D.items.length){setTimeout(()=>{document.getElementById('w').classList.add('show');sfxWin();if(navigator.vibrate)navigator.vibrate([80,50,80,50,180])},500)}}
+function buildList(){const ul=document.getElementById('lst');ul.innerHTML='';if(!D.items.length){const li=document.createElement('li');li.style.cssText='opacity:.5;font-style:italic;list-style:none;padding:4px 0';li.textContent='No hidden spots added yet.';ul.appendChild(li);return;}D.items.forEach(it=>{const li=document.createElement('li');li.id='l-'+it.id;const box=document.createElement('span');box.className='box';const lbl=document.createElement('span');lbl.className='label';lbl.textContent=it.name||'';li.appendChild(box);li.appendChild(lbl);if(found.has(it.id))li.classList.add('found');ul.appendChild(li)})}
+function updateCtr(){document.getElementById('ctr').innerHTML='found <b>'+found.size+'</b> / '+D.items.length;if(D.items.length>0&&found.size===D.items.length){setTimeout(()=>{document.getElementById('w').classList.add('show');sfxWin();if(navigator.vibrate)navigator.vibrate([80,50,80,50,180])},500)}}
 function addMark(it){const m=document.createElement('div');m.className='mark';m.style.cssText='left:'+(it.x-it.r*1.3)+'px;top:'+(it.y-it.r*1.3)+'px;width:'+(it.r*2.6)+'px;height:'+(it.r*2.6)+'px;';const r=(Math.random()*20-10).toFixed(1);m.innerHTML='<svg viewBox="0 0 100 100" style="transform:rotate('+r+'deg)"><circle cx="50" cy="50" r="44" transform="rotate('+(Math.random()*360)+' 50 50)"/></svg>';document.getElementById('world').appendChild(m)}
 function pop(t,x,y,cls){const p=document.createElement('div');p.className=cls;p.textContent=t;p.style.left=x+'px';p.style.top=y+'px';document.getElementById('world').appendChild(p);setTimeout(()=>p.remove(),1500)}
 // Camera

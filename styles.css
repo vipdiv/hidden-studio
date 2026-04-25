@@ -41,6 +41,7 @@
   --edit-zone-fill:     rgba(20, 115, 230, 0.10);
   --edit-surprise:      rgba(224, 123, 57, 0.65);
   --edit-surprise-fill: rgba(224, 123, 57, 0.12);
+  --edit-zone-width:    2px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -484,6 +485,14 @@ button.chip.off { opacity: 0.45; }
 .stage.erase-cursor      { cursor: not-allowed; }
 .stage.add-cursor        { cursor: cell; }
 .stage.crosshair-cursor  { cursor: crosshair; }
+/* Select tool: arrow cursor everywhere on canvas */
+.stage.select-active,
+.stage.select-active * { cursor: default !important; }
+/* Pan tool: grab cursor everywhere on canvas */
+.stage.pan-active,
+.stage.pan-active * { cursor: grab !important; }
+.stage.pan-active.grabbing,
+.stage.pan-active.grabbing * { cursor: grabbing !important; }
 
 .world {
   position: absolute;
@@ -554,12 +563,12 @@ button.chip.off { opacity: 0.45; }
   pointer-events: auto;
 }
 .edit-mode .hit.item {
-  border: 2px solid var(--edit-zone);
+  border: var(--edit-zone-width) solid var(--edit-zone);
   background: var(--edit-zone-fill);
   cursor: move;
 }
 .edit-mode .hit.surprise {
-  border: 2px solid var(--edit-surprise);
+  border: var(--edit-zone-width) solid var(--edit-surprise);
   background: var(--edit-surprise-fill);
   border-style: dashed;
   cursor: move;
@@ -596,6 +605,11 @@ button.chip.off { opacity: 0.45; }
 /* In play mode, hit zones are invisible and non-interactive — let clicks fall through to stage */
 .play-mode .hit { border: none; background: transparent; cursor: pointer; pointer-events: none; }
 .play-mode .hit .label, .play-mode .hit .resize { display: none; }
+
+/* Hit zone preview overlay (Ctrl+Shift+H) — reveals zones in play mode for creator inspection */
+body.show-hit-zones.play-mode .hit.item    { border: var(--edit-zone-width) dashed var(--edit-zone) !important; background: var(--edit-zone-fill) !important; }
+body.show-hit-zones.play-mode .hit.surprise { border: var(--edit-zone-width) dashed var(--edit-surprise) !important; background: var(--edit-surprise-fill) !important; }
+body.show-hit-zones.play-mode .hit .label  { display: block !important; }
 
 /* Hide editor-only chrome in play mode */
 body.play-mode #backBtn,
@@ -1294,6 +1308,11 @@ body.edit-mode #counter { display: none; }
 .ghost-btn:hover {
   background: rgba(212,212,212,0.1);
   border-color: var(--ui-text-dim);
+}
+.ghost-btn.active {
+  background: var(--ui-blue);
+  border-color: var(--ui-blue);
+  color: #fff;
 }
 .ghost-btn.danger:hover {
   background: rgba(228, 92, 92, 0.15);

@@ -300,12 +300,14 @@ window.Editor = (function() {
     tool = t;
     toolBtns.forEach(b => b.classList.toggle('active', b.dataset.tool === t));
     // Cursor hints
-    stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor', 'crosshair-cursor');
+    stage.classList.remove('pen-cursor', 'erase-cursor', 'add-cursor', 'crosshair-cursor', 'pan-active', 'select-active');
     if (t === 'pen')                              stage.classList.add('pen-cursor');
     else if (t === 'eraser')                      stage.classList.add('erase-cursor');
     else if (t === 'addItem' || t === 'addSurprise' || t === 'text') stage.classList.add('add-cursor');
     else if (t === 'rect' || t === 'ellipse' || t === 'star') stage.classList.add('crosshair-cursor');
     else if (t === 'crop') stage.classList.add('crosshair-cursor');
+    else if (t === 'pan')    stage.classList.add('pan-active');
+    else if (t === 'select') stage.classList.add('select-active');
     // Show/hide crop overlay
     if (t === 'crop') { document.body.classList.add('crop-active'); }
     else              { document.body.classList.remove('crop-active'); }
@@ -1347,7 +1349,7 @@ window.Editor = (function() {
     function buildRow(type, obj, arrIdx, isMember) {
       const active = isActive(type, obj.id);
       const memberCls = isMember ? ' layer-member' : '';
-      const hasHandle = type === 'sprite' || type === 'stroke' || type === 'text';
+      const hasHandle = type === 'sprite' || type === 'stroke' || type === 'text' || type === 'item' || type === 'surprise';
       let iconHtml = '', nameHtml = '';
       if (type === 'item') {
         iconHtml = `<span class="layer-icon">⊙</span>`;
@@ -1674,6 +1676,18 @@ window.Editor = (function() {
         window.Draw.loadFrom(strokes);
         project.drawings = window.Draw.getStrokes();
         renderLayersPanel(); schedSave();
+      } else if (type === 'text') {
+        const arr = project.texts;
+        arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0]);
+        renderTexts(); renderLayersPanel(); schedSave();
+      } else if (type === 'item') {
+        const arr = project.items;
+        arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0]);
+        window.Game.renderHits(); renderLayersPanel(); schedSave();
+      } else if (type === 'surprise') {
+        const arr = project.surprises;
+        arr.splice(toIdx, 0, arr.splice(fromIdx, 1)[0]);
+        window.Game.renderHits(); renderLayersPanel(); schedSave();
       }
     }
 
@@ -1923,6 +1937,8 @@ window.Editor = (function() {
 
     document.querySelectorAll('.doc-preset').forEach(btn => {
       btn.addEventListener('click', () => {
+        document.querySelectorAll('.doc-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         const pw = parseInt(btn.dataset.w), ph = parseInt(btn.dataset.h);
         if (curUnit === 'px') {
           document.getElementById('doc-px-w').value = pw;

@@ -12,7 +12,20 @@ No account, no server, no build step. Everything saves locally.
 
 Hidden Studio is a browser-based game maker for hidden object games (think Where's Waldo). Draw or import a scene, place circular hit zones over the things you want players to find, then share the game as a single standalone HTML file.
 
-**Current version:** 1.0 — see Help → About Hidden Studio inside the app for full release notes.
+**Current version:** 1.1 — see Help → About Hidden Studio inside the app for full release notes.
+
+---
+
+## What's new in 1.1
+
+- **Hit zone color & weight controls** — Settings → General now has color pickers for hit zone and surprise zone border colors, plus a stroke weight slider (1–10 px). Changes apply instantly and persist.
+- **Hit zone preview overlay** — press Ctrl+Shift+H in play mode to show dashed outlines over all hidden zones so you can inspect placement without leaving play mode. Press again to hide.
+- **Consistent tool cursors** — Select tool shows an arrow cursor everywhere on the canvas; Hand tool shows a grab cursor everywhere, including when hovering over sprites and hit zones.
+- **Double-click to upload** — double-click (or double-tap on mobile) an empty canvas to open the base image picker directly, without going to the Upload button.
+- **Layer reordering for all types** — text, hit zone, and surprise layers now have drag handles in the layers panel and can be reordered by dragging. Previously only sprites and strokes were reorderable.
+- **Snap indicator on zoom badge** — the zoom badge shows "· snap" when the grid is active (e.g. "100% · snap").
+- **Document Size modal active states** — clicking a preset or unit button now highlights it in blue.
+- **Export fixes** — exported game HTML no longer crashes with an "Invalid regular expression" error; zero-item projects no longer show the win screen immediately on load; hit zones no longer reveal their location by changing the cursor to a finger pointer.
 
 ---
 
@@ -74,7 +87,7 @@ No dependencies, no build step. Plain HTML + CSS + vanilla JS.
 | Crop | C | Trim the canvas to a specific region |
 
 ### Layers & canvas
-- Layers panel with drag-to-reorder, groups, show/hide, inline rename
+- Layers panel with drag-to-reorder (all layer types), groups, show/hide, inline rename
 - Custom canvas size (default 1600 × 1600 px)
 - Minimap with click-to-jump navigation
 - Fit canvas to imported image automatically
@@ -123,6 +136,10 @@ No dependencies, no build step. Plain HTML + CSS + vanilla JS.
 | Z / Alt+Z | Zoom in / out |
 | Ctrl+0 | Zoom to fit |
 | Ctrl+1 | Zoom to 100% |
+| Ctrl+R | Toggle rulers |
+| Ctrl+' | Toggle grid |
+| Ctrl+Y | Outline mode |
+| Ctrl+Shift+H | Hit zone preview overlay (play mode) |
 | Ctrl+S | Save now |
 | Ctrl+E | Export HTML |
 | Ctrl+D | Duplicate selected |

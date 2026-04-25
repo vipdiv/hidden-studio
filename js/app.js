@@ -372,6 +372,7 @@
     let startCamX = 0, startCamY = 0;
     let totalDelta = 0;
     let lastScreenX = 0, lastScreenY = 0;
+    let lastTapTime = 0;
 
     const DRAW_TOOLS = ['pen', 'eraser', 'rect', 'ellipse', 'star'];
 
@@ -491,6 +492,19 @@
         if (document.body.classList.contains('play-mode')) {
           window.Game.handleTap(p.x, p.y);
         } else if (document.body.classList.contains('edit-mode') && !isPanMode()) {
+          const now = Date.now();
+          const isDoubleTap = (now - lastTapTime) < 350
+            && !e.target.closest('.hit')
+            && !e.target.closest('.sprite');
+          lastTapTime = now;
+          if (isDoubleTap) {
+            const proj = window.Editor?.getProject?.();
+            const hasBase = proj?.baseType === 'svg' || proj?.baseType === 'image';
+            if (proj && !hasBase) {
+              document.getElementById('baseUploadInput')?.click();
+              return;
+            }
+          }
           window.Editor.onStageTap(w.x, w.y);
         }
       }
