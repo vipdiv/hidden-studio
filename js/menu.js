@@ -223,8 +223,6 @@ window.Menu = (function() {
       <div>${sections}</div>`;
 
     window.Editor?.openModal?.('Release Notes', body);
-    const mb = document.getElementById('modalBody');
-    if (mb) { mb.style.maxHeight = 'none'; mb.style.overflow = 'visible'; }
     document.getElementById('aboutBackBtn')?.addEventListener('click', openAbout);
   }
 

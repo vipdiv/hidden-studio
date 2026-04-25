@@ -1696,8 +1696,6 @@ body.play-mode .play-empty.visible { display: block; }
 }
 .modal-body {
   padding: 18px;
-  max-height: 60vh;
-  overflow-y: auto;
 }
 .modal-body label {
   display: block;
