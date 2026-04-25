@@ -1669,7 +1669,8 @@ body.play-mode .play-empty.visible { display: block; }
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.72);
   backdrop-filter: blur(4px);
-  display: grid; place-items: center;
+  display: flex; justify-content: center; align-items: safe center;
+  overflow-y: auto;
   z-index: 200;
   padding: 20px;
 }
