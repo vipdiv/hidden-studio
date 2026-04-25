@@ -260,36 +260,31 @@ const PanelIsland = () => {
     tabDrag,
   };
 
+  const dockVisible = dockedGroups.length > 0 || nearDock;
+
   return (
     <>
-      {/* Right dock column */}
-      <div className="dock-col" style={{
-        position: 'absolute',
-        top: 0, right: 0, bottom: 0,
-        width: 266,
-        background: 'var(--ps-dock-bg)',
-        borderLeft: '1px solid var(--ps-border)',
-        display: 'flex', flexDirection: 'column',
-        pointerEvents: 'auto',
-        overflowY: 'auto', overflowX: 'hidden',
-      }}>
-        {dockedGroups.map(g => <PanelGroup key={g.id} group={g} {...pgProps} />)}
+      {/* Right dock column — only render when something is docked or user is dragging near the edge */}
+      {dockVisible && (
+        <div className="dock-col" style={{
+          position: 'absolute',
+          top: 0, right: 0, bottom: 0,
+          width: 266,
+          background: 'var(--ps-dock-bg)',
+          borderLeft: '1px solid var(--ps-border)',
+          display: 'flex', flexDirection: 'column',
+          pointerEvents: 'auto',
+          overflowY: 'auto', overflowX: 'hidden',
+        }}>
+          {dockedGroups.map(g => <PanelGroup key={g.id} group={g} {...pgProps} />)}
 
-        {nearDock && (
-          <div style={{ margin: 5, padding: 14, background: 'var(--ps-accent-dim)', border: '1px dashed var(--ps-accent)', borderRadius: 3, color: 'var(--ps-accent)', fontSize: 11, textAlign: 'center' }}>
-            Drop to dock
-          </div>
-        )}
-
-        {dockedGroups.length === 0 && !nearDock && (
-          <div style={{ padding: 16, color: 'var(--ps-dim-text)', fontSize: 11, textAlign: 'center', lineHeight: 1.6 }}>
-            All panels are floating.<br/>
-            <span style={{ color: 'var(--ps-dim-text)', opacity: 0.7 }}>
-              Drag a panel here to dock it,<br/>or use Window menu to reopen.
-            </span>
-          </div>
-        )}
-      </div>
+          {nearDock && (
+            <div style={{ margin: 5, padding: 14, background: 'var(--ps-accent-dim)', border: '1px dashed var(--ps-accent)', borderRadius: 3, color: 'var(--ps-accent)', fontSize: 11, textAlign: 'center' }}>
+              Drop to dock
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Dock drop overlay — shows when dragging near right edge */}
       {nearDock && <DockDropOverlay active />}
