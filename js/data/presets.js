@@ -34,7 +34,7 @@ window.PRESET_PLANET = {
 window.PRESET_SCAN = {
   name: 'Original Scan',
   baseType: 'image',
-  baseContent: 'assets/scene.jpg',
+  baseContent: 'SCENE_JPG',
   // Since the scan is portrait ~900x1600, items are placed in % but we store
   // in the same 1600x1600 coordinate space. We'll translate through the
   // image's actual aspect.  For scan, we want to let it fill the world.

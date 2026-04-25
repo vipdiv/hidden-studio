@@ -1974,7 +1974,7 @@ window.Editor = (function() {
   }
   function setBaseScan() {
     project.baseType = 'image';
-    project.baseContent = 'assets/scene.jpg';
+    project.baseContent = 'SCENE_JPG';
     delete project.baseImgW; delete project.baseImgH;
     renderBaseLayer();
     schedSave();
@@ -2068,10 +2068,14 @@ window.Editor = (function() {
       // Trusted bundled content — safe to inject as markup so it can be styled
       el.innerHTML = window.PLANET_SVG;
     } else if (project.baseType === 'image' && project.baseContent) {
+      // 'SCENE_JPG' and legacy 'assets/scene.jpg' both resolve to the bundled data URL.
+      const isSceneRef = project.baseContent === 'SCENE_JPG' || project.baseContent === 'assets/scene.jpg';
       // baseContent comes from project data which can be tampered via JSON import.
       // Build the <img> imperatively and validate the URL protocol so a poisoned
       // entry like `" onerror="..."` can't break out of an attribute.
-      const safe = /^(data:image\/|https?:\/\/|blob:)/i.test(project.baseContent) ? project.baseContent : '';
+      const safe = isSceneRef
+        ? (window.SCENE_JPG || '')
+        : (/^(data:image\/|https?:\/\/|blob:)/i.test(project.baseContent) ? project.baseContent : '');
       const img = document.createElement('img');
       img.src = safe;
       img.alt = '';

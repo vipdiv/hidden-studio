@@ -230,12 +230,17 @@ window.Projects = (function() {
       return { type: 'svg', content: window.PLANET_SVG };
     }
     if (data.baseType === 'image' && data.baseContent) {
+      // SCENE_JPG token and legacy 'assets/scene.jpg' both resolve to the
+      // bundled data URL — no network fetch needed, works fully offline.
+      if (data.baseContent === 'SCENE_JPG' || data.baseContent === 'assets/scene.jpg') {
+        return { type: 'image', content: window.SCENE_JPG || '' };
+      }
       let content = data.baseContent;
-      // Relative paths (e.g. 'assets/scene.jpg' from the Original Scan preset) won't
-      // survive as a standalone file — fetch and inline them as data URLs now.
+      // For any other non-absolute URL, try to fetch and inline as data URL.
       if (!/^(data:|https?:|blob:)/i.test(content)) {
         try {
           const resp = await fetch(content);
+          if (!resp.ok) throw new Error('HTTP ' + resp.status);
           const blob = await resp.blob();
           content = await new Promise((res, rej) => {
             const fr = new FileReader();

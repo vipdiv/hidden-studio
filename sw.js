@@ -5,7 +5,7 @@
    newest version is always available offline next visit.
 ═══════════════════════════════════════════════════ */
 
-const CACHE = 'hidden-studio-shell-v31';
+const CACHE = 'hidden-studio-shell-v32';
 
 // Core app shell — pre-cached on SW install so the app
 // works even on the very first offline visit after install.
@@ -31,9 +31,9 @@ const PRECACHE = [
   './js/easter-eggs.js',
   './js/data/presets.js',
   './js/data/scene.svg.js',
+  './js/data/scene.jpg.js',
   './js/data/easter-eggs.js',
   './js/data/changelog.js',
-  './assets/scene.jpg',
 ];
 
 // ── Install: pre-cache the app shell ──────────────────
