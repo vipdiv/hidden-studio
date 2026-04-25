@@ -41,6 +41,7 @@
   --edit-zone-fill:     rgba(20, 115, 230, 0.10);
   --edit-surprise:      rgba(224, 123, 57, 0.65);
   --edit-surprise-fill: rgba(224, 123, 57, 0.12);
+  --edit-zone-width:    2px;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -554,12 +555,12 @@ button.chip.off { opacity: 0.45; }
   pointer-events: auto;
 }
 .edit-mode .hit.item {
-  border: 2px solid var(--edit-zone);
+  border: var(--edit-zone-width) solid var(--edit-zone);
   background: var(--edit-zone-fill);
   cursor: move;
 }
 .edit-mode .hit.surprise {
-  border: 2px solid var(--edit-surprise);
+  border: var(--edit-zone-width) solid var(--edit-surprise);
   background: var(--edit-surprise-fill);
   border-style: dashed;
   cursor: move;
@@ -598,8 +599,8 @@ button.chip.off { opacity: 0.45; }
 .play-mode .hit .label, .play-mode .hit .resize { display: none; }
 
 /* Hit zone preview overlay (Ctrl+Shift+H) — reveals zones in play mode for creator inspection */
-body.show-hit-zones.play-mode .hit.item    { border: 2px dashed var(--edit-zone) !important; background: var(--edit-zone-fill) !important; }
-body.show-hit-zones.play-mode .hit.surprise { border: 2px dashed var(--edit-surprise) !important; background: var(--edit-surprise-fill) !important; }
+body.show-hit-zones.play-mode .hit.item    { border: var(--edit-zone-width) dashed var(--edit-zone) !important; background: var(--edit-zone-fill) !important; }
+body.show-hit-zones.play-mode .hit.surprise { border: var(--edit-zone-width) dashed var(--edit-surprise) !important; background: var(--edit-surprise-fill) !important; }
 body.show-hit-zones.play-mode .hit .label  { display: block !important; }
 
 /* Hide editor-only chrome in play mode */

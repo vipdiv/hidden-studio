@@ -407,6 +407,7 @@ window.Shortcuts = (function() {
           ${toggle('Outline mode',    outline,  "window._settingsToggle('outline')")}
           ${row('Hit zone color',    `<input type="color" value="${zoneColor}"     onchange="window._settingsZoneColor(this.value)"    style="width:32px;height:24px;border:1px solid var(--panel-border);border-radius:3px;padding:1px;background:none;cursor:pointer">`)}
           ${row('Surprise color',    `<input type="color" value="${surpriseColor}" onchange="window._settingsSurpriseColor(this.value)" style="width:32px;height:24px;border:1px solid var(--panel-border);border-radius:3px;padding:1px;background:none;cursor:pointer">`)}
+          ${row('Stroke weight',     `<input type="number" value="${localStorage.getItem('hs_zone_width')||'2'}" min="1" max="10" onchange="window._settingsZoneWidth(this.value)" style="${inputStyle}">`)}
         `;
       } else if (activeTab === 'panels') {
         const regs = window.Panels?._getRegs() || {};
@@ -489,6 +490,7 @@ window.Shortcuts = (function() {
     window._settingsTheme = (v) => { window.Panels?.setTheme(v); };
     window._settingsZoneColor = (v) => { localStorage.setItem('hs_zone_color', v); applyZoneColors(); };
     window._settingsSurpriseColor = (v) => { localStorage.setItem('hs_surprise_color', v); applyZoneColors(); };
+    window._settingsZoneWidth = (v) => { localStorage.setItem('hs_zone_width', Math.min(10, Math.max(1, parseInt(v)||2))); applyZoneColors(); };
     window._settingsToggle = (key) => {
       if (key === 'rulers') {
         const on = document.body.classList.toggle('rulers-enabled');
@@ -544,14 +546,16 @@ window.Shortcuts = (function() {
   }
 
   function applyZoneColors() {
-    const zHex = localStorage.getItem('hs_zone_color')     || '#1473e6';
-    const sHex = localStorage.getItem('hs_surprise_color') || '#e07b39';
+    const zHex  = localStorage.getItem('hs_zone_color')     || '#1473e6';
+    const sHex  = localStorage.getItem('hs_surprise_color') || '#e07b39';
+    const width = localStorage.getItem('hs_zone_width')     || '2';
     const z = hexToRgb(zHex), s = hexToRgb(sHex);
     const root = document.documentElement;
     root.style.setProperty('--edit-zone',          `rgba(${z.r},${z.g},${z.b},0.55)`);
     root.style.setProperty('--edit-zone-fill',     `rgba(${z.r},${z.g},${z.b},0.10)`);
     root.style.setProperty('--edit-surprise',      `rgba(${s.r},${s.g},${s.b},0.65)`);
     root.style.setProperty('--edit-surprise-fill', `rgba(${s.r},${s.g},${s.b},0.12)`);
+    root.style.setProperty('--edit-zone-width',    `${width}px`);
   }
 
   /* ── init ───────────────────────────────────── */
