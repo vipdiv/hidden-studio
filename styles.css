@@ -1301,6 +1301,11 @@ body.edit-mode #counter { display: none; }
   background: rgba(212,212,212,0.1);
   border-color: var(--ui-text-dim);
 }
+.ghost-btn.active {
+  background: var(--ui-blue);
+  border-color: var(--ui-blue);
+  color: #fff;
+}
 .ghost-btn.danger:hover {
   background: rgba(228, 92, 92, 0.15);
   border-color: var(--ui-red);

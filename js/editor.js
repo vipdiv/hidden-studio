@@ -1923,6 +1923,8 @@ window.Editor = (function() {
 
     document.querySelectorAll('.doc-preset').forEach(btn => {
       btn.addEventListener('click', () => {
+        document.querySelectorAll('.doc-preset').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
         const pw = parseInt(btn.dataset.w), ph = parseInt(btn.dataset.h);
         if (curUnit === 'px') {
           document.getElementById('doc-px-w').value = pw;
