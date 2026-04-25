@@ -64,6 +64,13 @@ window.Shortcuts = (function() {
       return;
     }
 
+    // Ctrl+Shift+H → hit zone preview (global — works in play mode too)
+    if (e.key === 'H' && mod(e) && e.shiftKey && !isTyping()) {
+      toggleHitZonePreview();
+      e.preventDefault();
+      return;
+    }
+
     // Everything below is edit-mode only and suppressed while typing
     if (!isEditMode() || isTyping()) return;
 
@@ -110,11 +117,6 @@ window.Shortcuts = (function() {
 
         case 'y': case 'Y':
           toggleOutlineMode();
-          e.preventDefault();
-          return;
-
-        case 'H': // Ctrl+Shift+H — hit zone preview overlay
-          toggleHitZonePreview();
           e.preventDefault();
           return;
 
