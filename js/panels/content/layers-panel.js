@@ -29,6 +29,7 @@ console.log("LAYERS_PANEL_CONTENT_LOADED");
     const list = document.createElement('ul');
     list.className = 'layers-list';
     list.id = 'layersList';
+    list.style.cssText = 'overflow-y:auto;max-height:340px;';
 
     root.appendChild(header);
     root.appendChild(list);

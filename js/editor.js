@@ -9,6 +9,7 @@ window.Editor = (function() {
   let selectedSprite = null;  // sprite id, or null
   let selectedBase = false;   // true when base layer is selected
   let selectedStroke = null;  // stroke id, or null
+  let _textEditTarget = null; // text id to enter inline edit after next renderTexts()
   let tool = 'select';
 
   // DOM refs
@@ -171,11 +172,12 @@ window.Editor = (function() {
     if (!p.baseTransform) p.baseTransform = window.Transforms.defaults();
     if (p.baseX === undefined) p.baseX = 0;
     if (p.baseY === undefined) p.baseY = 0;
-    // Ensure texts array exists and migrate hidden/locked
+    // Ensure texts array exists and migrate hidden/locked/name
     if (!p.texts) p.texts = [];
     p.texts.forEach(t => {
       if (t.hidden === undefined) t.hidden = false;
       if (t.locked === undefined) t.locked = false;
+      if (t.name  === undefined) t.name  = '';
     });
     // Ensure groups array exists
     if (!p.groups) p.groups = [];
@@ -393,7 +395,7 @@ window.Editor = (function() {
       if (!text) return;
       const id = 'txt_' + Date.now().toString(36);
       const txt = { id, text, x, y, size: parseInt(sizeEl.value), color: '#1a1613',
-                    fontFamily: 'Caveat', hidden: false, locked: false };
+                    fontFamily: 'Caveat', hidden: false, locked: false, name: '' };
       project.texts = project.texts || [];
       project.texts.push(txt);
       closeModal();
@@ -407,8 +409,17 @@ window.Editor = (function() {
 
   function renderTexts() {
     if (!spriteLayer) return;
-    spriteLayer.querySelectorAll('.text-element').forEach(el => el.remove());
+    // Preserve any element currently in contenteditable edit mode
+    const activeEdit = spriteLayer.querySelector('.text-element[contenteditable="true"]');
+    spriteLayer.querySelectorAll('.text-element').forEach(el => {
+      if (el !== activeEdit) el.remove();
+    });
     (project?.texts || []).forEach(txt => {
+      // If this text is actively being edited, only update its class; don't recreate
+      if (activeEdit && activeEdit.dataset.id === txt.id) {
+        activeEdit.className = 'text-element' + (selected?.id === txt.id && selected?.kind === 'text' ? ' selected' : '');
+        return;
+      }
       const el = document.createElement('div');
       el.className = 'text-element' + (selected?.id === txt.id && selected?.kind === 'text' ? ' selected' : '');
       el.dataset.id = txt.id;
@@ -417,11 +428,67 @@ window.Editor = (function() {
       el.style.color  = txt.color || '#1a1613';
       el.style.fontSize = (txt.size || 32) + 'px';
       el.style.fontFamily = txt.fontFamily || 'Caveat, cursive';
-      if (txt.hidden) el.style.opacity = '0.2';
+      if (txt.hidden) el.style.display = 'none';
       el.textContent = txt.text;
-      el.addEventListener('pointerdown', (e) => onTextPointerDown(e, txt));
+      el.addEventListener('pointerdown', (e) => {
+        if (el.contentEditable === 'true') return; // browser handles text cursor
+        onTextPointerDown(e, txt);
+      });
+      if (txt.id === _textEditTarget) {
+        _textEditTarget = null;
+        const target = el;
+        setTimeout(() => _enterTextEditMode(target, txt), 0);
+      }
       spriteLayer.appendChild(el);
     });
+  }
+
+  function _enterTextEditMode(el, txt) {
+    if (!el || !el.isConnected) return;
+    el.style.outline = '2px solid var(--ui-blue, #3860a8)';
+    el.style.outlineOffset = '3px';
+    el.style.cursor = 'text';
+    el.style.userSelect = 'text';
+    el.contentEditable = 'true';
+    el.focus();
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(el);
+      const sel = window.getSelection();
+      sel.removeAllRanges();
+      sel.addRange(range);
+    } catch (_) {}
+    let cancelled = false;
+    function commitEdit() {
+      if (cancelled) return;
+      el.contentEditable = 'false';
+      el.style.outline = '';
+      el.style.outlineOffset = '';
+      el.style.cursor = '';
+      el.style.userSelect = '';
+      const newText = el.innerText.replace(/\n/g, ' ').trim() || txt.text;
+      if (newText !== txt.text) {
+        txt.text = newText;
+        schedSave();
+        renderLayersPanel();
+      }
+      renderTexts();
+    }
+    function onKey(ke) {
+      if (ke.key === 'Enter') { ke.preventDefault(); el.removeEventListener('keydown', onKey); el.blur(); }
+      if (ke.key === 'Escape') {
+        cancelled = true;
+        el.removeEventListener('keydown', onKey);
+        el.innerText = txt.text;
+        el.contentEditable = 'false';
+        el.style.outline = '';
+        el.style.outlineOffset = '';
+        el.style.cursor = '';
+        el.style.userSelect = '';
+      }
+    }
+    el.addEventListener('blur', commitEdit, { once: true });
+    el.addEventListener('keydown', onKey);
   }
 
   function onTextPointerDown(e, txt) {
@@ -445,8 +512,15 @@ window.Editor = (function() {
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
-      if (!moved) select('text', txt.id);
-      else schedSave();
+      if (!moved) {
+        // Second click on an already-selected text → enter inline edit after re-render
+        if (selected?.id === txt.id && selected?.kind === 'text') {
+          _textEditTarget = txt.id;
+        }
+        select('text', txt.id);
+      } else {
+        schedSave();
+      }
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -1368,7 +1442,8 @@ window.Editor = (function() {
         nameHtml = escapeHtmlInner(obj.name || `${label} ${strokeKindIdx.get(obj.id) || (arrIdx + 1)}`);
       } else if (type === 'text') {
         iconHtml = `<span class="layer-icon" style="font-family:'Caveat',cursive;font-size:13px;font-weight:700;color:${obj.color}">A</span>`;
-        nameHtml = escapeHtmlInner(obj.text.length > 20 ? obj.text.slice(0,20)+'…' : obj.text);
+        const textLabel = obj.name || obj.text;
+        nameHtml = escapeHtmlInner(textLabel.length > 20 ? textLabel.slice(0,20)+'…' : textLabel);
       }
       const handleHtml = hasHandle ? `<span class="layer-drag-handle" title="Drag to reorder">⠿</span>` : '';
       const renamable = type !== 'base';
@@ -1572,16 +1647,16 @@ window.Editor = (function() {
   function _applyVisibility(type, id, hidden) {
     if (type === 'sprite') {
       const el = document.querySelector(`.sprite[data-id="${id}"]`);
-      if (el) el.style.opacity = hidden ? '0.2' : '';
+      if (el) el.style.display = hidden ? 'none' : '';
     } else if (type === 'item' || type === 'surprise') {
       const el = document.querySelector(`.hit[data-id="${id}"]`);
-      if (el) el.style.opacity = hidden ? '0.2' : '';
+      if (el) el.style.display = hidden ? 'none' : '';
     } else if (type === 'stroke') {
       const g = document.querySelector(`[data-stroke-id="${id}"]`);
-      if (g) g.style.opacity = hidden ? '0.2' : '';
+      if (g) g.style.display = hidden ? 'none' : '';
     } else if (type === 'text') {
       const el = document.querySelector(`.text-element[data-id="${id}"]`);
-      if (el) el.style.opacity = hidden ? '0.2' : '';
+      if (el) el.style.display = hidden ? 'none' : '';
     }
   }
 
@@ -1731,9 +1806,9 @@ window.Editor = (function() {
     input.focus();
     input.select();
     const commit = () => {
-      const val = input.value.trim() || current;
-      if (type === 'text') { obj.text = val; renderTexts(); }
-      else obj.name = val;
+      const val = input.value.trim();
+      // Text layers: allow empty label (shows text content auto-label); others: keep current if blank
+      obj.name = type === 'text' ? val : (val || current);
       if (type === 'stroke') project.drawings = window.Draw.getStrokes();
       schedSave();
       if (type === 'item' || type === 'surprise') {
@@ -2181,7 +2256,7 @@ window.Editor = (function() {
       const el = document.createElement('div');
       el.className = 'sprite selectable';
       el.dataset.id = s.id;
-      if (s.hidden) el.style.opacity = '0.2';
+      if (s.hidden) el.style.display = 'none';
       el.style.left   = `${s.x - s.w/2}px`;
       el.style.top    = `${s.y - s.h/2}px`;
       el.style.width  = `${s.w}px`;

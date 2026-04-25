@@ -870,6 +870,11 @@ body.edit-mode .edit-panel.collapsed ~ .edit-panel-toggle { display: block; }
   pointer-events: none;
 }
 
+/* Shift minimap left of the right-side panel dock when it's visible */
+body.edit-mode:not(.dock-collapsed) #minimap {
+  right: calc(266px + 14px);
+}
+
 .win {
   position: fixed; inset: 0;
   background: rgba(0, 0, 0, 0.82);

@@ -163,6 +163,7 @@ window.Game = (function() {
       const resize = document.createElement('div');
       resize.className = 'resize';
       el.appendChild(resize);
+      if (item.hidden) el.style.display = 'none';
       hitsLayer.appendChild(el);
     });
   }

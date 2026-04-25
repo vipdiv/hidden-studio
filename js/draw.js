@@ -199,6 +199,7 @@ window.Draw = (function() {
       const tx = s.tx || 0, ty = s.ty || 0;
       if (tx || ty) g.setAttribute('transform', `translate(${tx}, ${ty})`);
       g.setAttribute('data-stroke-id', s.id);
+      if (s.hidden) g.style.display = 'none';
 
       if (s.id === selectedId) {
         // Selection halo — wide semi-transparent path behind the stroke
