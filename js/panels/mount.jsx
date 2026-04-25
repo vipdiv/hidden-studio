@@ -57,6 +57,14 @@ const PanelIsland = () => {
   const [closedPanels, setClosedPanels] = React.useState([]);
   const [tabDrag, setTabDrag] = React.useState(null);
   const [nearDock, setNearDock] = React.useState(false);
+  const [dockCollapsed, setDockCollapsed] = React.useState(() => {
+    try { return localStorage.getItem('hs-dock-collapsed') === '1'; } catch { return false; }
+  });
+
+  React.useEffect(() => {
+    document.body.classList.toggle('dock-collapsed', dockCollapsed);
+    try { localStorage.setItem('hs-dock-collapsed', dockCollapsed ? '1' : '0'); } catch {}
+  }, [dockCollapsed]);
 
   const groupsRef = React.useRef(groups);
   React.useEffect(() => { groupsRef.current = groups; }, [groups]);
@@ -260,11 +268,11 @@ const PanelIsland = () => {
     tabDrag,
   };
 
-  const dockVisible = dockedGroups.length > 0 || nearDock;
+  const dockVisible = !dockCollapsed && (dockedGroups.length > 0 || nearDock);
 
   return (
     <>
-      {/* Right dock column — only render when something is docked or user is dragging near the edge */}
+      {/* Right dock column — only render when expanded AND something is docked or user is dragging near the edge */}
       {dockVisible && (
         <div className="dock-col" style={{
           position: 'absolute',
@@ -276,6 +284,26 @@ const PanelIsland = () => {
           pointerEvents: 'auto',
           overflowY: 'auto', overflowX: 'hidden',
         }}>
+          {/* Collapse handle — thin bar above the first panel */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+            height: 20, padding: '0 4px', flexShrink: 0,
+            background: 'var(--ps-panel-header)',
+            borderBottom: '1px solid var(--ps-border)',
+          }}>
+            <button
+              title="Collapse panels"
+              onClick={() => setDockCollapsed(true)}
+              style={{
+                background: 'none', border: 'none',
+                color: 'var(--ps-dim-text)', cursor: 'pointer',
+                fontSize: 13, lineHeight: 1, padding: '2px 6px',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--ps-text)'; }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--ps-dim-text)'; }}
+            >»</button>
+          </div>
+
           {dockedGroups.map(g => <PanelGroup key={g.id} group={g} {...pgProps} />)}
 
           {nearDock && (
@@ -284,6 +312,24 @@ const PanelIsland = () => {
             </div>
           )}
         </div>
+      )}
+
+      {/* Re-expand button — fixed at right edge when dock is collapsed */}
+      {dockCollapsed && dockedGroups.length > 0 && (
+        <button
+          title="Show panels"
+          onClick={() => setDockCollapsed(false)}
+          style={{
+            position: 'fixed', top: 80, right: 0, zIndex: 25,
+            width: 22, height: 36,
+            background: 'var(--panel-bg)',
+            border: '1.5px solid var(--panel-border)',
+            borderRight: 'none',
+            borderRadius: '6px 0 0 6px',
+            color: 'var(--ui-text)', cursor: 'pointer',
+            fontSize: 12, pointerEvents: 'auto',
+          }}
+        >«</button>
       )}
 
       {/* Dock drop overlay — shows when dragging near right edge */}
