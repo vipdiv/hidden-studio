@@ -130,6 +130,21 @@ body[data-theme="paper"] .tool-strip .tool-btn.active {
   overflow: visible;
 }
 
+/* ── Dock column: hide native scrollbar ─────────── */
+.dock-col {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.dock-col::-webkit-scrollbar { display: none; }
+
+/* ── Keep panel root visible in fullscreen ──────── */
+:-webkit-full-screen #panel-root,
+:-moz-full-screen    #panel-root,
+:fullscreen          #panel-root { display: block !important; }
+:-webkit-full-screen .dock-col,
+:-moz-full-screen    .dock-col,
+:fullscreen          .dock-col   { display: flex !important; }
+
 /* ── M4: 24px menu bar additions ────────────────── */
 
 /* Raise height from 22px → 24px */

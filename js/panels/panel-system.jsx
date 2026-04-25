@@ -126,10 +126,9 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
       </div>
 
       {/* Panel content */}
-      {(
-        <div className="panel-body" style={{ overflowY: 'auto', overflowX: 'hidden', maxHeight: group.floating ? (group.height || 520) : undefined }}>
-          <PanelContent panelId={group.tabs[group.activeTab]} />
-        </div>
+      <div className="panel-body" style={{ overflowY: group.floating ? 'auto' : 'hidden', overflowX: 'hidden', maxHeight: group.floating ? (group.height || 520) : undefined }}>
+        <PanelContent panelId={group.tabs[group.activeTab]} />
+      </div>
 
       {/* Drop-to-merge hint */}
       {isDropTarget && (
