@@ -374,6 +374,7 @@ window.Shortcuts = (function() {
 
   function showSettingsModal() {
     const PANELS_LIST = ['layers','navigator','properties','transform','swatches','hitzone','surprise','difficulty','project','history'];
+    const PANEL_TITLES = { layers:'Layers', navigator:'Navigator', properties:'Properties', transform:'Transform', swatches:'Swatches', hitzone:'Hit Zone', surprise:'Surprise', difficulty:'Difficulty', project:'Project', history:'History' };
 
     let activeTab = 'general';
 
@@ -399,7 +400,7 @@ window.Shortcuts = (function() {
         const regs = window.Panels?._getRegs() || {};
         content = PANELS_LIST.map(id => {
           const visible = window.Panels?.isVisible(id) ?? false;
-          const title = regs[id]?.title || id;
+          const title = regs[id]?.title || PANEL_TITLES[id] || id;
           return toggle(title, visible, `window._settingsPanel('${id}')`);
         }).join('');
       } else if (activeTab === 'export') {
@@ -421,7 +422,8 @@ window.Shortcuts = (function() {
         `;
       }
 
-      document.getElementById('settingsContent').innerHTML = content;
+      const el = document.getElementById('settingsContent');
+      if (el) el.innerHTML = content;
     }
 
     const inputStyle = 'width:90px;background:var(--panel-bg-2);border:1px solid var(--panel-border);color:var(--ui-text);border-radius:3px;padding:3px 6px;font-size:12px';
@@ -436,11 +438,9 @@ window.Shortcuts = (function() {
     function toggle(label, checked, onchange) {
       return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--panel-border)">
         <span style="font-size:12px;color:var(--ui-text)">${label}</span>
-        <label style="position:relative;display:inline-block;width:34px;height:18px;cursor:pointer">
-          <input type="checkbox" ${checked?'checked':''} onchange="${onchange}" style="opacity:0;width:0;height:0;position:absolute">
-          <span style="position:absolute;inset:0;border-radius:9px;background:${checked?'var(--ui-blue)':'var(--panel-border)'};transition:.2s">
-            <span style="position:absolute;top:2px;left:${checked?'18':'2'}px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.2s"></span>
-          </span>
+        <label class="hs-sw">
+          <input type="checkbox" ${checked?'checked':''} onchange="${onchange}">
+          <span class="hs-sw-track"><span class="hs-sw-knob"></span></span>
         </label>
       </div>`;
     }
@@ -462,6 +462,14 @@ window.Shortcuts = (function() {
     ).join('');
 
     const html = `
+      <style>
+        .hs-sw { position:relative; display:inline-block; width:34px; height:18px; cursor:pointer; flex-shrink:0; }
+        .hs-sw input { position:absolute; opacity:0; width:100%; height:100%; margin:0; cursor:pointer; z-index:1; }
+        .hs-sw-track { position:absolute; inset:0; border-radius:9px; background:var(--panel-border); transition:.2s; pointer-events:none; }
+        .hs-sw-knob  { position:absolute; top:2px; left:2px; width:14px; height:14px; border-radius:50%; background:#fff; transition:.2s; }
+        .hs-sw input:checked + .hs-sw-track { background:var(--ui-blue); }
+        .hs-sw input:checked + .hs-sw-track .hs-sw-knob { left:18px; }
+      </style>
       <div style="display:flex;gap:2px;margin-bottom:12px;border-bottom:1px solid var(--panel-border)">${tabBar}</div>
       <div id="settingsContent"></div>`;
 
@@ -480,8 +488,9 @@ window.Shortcuts = (function() {
       if (key === 'rulers')  toggleRulers();
       if (key === 'grid')    toggleGrid();
       if (key === 'outline') toggleOutlineMode();
+      renderTab();
     };
-    window._settingsPanel = (id) => { window.Panels?.toggle(id); };
+    window._settingsPanel = (id) => { window.Panels?.toggle(id); renderTab(); };
     window._settingsCanvasApply = () => {
       const w = parseInt(document.getElementById('settingsW')?.value) || 1600;
       const h = parseInt(document.getElementById('settingsH')?.value) || 1600;
