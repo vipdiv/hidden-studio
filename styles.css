@@ -597,6 +597,11 @@ button.chip.off { opacity: 0.45; }
 .play-mode .hit { border: none; background: transparent; cursor: pointer; pointer-events: none; }
 .play-mode .hit .label, .play-mode .hit .resize { display: none; }
 
+/* Hit zone preview overlay (Ctrl+Shift+H) — reveals zones in play mode for creator inspection */
+body.show-hit-zones.play-mode .hit.item    { border: 2px dashed var(--edit-zone) !important; background: var(--edit-zone-fill) !important; }
+body.show-hit-zones.play-mode .hit.surprise { border: 2px dashed var(--edit-surprise) !important; background: var(--edit-surprise-fill) !important; }
+body.show-hit-zones.play-mode .hit .label  { display: block !important; }
+
 /* Hide editor-only chrome in play mode */
 body.play-mode #backBtn,
 body.play-mode #shortcutsBtn,

@@ -40,9 +40,10 @@ window.Menu = (function() {
     const gridEnabled    = document.body.classList.contains('grid-enabled');
     const outlineEnabled = document.body.classList.contains('outline-enabled');
 
-    if (rulersEnabled)  addItem('toggle-rulers', 'Rulers',       "Ctrl+R",  document.body.classList.contains('show-rulers'));
-    if (gridEnabled)    addItem('toggle-grid',   'Grid',         "Ctrl+'",  document.body.classList.contains('show-grid'));
-    if (outlineEnabled) addItem('outline-mode',  'Outline Mode', 'Ctrl+Y',  document.body.classList.contains('outline-mode'));
+    if (rulersEnabled)  addItem('toggle-rulers',   'Rulers',            "Ctrl+R",       document.body.classList.contains('show-rulers'));
+    if (gridEnabled)    addItem('toggle-grid',     'Grid',              "Ctrl+'",       document.body.classList.contains('show-grid'));
+    if (outlineEnabled) addItem('outline-mode',    'Outline Mode',      'Ctrl+Y',       document.body.classList.contains('outline-mode'));
+    addItem('hit-zone-preview', 'Hit Zone Preview', 'Ctrl+Shift+H', document.body.classList.contains('show-hit-zones'));
 
     if (rulersEnabled || gridEnabled || outlineEnabled) dd.appendChild(makeSep());
 
@@ -323,9 +324,10 @@ window.Menu = (function() {
         break;
       }
 
-      case 'toggle-rulers': window.Shortcuts?.toggleRulers?.(); break;
-      case 'toggle-grid':   window.Shortcuts?.toggleGrid?.(); break;
-      case 'outline-mode':  window.Shortcuts?.toggleOutlineMode?.(); break;
+      case 'toggle-rulers':   window.Shortcuts?.toggleRulers?.(); break;
+      case 'toggle-grid':     window.Shortcuts?.toggleGrid?.(); break;
+      case 'outline-mode':    window.Shortcuts?.toggleOutlineMode?.(); break;
+      case 'hit-zone-preview': window.Shortcuts?.toggleHitZonePreview?.(); break;
 
       case 'toggle-panels': window.Shortcuts?.togglePanels?.(); break;
       case 'toggle-mode':

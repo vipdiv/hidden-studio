@@ -113,6 +113,11 @@ window.Shortcuts = (function() {
           e.preventDefault();
           return;
 
+        case 'H': // Ctrl+Shift+H — hit zone preview overlay
+          toggleHitZonePreview();
+          e.preventDefault();
+          return;
+
         case '0':
           window.Game.centerOnPlanet();
           e.preventDefault();
@@ -252,6 +257,7 @@ window.Shortcuts = (function() {
         ${row('Rulers', 'Ctrl+R')}
         ${row('Grid', "Ctrl+'")}
         ${row('Outline mode', 'Ctrl+Y')}
+        ${row('Hit zone preview', 'Ctrl+Shift+H')}
         ${row('Hide panels', 'Tab')}
         ${row('Play / Edit', 'F')}
       </div>
@@ -623,6 +629,10 @@ window.Shortcuts = (function() {
     document.body.classList.toggle('outline-mode');
   }
 
+  function toggleHitZonePreview() {
+    document.body.classList.toggle('show-hit-zones');
+  }
+
   /* ── M6: Zoom badge polling ─────────────────── */
 
   function startZoomBadge() {
@@ -630,7 +640,10 @@ window.Shortcuts = (function() {
     if (!badge) return;
     setInterval(() => {
       const z = window.Game?.scale;
-      if (z != null) badge.textContent = Math.round(z * 100) + '%';
+      if (z != null) {
+        const snap = document.body.classList.contains('show-grid') ? ' · snap' : '';
+        badge.textContent = Math.round(z * 100) + '%' + snap;
+      }
     }, 200);
   }
 
@@ -651,7 +664,7 @@ window.Shortcuts = (function() {
     showShortcutsModal, showDocsModal, showSettingsModal,
     zoomAt,
     togglePanels, resetPanels,
-    toggleRulers, toggleGrid, toggleOutlineMode,
+    toggleRulers, toggleGrid, toggleOutlineMode, toggleHitZonePreview,
   };
 
 })();
