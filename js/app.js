@@ -6,7 +6,7 @@
 
 (function() {
 
-  console.log('[Hidden Studio] build: pan-lock-v1 branch: claude/push-ui-redesign-commit-iJAaa');
+  console.log('[Hidden Studio] build: surprise-export-v1 branch: claude/push-ui-redesign-commit-iJAaa');
 
   let currentProject = null;
   let mode = 'play'; // 'play' | 'edit'

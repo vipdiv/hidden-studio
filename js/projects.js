@@ -345,6 +345,11 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .egg-fl .egg-x{top:-12px;right:-12px}
 .egg-st{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;font-family:'Caveat',cursive;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:var(--paper);text-align:center;max-width:min(500px,85vw);text-shadow:0 2px 12px rgba(0,0,0,.9);pointer-events:none;animation:egTxt 2.2s ease-out forwards}
 .egg-shake{animation:egShk .85s ease-out}
+.sparkle{position:absolute;width:14px;height:14px;pointer-events:none;z-index:5;animation:spk 2s ease-in-out infinite}
+@keyframes spk{0%,100%{opacity:.5;transform:scale(.8) rotate(0deg)}50%{opacity:1;transform:scale(1.2) rotate(45deg)}}
+.surp{position:absolute;pointer-events:none;z-index:7;animation:srp 1.6s ease-out forwards}
+.surp svg{width:80px;height:80px;display:block;margin:-40px 0 0 -40px}
+@keyframes srp{0%{opacity:0;transform:scale(.3) rotate(-30deg)}30%{opacity:1;transform:scale(1.3) rotate(0deg)}80%{opacity:1;transform:scale(1) rotate(0deg)}100%{opacity:0;transform:scale(1) translateY(-40px) rotate(15deg)}}
 </style>
 </head><body>
 <div class="hud">
@@ -446,9 +451,17 @@ D.items.forEach(item => {
   h.style.cssText = 'left:' + (item.x - item.r) + 'px;top:' + (item.y - item.r) + 'px;width:' + (item.r*2) + 'px;height:' + (item.r*2) + 'px;';
   hitsLayer.appendChild(h);
 });
+// Surprises (bonus hit zones — sparkles + reveal on tap, do not count toward "find all")
+const SUR = D.surprises || [];
+SUR.forEach(s => {
+  const h = document.createElement('div');
+  h.className = 'hit'; h.dataset.id = s.id; h.dataset.kind = 'surprise';
+  h.style.cssText = 'left:' + (s.x - s.r) + 'px;top:' + (s.y - s.r) + 'px;width:' + (s.r*2) + 'px;height:' + (s.r*2) + 'px;';
+  hitsLayer.appendChild(h);
+});
 document.getElementById('ttl').textContent = D.items.length;
 // Game state
-let found = new Set(), soundOn = true, audioCtx = null, panLocked = true;
+let found = new Set(), surF = new Set(), soundOn = true, audioCtx = null, panLocked = true;
 function aud(){ if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume(); return audioCtx }
 function sfxFound(){if(!soundOn)return;const c=aud();if(!c)return;const t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(880,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.3);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.35);}
 function env(c,o,g,t,a,p,d){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(p,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+d);o.connect(g).connect(c.destination);o.start(t);o.stop(t+a+d+.05)}
@@ -471,11 +484,14 @@ drip:c=>{const t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='s
 none:()=>{}
 };
 function sfxMiss(){if(!soundOn)return;if(D.missSound==='__custom__'&&D.missSoundData){try{const a=new Audio(D.missSoundData);a.volume=.85;a.play().catch(()=>{});return}catch(_){}}const c=aud();if(!c)return;(SFXP[D.missSound]||SFXP.miss)(c)}
+function sfxPlay(name){if(!soundOn)return;const c=aud();if(!c)return;(SFXP[name]||SFXP.pop)(c)}
 function sfxWin(){if(!soundOn)return;const c=aud();if(!c)return;[523,659,784,1047].forEach((f,i)=>{const t=c.currentTime+i*.12,o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.35);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.4)})}
 function buildList(){const ul=document.getElementById('lst');ul.innerHTML='';if(!D.items.length){const li=document.createElement('li');li.style.cssText='opacity:.5;font-style:italic;list-style:none;padding:4px 0';li.textContent='No hidden spots added yet.';ul.appendChild(li);return;}D.items.forEach(it=>{const li=document.createElement('li');li.id='l-'+it.id;const box=document.createElement('span');box.className='box';const lbl=document.createElement('span');lbl.className='label';lbl.textContent=it.name||'';li.appendChild(box);li.appendChild(lbl);if(found.has(it.id))li.classList.add('found');ul.appendChild(li)})}
 function updateCtr(){document.getElementById('ctr').innerHTML='found <b>'+found.size+'</b> / '+D.items.length;if(D.items.length>0&&found.size===D.items.length){setTimeout(()=>{document.getElementById('w').classList.add('show');sfxWin();if(navigator.vibrate)navigator.vibrate([80,50,80,50,180])},500)}}
 function addMark(it){const m=document.createElement('div');m.className='mark';m.style.cssText='left:'+(it.x-it.r*1.3)+'px;top:'+(it.y-it.r*1.3)+'px;width:'+(it.r*2.6)+'px;height:'+(it.r*2.6)+'px;';const r=(Math.random()*20-10).toFixed(1);m.innerHTML='<svg viewBox="0 0 100 100" style="transform:rotate('+r+'deg)"><circle cx="50" cy="50" r="44" transform="rotate('+(Math.random()*360)+' 50 50)"/></svg>';document.getElementById('world').appendChild(m)}
 function pop(t,x,y,cls){const p=document.createElement('div');p.className=cls;p.textContent=t;p.style.left=x+'px';p.style.top=y+'px';document.getElementById('world').appendChild(p);setTimeout(()=>p.remove(),1500)}
+function renderSparkles(){document.querySelectorAll('.sparkle').forEach(e=>e.remove());SUR.forEach(s=>{if(surF.has(s.id))return;const sp=document.createElement('div');sp.className='sparkle';sp.dataset.id=s.id;sp.style.left=(s.x-7)+'px';sp.style.top=(s.y-7)+'px';sp.innerHTML='<svg viewBox="0 0 14 14"><path d="M 7 0 L 8 6 L 14 7 L 8 8 L 7 14 L 6 8 L 0 7 L 6 6 Z" fill="#c43f2e" opacity="0.85"/></svg>';sp.style.animationDelay=(Math.random()*2)+'s';document.getElementById('world').appendChild(sp)})}
+function triggerSurprise(s){surF.add(s.id);document.querySelector('.sparkle[data-id="'+s.id+'"]')?.remove();const el=document.createElement('div');el.className='surp';el.style.left=s.x+'px';el.style.top=s.y+'px';el.innerHTML='<svg viewBox="0 0 100 100"><path d="M 50 0 L 58 42 L 100 50 L 58 58 L 50 100 L 42 58 L 0 50 L 42 42 Z" fill="#c43f2e"/></svg>';document.getElementById('world').appendChild(el);setTimeout(()=>el.remove(),1700);sfxPlay(s.sound||'pop');if(navigator.vibrate)navigator.vibrate([20,30,40])}
 // Camera
 let camX=0,camY=0,scale=1;
 function panelOpen(){const lp=document.getElementById('list-p');return lp&&!lp.classList.contains('hidden')&&innerWidth>640}
@@ -501,7 +517,7 @@ function egTxt(text){const d=document.createElement('div');d.className='eg-txt';
 function egShowFloat(egg){const vc=egg.visualContent||{};const el=document.createElement('div');el.className='egg-fl';if(egg.dismissable)el.appendChild(egCloseBtn());if(vc.image)el.appendChild(egImg(vc.image));if(vc.text)el.appendChild(egTxt(vc.text));const pos=vc.position||'center';if(pos==='bottom-right'){el.style.left='';el.style.top='';el.style.right='24px';el.style.bottom='24px';el.style.transform='none'}else if(pos==='random'){el.style.left=(10+Math.random()*55)+'%';el.style.top=(10+Math.random()*55)+'%'}document.body.appendChild(el);egOverlay=el;if(egg.dismissable)setTimeout(()=>document.addEventListener('click',(e)=>{if(!el.contains(e.target))egDismiss()},{once:true}),200)}
 function egShowFull(egg){const vc=egg.visualContent||{};const el=document.createElement('div');el.className='egg-fs';const inner=document.createElement('div');inner.className='egg-in';if(egg.dismissable)inner.appendChild(egCloseBtn());if(vc.image)inner.appendChild(egImg(vc.image));if(vc.text)inner.appendChild(egTxt(vc.text));el.appendChild(inner);el.addEventListener('click',(e)=>{if(e.target===el)egDismiss()});document.body.appendChild(el);egOverlay=el}
 function egDoShake(egg){const vc=egg.visualContent||{};stage.classList.add('egg-shake');setTimeout(()=>stage.classList.remove('egg-shake'),850);if(vc.text){const el=document.createElement('div');el.className='egg-st';el.textContent=vc.text;document.body.appendChild(el);egOverlay=el;setTimeout(()=>{if(egOverlay===el){el.remove();egOverlay=null}},2200)}if(egAudio&&!egg.loop)egAudio.addEventListener('ended',()=>{egAudio=null},{once:true})}
-function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('grabbing');if(tap){const wx=(cx-camX)/scale,wy=(cy-camY)/scale;let h=null;for(const it of D.items){if(found.has(it.id))continue;const dx=wx-it.x,dy=wy-it.y;if(Math.sqrt(dx*dx+dy*dy)<it.r){h=it;break}}if(h){if(h.easterEgg&&h.easterEgg.enabled){egTrigger(h.easterEgg);return}found.add(h.id);addMark(h);pop('found!',h.x,h.y-h.r-8,'pop');sfxFound();if(navigator.vibrate)navigator.vibrate([30,40,60]);document.getElementById('l-'+h.id)?.classList.add('found');updateCtr()}else{const m=['nope!','miss!','hmm'];pop(m[Math.floor(Math.random()*m.length)],wx,wy,'miss');sfxMiss();if(navigator.vibrate)navigator.vibrate(40)}}}
+function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('grabbing');if(tap){const wx=(cx-camX)/scale,wy=(cy-camY)/scale;for(const s of SUR){if(surF.has(s.id))continue;const dx=wx-s.x,dy=wy-s.y;if(Math.sqrt(dx*dx+dy*dy)<s.r){if(s.easterEgg&&s.easterEgg.enabled){egTrigger(s.easterEgg);return}triggerSurprise(s);return}}let h=null;for(const it of D.items){if(found.has(it.id))continue;const dx=wx-it.x,dy=wy-it.y;if(Math.sqrt(dx*dx+dy*dy)<it.r){h=it;break}}if(h){if(h.easterEgg&&h.easterEgg.enabled){egTrigger(h.easterEgg);return}found.add(h.id);addMark(h);pop('found!',h.x,h.y-h.r-8,'pop');sfxFound();if(navigator.vibrate)navigator.vibrate([30,40,60]);document.getElementById('l-'+h.id)?.classList.add('found');updateCtr()}else{const m=['nope!','miss!','hmm'];pop(m[Math.floor(Math.random()*m.length)],wx,wy,'miss');sfxMiss();if(navigator.vibrate)navigator.vibrate(40)}}}
 stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEventListener('mouseup',pu);
 stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
 document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
@@ -526,9 +542,9 @@ document.addEventListener('wheel',(e)=>{
 },{passive:false});
 // Recenter whenever the window resizes (covers orientation changes too)
 addEventListener('resize',()=>{center()});
-function R(){found=new Set();document.querySelectorAll('.mark,.pop,.miss').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr()}
+function R(){found=new Set();surF=new Set();document.querySelectorAll('.mark,.pop,.miss,.surp,.sparkle').forEach(e=>e.remove());document.getElementById('w').classList.remove('show');buildList();updateCtr();renderSparkles()}
 window.R=R;
-buildList();center();updateCtr();
+buildList();center();updateCtr();renderSparkles();
 </script></body></html>`;
 
   return {
