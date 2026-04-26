@@ -6,10 +6,11 @@
 
 (function() {
 
-  console.log('[Hidden Studio] build: character-v1 branch: claude/push-ui-redesign-commit-iJAaa');
+  console.log('[Hidden Studio] build: pan-lock-v1 branch: claude/push-ui-redesign-commit-iJAaa');
 
   let currentProject = null;
   let mode = 'play'; // 'play' | 'edit'
+  let panLocked = true; // canvas pan locked in play mode by default
 
   // DOM refs — populated on DOMContentLoaded
   let startScreen, projectsList, app;
@@ -160,6 +161,12 @@
     // Mode toggle
     document.querySelectorAll('.mode-btn').forEach(b => {
       b.addEventListener('click', () => setMode(b.dataset.mode));
+    });
+
+    // Pan lock toggle (play mode only)
+    document.getElementById('panLockBtn')?.addEventListener('click', () => {
+      panLocked = !panLocked;
+      _updatePanLockBtn();
     });
 
     // Sound toggle
@@ -333,6 +340,14 @@
     setMode('play');
   }
 
+  function _updatePanLockBtn() {
+    const btn = document.getElementById('panLockBtn');
+    if (!btn) return;
+    btn.textContent = panLocked ? '🔒' : '🔓';
+    btn.title = panLocked ? 'Canvas pan: locked — click to unlock' : 'Canvas pan: unlocked — click to lock';
+    btn.classList.toggle('unlocked', !panLocked);
+  }
+
   /* ————————————————————————————————————————
      MODE SWITCH
   ———————————————————————————————————————— */
@@ -351,6 +366,8 @@
     document.getElementById('editPanel').classList.toggle('hidden', m !== 'edit');
 
     if (m === 'play') {
+      panLocked = true;
+      _updatePanLockBtn();
       // Start with list panel collapsed so it doesn't cover the artwork;
       // user can open it with the 📋 button
       document.getElementById('listPanel').classList.add('collapsed');
@@ -450,7 +467,8 @@
       lastScreenX  = p.x; lastScreenY  = p.y;
       startCamX = window.Game.camX; startCamY = window.Game.camY;
       totalDelta = 0;
-      stage.classList.add('grabbing');
+      const inPlayLocked = document.body.classList.contains('play-mode') && panLocked;
+      if (!inPlayLocked) stage.classList.add('grabbing');
     }
 
     function onMove(e) {
@@ -466,7 +484,8 @@
         return;
       }
 
-      // Pan
+      // Pan — skip if play mode and canvas pan is locked
+      if (document.body.classList.contains('play-mode') && panLocked) return;
       window.Game.camX = startCamX + (p.x - startScreenX);
       window.Game.camY = startCamY + (p.y - startScreenY);
       window.Game.applyCamera();

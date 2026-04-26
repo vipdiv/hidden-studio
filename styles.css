@@ -398,6 +398,9 @@ input, textarea { font: inherit; }
   transition: all 0.12s;
 }
 .icon-btn:hover { background: var(--panel-bg-2); border-color: var(--ui-text-dim); }
+.pan-lock-btn { display: none; }
+body.play-mode .pan-lock-btn { display: grid; }
+.pan-lock-btn.unlocked { opacity: 0.5; }
 
 .project-name {
   font-size: 13px;

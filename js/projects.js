@@ -350,6 +350,7 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 <div class="hud">
   <div class="title">A Little <em>Hidden</em> Scene</div>
   <div style="display:flex;gap:8px;align-items:center">
+    <button class="chip" id="panlck" title="Canvas pan: locked — click to unlock" style="padding:5px 10px;font-size:15px">🔒</button>
     <button class="chip" id="sfx">🔊</button>
     <div class="chip" id="ctr">found <b>0</b> / <span id="ttl">0</span></div>
   </div>
@@ -447,7 +448,7 @@ D.items.forEach(item => {
 });
 document.getElementById('ttl').textContent = D.items.length;
 // Game state
-let found = new Set(), soundOn = true, audioCtx = null;
+let found = new Set(), soundOn = true, audioCtx = null, panLocked = true;
 function aud(){ if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume(); return audioCtx }
 function sfxFound(){if(!soundOn)return;const c=aud();if(!c)return;const t=c.currentTime,o=c.createOscillator(),g=c.createGain();o.type='sine';o.frequency.setValueAtTime(420,t);o.frequency.exponentialRampToValueAtTime(880,t+.12);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.22,t+.02);g.gain.exponentialRampToValueAtTime(.0001,t+.3);o.connect(g).connect(c.destination);o.start(t);o.stop(t+.35);}
 function env(c,o,g,t,a,p,d){g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(p,t+a);g.gain.exponentialRampToValueAtTime(.0001,t+a+d);o.connect(g).connect(c.destination);o.start(t);o.stop(t+a+d+.05)}
@@ -488,7 +489,7 @@ let drg=false,sx=0,sy=0,scX=0,scY=0,dd=0,cx=0,cy=0;
 const stage=document.getElementById('stage');
 function pt(e){if(e.touches&&e.touches[0])return{x:e.touches[0].clientX,y:e.touches[0].clientY};if(e.changedTouches&&e.changedTouches[0])return{x:e.changedTouches[0].clientX,y:e.changedTouches[0].clientY};return{x:e.clientX,y:e.clientY}}
 function pd(e){const p=pt(e);drg=true;sx=p.x;sy=p.y;scX=camX;scY=camY;dd=0;cx=p.x;cy=p.y;stage.classList.add('grabbing')}
-function pm(e){if(!drg)return;const p=pt(e),dx=p.x-sx,dy=p.y-sy;dd+=Math.abs(dx)+Math.abs(dy);camX=scX+dx;camY=scY+dy;applyC()}
+function pm(e){if(!drg)return;const p=pt(e),dx=p.x-sx,dy=p.y-sy;dd+=Math.abs(dx)+Math.abs(dy);if(!panLocked){camX=scX+dx;camY=scY+dy;applyC()}}
 // Easter egg runtime
 let egAudio=null,egOverlay=null,egEsc=null;
 function egDismiss(){if(egAudio){egAudio.pause();egAudio.currentTime=0;egAudio=null}if(egOverlay){egOverlay.remove();egOverlay=null}if(egEsc){document.removeEventListener('keydown',egEsc);egEsc=null}document.removeEventListener('click',egDismiss)}
@@ -504,6 +505,7 @@ function pu(e){if(!drg)return;const tap=dd<6;drg=false;stage.classList.remove('g
 stage.addEventListener('mousedown',pd);addEventListener('mousemove',pm);addEventListener('mouseup',pu);
 stage.addEventListener('touchstart',pd,{passive:true});addEventListener('touchmove',pm,{passive:true});addEventListener('touchend',pu);
 document.getElementById('sfx').addEventListener('click',()=>{soundOn=!soundOn;document.getElementById('sfx').textContent=soundOn?'🔊':'🔇';if(soundOn)aud()});
+document.getElementById('panlck').addEventListener('click',()=>{panLocked=!panLocked;const b=document.getElementById('panlck');b.textContent=panLocked?'🔒':'🔓';b.title=panLocked?'Canvas pan: locked — click to unlock':'Canvas pan: unlocked — click to lock';b.style.opacity=panLocked?'':'0.6'});
 const lp=document.getElementById('list-p');
 function isMob(){return innerWidth<=640}
 document.getElementById('pc').addEventListener('click',()=>{if(isMob()){lp.classList.remove('open')}else{lp.classList.add('hidden')}center()});
