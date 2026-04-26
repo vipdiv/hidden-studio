@@ -345,11 +345,18 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .egg-fl .egg-x{top:-12px;right:-12px}
 .egg-st{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:800;font-family:'Caveat',cursive;font-size:clamp(20px,3.5vw,32px);font-weight:700;color:var(--paper);text-align:center;max-width:min(500px,85vw);text-shadow:0 2px 12px rgba(0,0,0,.9);pointer-events:none;animation:egTxt 2.2s ease-out forwards}
 .egg-shake{animation:egShk .85s ease-out}
-.sparkle{position:absolute;width:14px;height:14px;pointer-events:none;z-index:5;animation:spk 2s ease-in-out infinite}
-@keyframes spk{0%,100%{opacity:.5;transform:scale(.8) rotate(0deg)}50%{opacity:1;transform:scale(1.2) rotate(45deg)}}
-.surp{position:absolute;pointer-events:none;z-index:7;animation:srp 1.6s ease-out forwards}
+.sparkle{position:absolute;width:14px;height:14px;pointer-events:auto;cursor:pointer;z-index:5;animation:spk 3.5s ease-in-out infinite;opacity:0}
+@keyframes spk{0%,70%,100%{opacity:0;transform:scale(.5) rotate(0)}80%{opacity:.8;transform:scale(1) rotate(180deg)}90%{opacity:0;transform:scale(1.3) rotate(360deg)}}
+.sparkle:hover{filter:brightness(2) drop-shadow(0 0 4px #c43f2e);transform:scale(1.5)}
+.surp{position:absolute;pointer-events:none;z-index:7}
 .surp svg{width:80px;height:80px;display:block;margin:-40px 0 0 -40px}
-@keyframes srp{0%{opacity:0;transform:scale(.3) rotate(-30deg)}30%{opacity:1;transform:scale(1.3) rotate(0deg)}80%{opacity:1;transform:scale(1) rotate(0deg)}100%{opacity:0;transform:scale(1) translateY(-40px) rotate(15deg)}}
+@keyframes anim-wiggle{0%,100%{transform:rotate(0)}25%{transform:rotate(-4deg)}75%{transform:rotate(4deg)}}
+@keyframes anim-bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes anim-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes anim-pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+@keyframes anim-spin{to{transform:rotate(360deg)}}
+@keyframes anim-shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-3px)}40%{transform:translateX(3px)}60%{transform:translateX(-2px)}80%{transform:translateX(2px)}}
+@keyframes anim-popin{0%{opacity:0;transform:scale(.3)}60%{opacity:1;transform:scale(1.15)}100%{opacity:1;transform:scale(1)}}
 </style>
 </head><body>
 <div class="hud">
@@ -460,6 +467,9 @@ SUR.forEach(s => {
   hitsLayer.appendChild(h);
 });
 document.getElementById('ttl').textContent = D.items.length;
+// Surprise animation presets (mirrors animations.js PRESETS/LOOPING_NAMES)
+const SURP_ANIM={wiggle:'anim-wiggle 1.4s ease-in-out infinite',bounce:'anim-bounce 1.2s cubic-bezier(.5,0,.5,1) infinite',float:'anim-float 3.2s ease-in-out infinite',pulse:'anim-pulse 1.6s ease-in-out infinite',spin:'anim-spin 6s linear infinite',shake:'anim-shake .6s ease-in-out infinite',pop:'anim-popin .5s cubic-bezier(.2,1.3,.4,1) forwards'};
+const SURP_LOOPING=['wiggle','bounce','float','pulse','spin','shake','sway'];
 // Game state
 let found = new Set(), surF = new Set(), soundOn = true, audioCtx = null, panLocked = true;
 function aud(){ if(!audioCtx){try{audioCtx=new(window.AudioContext||window.webkitAudioContext)()}catch(e){}} if(audioCtx&&audioCtx.state==='suspended')audioCtx.resume(); return audioCtx }
@@ -490,8 +500,8 @@ function buildList(){const ul=document.getElementById('lst');ul.innerHTML='';if(
 function updateCtr(){document.getElementById('ctr').innerHTML='found <b>'+found.size+'</b> / '+D.items.length;if(D.items.length>0&&found.size===D.items.length){setTimeout(()=>{document.getElementById('w').classList.add('show');sfxWin();if(navigator.vibrate)navigator.vibrate([80,50,80,50,180])},500)}}
 function addMark(it){const m=document.createElement('div');m.className='mark';m.style.cssText='left:'+(it.x-it.r*1.3)+'px;top:'+(it.y-it.r*1.3)+'px;width:'+(it.r*2.6)+'px;height:'+(it.r*2.6)+'px;';const r=(Math.random()*20-10).toFixed(1);m.innerHTML='<svg viewBox="0 0 100 100" style="transform:rotate('+r+'deg)"><circle cx="50" cy="50" r="44" transform="rotate('+(Math.random()*360)+' 50 50)"/></svg>';document.getElementById('world').appendChild(m)}
 function pop(t,x,y,cls){const p=document.createElement('div');p.className=cls;p.textContent=t;p.style.left=x+'px';p.style.top=y+'px';document.getElementById('world').appendChild(p);setTimeout(()=>p.remove(),1500)}
-function renderSparkles(){document.querySelectorAll('.sparkle').forEach(e=>e.remove());SUR.forEach(s=>{if(surF.has(s.id))return;const sp=document.createElement('div');sp.className='sparkle';sp.dataset.id=s.id;sp.style.left=(s.x-7)+'px';sp.style.top=(s.y-7)+'px';sp.innerHTML='<svg viewBox="0 0 14 14"><path d="M 7 0 L 8 6 L 14 7 L 8 8 L 7 14 L 6 8 L 0 7 L 6 6 Z" fill="#c43f2e" opacity="0.85"/></svg>';sp.style.animationDelay=(Math.random()*2)+'s';document.getElementById('world').appendChild(sp)})}
-function triggerSurprise(s){surF.add(s.id);document.querySelector('.sparkle[data-id="'+s.id+'"]')?.remove();const el=document.createElement('div');el.className='surp';el.style.left=s.x+'px';el.style.top=s.y+'px';el.innerHTML='<svg viewBox="0 0 100 100"><path d="M 50 0 L 58 42 L 100 50 L 58 58 L 50 100 L 42 58 L 0 50 L 42 42 Z" fill="#c43f2e"/></svg>';document.getElementById('world').appendChild(el);setTimeout(()=>el.remove(),1700);sfxPlay(s.sound||'pop');if(navigator.vibrate)navigator.vibrate([20,30,40])}
+function renderSparkles(){document.querySelectorAll('.sparkle').forEach(e=>e.remove());SUR.forEach(s=>{if(surF.has(s.id))return;const sp=document.createElement('div');sp.className='sparkle';sp.dataset.id=s.id;sp.style.left=(s.x-7)+'px';sp.style.top=(s.y-7)+'px';sp.innerHTML='<svg viewBox="0 0 14 14"><path d="M 7 0 L 8 6 L 14 7 L 8 8 L 7 14 L 6 8 L 0 7 L 6 6 Z" fill="#c43f2e" opacity="0.85"/></svg>';const loopA=(s.anim||[]).find(a=>SURP_LOOPING.includes(a));if(loopA&&SURP_ANIM[loopA]){sp.style.animation=SURP_ANIM[loopA];sp.style.opacity='1'}else{sp.style.animationDelay=(Math.random()*2)+'s'}document.getElementById('world').appendChild(sp)})}
+function triggerSurprise(s){surF.add(s.id);document.querySelector('.sparkle[data-id="'+s.id+'"]')?.remove();const el=document.createElement('div');el.className='surp';el.style.left=s.x+'px';el.style.top=s.y+'px';el.innerHTML='<svg viewBox="0 0 100 100"><path d="M 50 0 L 58 42 L 100 50 L 58 58 L 50 100 L 42 58 L 0 50 L 42 42 Z" fill="#c43f2e"/></svg>';const anims=s.anim||['pop'];const loopA=anims.find(a=>SURP_LOOPING.includes(a));const shotA=anims.find(a=>!SURP_LOOPING.includes(a));el.style.animation=SURP_ANIM[shotA||loopA||'pop']||'anim-popin .5s cubic-bezier(.2,1.3,.4,1) forwards';if(loopA&&SURP_ANIM[loopA]&&!shotA){el.style.transformOrigin='center center'}document.getElementById('world').appendChild(el);const displayTime=loopA&&!shotA?2500:1700;setTimeout(()=>{el.remove();surF.delete(s.id);renderSparkles()},displayTime);sfxPlay(s.sound||'pop');if(navigator.vibrate)navigator.vibrate([20,30,40])}
 // Camera
 let camX=0,camY=0,scale=1;
 function panelOpen(){const lp=document.getElementById('list-p');return lp&&!lp.classList.contains('hidden')&&innerWidth>640}

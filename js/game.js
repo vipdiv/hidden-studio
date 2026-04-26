@@ -15,6 +15,7 @@ window.Game = (function() {
 
   let project = null;
   let state = { found: new Set(), surprisesFound: new Set() };
+  let surprisesRevealing = new Set(); // temp debounce — cleared after reveal, enables re-trigger
 
   // DOM refs (set on init)
   let stage, world, hitsLayer, playLayer;
@@ -50,6 +51,7 @@ window.Game = (function() {
 
   function restart() {
     state = { found: new Set(), surprisesFound: new Set() };
+    surprisesRevealing.clear();
     winEl.classList.remove('show');
     playLayer.innerHTML = '';
     renderList();
@@ -172,15 +174,23 @@ window.Game = (function() {
     // Only show sparkles in play mode — if we're in edit, skip.
     if (document.body.classList.contains('edit-mode')) return;
     playLayer.querySelectorAll('.sparkle').forEach(el => el.remove());
+    window.Anim.injectKeyframes();
     (project?.surprises || []).forEach(s => {
-      if (state.surprisesFound.has(s.id)) return;
+      if (surprisesRevealing.has(s.id)) return;
       const sp = document.createElement('div');
       sp.className = 'sparkle';
       sp.dataset.id = s.id;
       sp.style.left = `${s.x - 7}px`;
       sp.style.top  = `${s.y - 7}px`;
       sp.innerHTML = `<svg viewBox="0 0 14 14"><path d="M 7 0 L 8 6 L 14 7 L 8 8 L 7 14 L 6 8 L 0 7 L 6 6 Z" fill="#c43f2e" opacity="0.8"/></svg>`;
-      sp.style.animationDelay = (Math.random() * 2) + 's';
+      // Apply looping idle animation from s.anim, or fall back to default sparkle CSS
+      const loopAnim = (s.anim || []).find(a => window.Anim.LOOPING_NAMES.includes(a));
+      if (loopAnim && window.Anim.PRESETS[loopAnim]) {
+        sp.style.animation = window.Anim.PRESETS[loopAnim].animation;
+        sp.style.opacity = '1';
+      } else {
+        sp.style.animationDelay = (Math.random() * 2) + 's';
+      }
       playLayer.appendChild(sp);
     });
   }
@@ -253,7 +263,7 @@ window.Game = (function() {
 
     // Check surprises first
     for (const s of (project?.surprises || [])) {
-      if (state.surprisesFound.has(s.id)) continue;
+      if (surprisesRevealing.has(s.id)) continue;
       const dx = w.x - s.x, dy = w.y - s.y;
       if (Math.sqrt(dx*dx + dy*dy) < s.r) {
         // Easter egg check on surprises
@@ -317,8 +327,8 @@ window.Game = (function() {
   }
 
   function triggerSurprise(s) {
-    state.surprisesFound.add(s.id);
-    // Remove sparkle
+    surprisesRevealing.add(s.id);
+    // Remove sparkle during reveal
     const sp = document.querySelector(`.sparkle[data-id="${s.id}"]`);
     if (sp) sp.remove();
     // Show sprite
@@ -329,7 +339,6 @@ window.Game = (function() {
     else if (s.sound) window.SFX.play(s.sound);
     else window.SFX.play('pop');
     window.SFX.haptic([20, 30, 40]);
-    updateCounter();
   }
 
   function showSurpriseSprite(s) {
@@ -348,12 +357,15 @@ window.Game = (function() {
     window.Anim.apply(el, s.anim || ['pop']);
     playLayer.appendChild(el);
 
-    // One-shot animations auto-remove
-    const anims = s.anim || [];
-    const hasOneShot = anims.some(a => ['fly', 'jump'].includes(a));
-    if (hasOneShot) {
-      setTimeout(() => el.remove(), 4500);
-    }
+    // All reveals auto-remove and restore the sparkle (re-triggerable)
+    const anims = s.anim || ['pop'];
+    const isOneShot = anims.some(a => window.Anim.ONE_SHOT_NAMES.includes(a));
+    const displayTime = isOneShot ? 2000 : 2500;
+    setTimeout(() => {
+      el.remove();
+      surprisesRevealing.delete(s.id);
+      renderSparkles();
+    }, displayTime);
   }
 
   function addMark(item) {
