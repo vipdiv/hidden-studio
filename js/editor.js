@@ -10,6 +10,9 @@ window.Editor = (function() {
   let selectedBase = false;   // true when base layer is selected
   let selectedStroke = null;  // stroke id, or null
   let _textEditTarget = null; // text id to enter inline edit after next renderTexts()
+  let _catCollapsed = (function() {
+    try { return JSON.parse(localStorage.getItem('hs-cat-collapsed') || '{}'); } catch { return {}; }
+  })();
   let tool = 'select';
 
   // DOM refs
@@ -1485,17 +1488,26 @@ window.Editor = (function() {
       }
     });
 
-    // ── Ungrouped layers (with render-layer section headers) ──
-    const SECTION_MAP = { item: 'Hit Zones', surprise: 'Hit Zones', text: 'Sprites & Text', sprite: 'Sprites & Text', stroke: 'Strokes' };
-    let lastSection = null;
+    // ── Ungrouped layers (collapsible render-layer section headers) ──
+    const SECTION_DEF = {
+      item:     { label: 'Hit Zones',      id: 'hit-zones'    },
+      surprise: { label: 'Hit Zones',      id: 'hit-zones'    },
+      text:     { label: 'Sprites & Text', id: 'sprites-text' },
+      sprite:   { label: 'Sprites & Text', id: 'sprites-text' },
+      stroke:   { label: 'Strokes',        id: 'strokes'      },
+    };
+    let lastCatId = null;
     allLayers.forEach(({ type, obj, arrIdx }) => {
       if (groupedKeys.has(type + ':' + obj.id)) return;
-      const section = SECTION_MAP[type];
-      if (section && section !== lastSection) {
-        rows.push(`<li class="layer-type-header">${section}</li>`);
-        lastSection = section;
+      const sec = SECTION_DEF[type];
+      if (!sec) { rows.push(buildRow(type, obj, arrIdx, false)); return; }
+      if (sec.id !== lastCatId) {
+        const collapsed = !!_catCollapsed[sec.id];
+        rows.push(`<li class="layer-type-header${collapsed ? ' cat-collapsed' : ''}" data-cat-id="${sec.id}"><button class="cat-toggle">${collapsed ? '▶' : '▼'}</button>${sec.label}</li>`);
+        if (collapsed) rows.push(`<li class="layer-folder-empty">— empty —</li>`);
+        lastCatId = sec.id;
       }
-      rows.push(buildRow(type, obj, arrIdx, false));
+      if (!_catCollapsed[sec.id]) rows.push(buildRow(type, obj, arrIdx, false));
     });
 
     // ── Base layer (always at bottom, ungroupable) ────────────
@@ -1519,6 +1531,16 @@ window.Editor = (function() {
         e.stopPropagation();
         const g = (project.groups||[]).find(x => x.id === btn.dataset.groupId);
         if (g) { g.collapsed = !g.collapsed; schedSave(); renderLayersPanel(); }
+      });
+    });
+
+    // Category header collapse/expand
+    listEl.querySelectorAll('.layer-type-header[data-cat-id]').forEach(hdr => {
+      hdr.addEventListener('click', () => {
+        const catId = hdr.dataset.catId;
+        _catCollapsed[catId] = !_catCollapsed[catId];
+        try { localStorage.setItem('hs-cat-collapsed', JSON.stringify(_catCollapsed)); } catch {}
+        renderLayersPanel();
       });
     });
 
@@ -1748,6 +1770,8 @@ window.Editor = (function() {
         return;
       }
 
+      const RENDER_CAT = { item: 'hit-zones', surprise: 'hit-zones', text: 'sprites-text', sprite: 'sprites-text', stroke: 'strokes' };
+      if (RENDER_CAT[type] !== RENDER_CAT[currentTarget.dataset.layerType]) return;
       const fromIdx = parseInt(row.dataset.arrIdx);
       const toIdx   = parseInt(currentTarget.dataset.arrIdx);
       if (isNaN(fromIdx) || isNaN(toIdx) || fromIdx === toIdx) return;

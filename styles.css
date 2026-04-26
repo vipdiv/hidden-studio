@@ -1329,8 +1329,10 @@ body.edit-mode #counter { display: none; }
 .actions-section .ghost-btn {
   display: block;
   width: 100%;
-  margin-bottom: 4px;
+  margin-bottom: 3px;
+  padding: 5px 10px;
 }
+.actions-section .save-status { margin-top: 4px; }
 
 /* Inline form rows used in miss-tap and similar tool-sections */
 .prop-label {
@@ -1640,7 +1642,10 @@ body.edit-mode #counter { display: none; }
 
 /* Render-layer section headers (Hit Zones / Sprites & Text / Strokes) */
 .layer-type-header {
-  padding: 4px 8px 3px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
   font-size: 9px;
   font-weight: 600;
   text-transform: uppercase;
@@ -1651,8 +1656,21 @@ body.edit-mode #counter { display: none; }
   border-bottom: 1px solid var(--panel-border);
   list-style: none;
   user-select: none;
-  pointer-events: none;
+  cursor: pointer;
   margin-top: 1px;
+}
+.layer-type-header:hover { background: rgba(212,212,212,0.04); }
+.layer-type-header.cat-collapsed { opacity: 0.75; }
+.cat-toggle {
+  background: none;
+  border: none;
+  color: var(--ui-text-dim);
+  font-size: 7px;
+  padding: 0;
+  line-height: 1;
+  flex-shrink: 0;
+  cursor: pointer;
+  pointer-events: none;
 }
 
 /* Member layers indented under their folder */
@@ -1785,7 +1803,9 @@ body.play-mode .play-empty.visible { display: block; }
 .list-panel,
 .egg-inner,
 .layer-list,
-.modal-backdrop {
+.modal-backdrop,
+.panel-body,
+.dock-col {
   scrollbar-width: thin;
   scrollbar-color: var(--panel-border) transparent;
 }
@@ -1794,19 +1814,25 @@ body.play-mode .play-empty.visible { display: block; }
 .list-panel::-webkit-scrollbar,
 .egg-inner::-webkit-scrollbar,
 .layer-list::-webkit-scrollbar,
-.modal-backdrop::-webkit-scrollbar { width: 8px; }
+.modal-backdrop::-webkit-scrollbar,
+.panel-body::-webkit-scrollbar,
+.dock-col::-webkit-scrollbar { width: 6px; }
 .edit-panel::-webkit-scrollbar-track,
 .properties-panel::-webkit-scrollbar-track,
 .list-panel::-webkit-scrollbar-track,
 .egg-inner::-webkit-scrollbar-track,
 .layer-list::-webkit-scrollbar-track,
-.modal-backdrop::-webkit-scrollbar-track { background: transparent; }
+.modal-backdrop::-webkit-scrollbar-track,
+.panel-body::-webkit-scrollbar-track,
+.dock-col::-webkit-scrollbar-track { background: transparent; }
 .edit-panel::-webkit-scrollbar-thumb,
 .properties-panel::-webkit-scrollbar-thumb,
 .list-panel::-webkit-scrollbar-thumb,
 .egg-inner::-webkit-scrollbar-thumb,
 .layer-list::-webkit-scrollbar-thumb,
-.modal-backdrop::-webkit-scrollbar-thumb {
+.modal-backdrop::-webkit-scrollbar-thumb,
+.panel-body::-webkit-scrollbar-thumb,
+.dock-col::-webkit-scrollbar-thumb {
   background: var(--panel-border);
   border-radius: 4px;
 }
@@ -1815,7 +1841,9 @@ body.play-mode .play-empty.visible { display: block; }
 .list-panel::-webkit-scrollbar-thumb:hover,
 .egg-inner::-webkit-scrollbar-thumb:hover,
 .layer-list::-webkit-scrollbar-thumb:hover,
-.modal-backdrop::-webkit-scrollbar-thumb:hover { background: var(--ui-text-dim); }
+.modal-backdrop::-webkit-scrollbar-thumb:hover,
+.panel-body::-webkit-scrollbar-thumb:hover,
+.dock-col::-webkit-scrollbar-thumb:hover { background: var(--ui-text-dim); }
 .modal-body label {
   display: block;
   font-size: 15px;
