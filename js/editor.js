@@ -1504,7 +1504,6 @@ window.Editor = (function() {
       if (sec.id !== lastCatId) {
         const collapsed = !!_catCollapsed[sec.id];
         rows.push(`<li class="layer-type-header${collapsed ? ' cat-collapsed' : ''}" data-cat-id="${sec.id}"><button class="cat-toggle">${collapsed ? '▶' : '▼'}</button>${sec.label}</li>`);
-        if (collapsed) rows.push(`<li class="layer-folder-empty">— empty —</li>`);
         lastCatId = sec.id;
       }
       if (!_catCollapsed[sec.id]) rows.push(buildRow(type, obj, arrIdx, false));

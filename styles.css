@@ -1329,9 +1329,12 @@ body.edit-mode #counter { display: none; }
 .actions-section .ghost-btn {
   display: block;
   width: 100%;
-  margin-bottom: 3px;
-  padding: 5px 10px;
+  margin: 0;
+  padding: 6px 10px;
+  border-radius: 0;
+  border-top-width: 0;
 }
+.actions-section .ghost-btn:first-of-type { border-top-width: 1px; }
 .actions-section .save-status { margin-top: 4px; }
 
 /* Inline form rows used in miss-tap and similar tool-sections */
