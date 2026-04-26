@@ -6,6 +6,8 @@
 
 (function() {
 
+  console.log('[Hidden Studio] build: layers-qa-v4 branch: claude/push-ui-redesign-commit-iJAaa');
+
   let currentProject = null;
   let mode = 'play'; // 'play' | 'edit'
 

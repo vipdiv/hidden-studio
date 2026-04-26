@@ -1638,6 +1638,23 @@ body.edit-mode #counter { display: none; }
   padding: 3px 4px 3px 36px;
 }
 
+/* Render-layer section headers (Hit Zones / Sprites & Text / Strokes) */
+.layer-type-header {
+  padding: 4px 8px 3px;
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--ui-text-dim);
+  background: var(--ui-bg);
+  border-top: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--panel-border);
+  list-style: none;
+  user-select: none;
+  pointer-events: none;
+  margin-top: 1px;
+}
+
 /* Member layers indented under their folder */
 .layer-member {
   padding-left: 20px;

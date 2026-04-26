@@ -19,7 +19,7 @@ const PanelContent = ({ panelId }) => {
     }
   }, [panelId]);
 
-  return <div ref={containerRef} style={{ padding: '10px 12px' }} />;
+  return <div ref={containerRef} style={{ padding: '8px 10px' }} />;
 };
 
 const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDrag, tabDrag }) => {
@@ -34,7 +34,7 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
     boxShadow: '0 8px 28px rgba(0,0,0,0.72)',
     borderRadius: 3,
     pointerEvents: 'auto',
-  } : { position: 'relative', width: '100%' };
+  } : { position: 'relative', width: '100%', flexShrink: 0 };
 
   const CtrlBtn = ({ title, onClick, children }) => (
     <button
@@ -126,7 +126,7 @@ const PanelGroup = ({ group, panelDefs, onUpdate, onRemove, onStartDrag, onTabDr
       </div>
 
       {/* Panel content */}
-      <div className="panel-body" style={{ overflowX: 'hidden', overflowY: group.floating ? 'auto' : 'hidden', maxHeight: group.floating ? (group.height || 520) : undefined }}>
+      <div className="panel-body" style={{ overflowX: 'hidden', overflowY: 'auto', maxHeight: (group.height || 520) - 26 }}>
         <PanelContent panelId={group.tabs[group.activeTab]} />
       </div>
 

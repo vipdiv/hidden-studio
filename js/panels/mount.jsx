@@ -19,7 +19,7 @@ const STUB_PANELS = [
 // Stub DOM builder — returns a vanilla HTMLElement used as panel body
 function makeStubNode(panelId, title) {
   const el = document.createElement('div');
-  el.style.cssText = 'padding:14px 12px;color:var(--ps-dim-text);font-size:12px;line-height:1.6;';
+  el.style.cssText = 'padding:8px 10px;color:var(--ps-dim-text);font-size:12px;line-height:1.6;';
   if (panelId === 'history') {
     el.innerHTML = '<em>History will be available after undo/redo lands.</em>';
   } else {

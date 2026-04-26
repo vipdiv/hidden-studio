@@ -418,6 +418,9 @@ window.Editor = (function() {
       // If this text is actively being edited, only update its class; don't recreate
       if (activeEdit && activeEdit.dataset.id === txt.id) {
         activeEdit.className = 'text-element' + (selected?.id === txt.id && selected?.kind === 'text' ? ' selected' : '');
+        activeEdit.style.color = txt.color || '#1a1613';
+        activeEdit.style.fontSize = (txt.size || 32) + 'px';
+        activeEdit.style.fontFamily = txt.fontFamily || 'Caveat, cursive';
         return;
       }
       const el = document.createElement('div');
@@ -1375,9 +1378,9 @@ window.Editor = (function() {
     const allLayers = [];
     for (let i = items.length - 1;     i >= 0; i--) allLayers.push({ type:'item',     obj:items[i],     arrIdx:i });
     for (let i = surprises.length - 1; i >= 0; i--) allLayers.push({ type:'surprise', obj:surprises[i], arrIdx:i });
+    for (let i = texts.length - 1;     i >= 0; i--) allLayers.push({ type:'text',     obj:texts[i],     arrIdx:i });
     for (let i = sprites.length - 1;   i >= 0; i--) allLayers.push({ type:'sprite',   obj:sprites[i],   arrIdx:i });
     for (let i = strokes.length - 1;   i >= 0; i--) allLayers.push({ type:'stroke',   obj:strokes[i],   arrIdx:i });
-    for (let i = texts.length - 1;     i >= 0; i--) allLayers.push({ type:'text',     obj:texts[i],     arrIdx:i });
 
     function getMembersOf(group) {
       return group.memberIds.map(k => {
@@ -1482,9 +1485,17 @@ window.Editor = (function() {
       }
     });
 
-    // ── Ungrouped layers ──────────────────────────────────────
+    // ── Ungrouped layers (with render-layer section headers) ──
+    const SECTION_MAP = { item: 'Hit Zones', surprise: 'Hit Zones', text: 'Sprites & Text', sprite: 'Sprites & Text', stroke: 'Strokes' };
+    let lastSection = null;
     allLayers.forEach(({ type, obj, arrIdx }) => {
-      if (!groupedKeys.has(type + ':' + obj.id)) rows.push(buildRow(type, obj, arrIdx, false));
+      if (groupedKeys.has(type + ':' + obj.id)) return;
+      const section = SECTION_MAP[type];
+      if (section && section !== lastSection) {
+        rows.push(`<li class="layer-type-header">${section}</li>`);
+        lastSection = section;
+      }
+      rows.push(buildRow(type, obj, arrIdx, false));
     });
 
     // ── Base layer (always at bottom, ungroupable) ────────────
