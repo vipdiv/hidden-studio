@@ -6,14 +6,15 @@
 const STUB_PANELS = [
   { id: 'layers',     title: 'Layers',      side: 'right', order: 0 },
   { id: 'navigator',  title: 'Navigator',   side: 'right', order: 1 },
-  { id: 'properties', title: 'Properties',  side: 'right', order: 2 },
-  { id: 'transform',  title: 'Transform',   side: 'right', order: 3 },
-  { id: 'swatches',   title: 'Swatches',    side: 'right', order: 4 },
-  { id: 'hitzone',    title: 'Hit Zone',    side: 'right', order: 5 },
-  { id: 'surprise',   title: 'Surprise',    side: 'right', order: 6 },
-  { id: 'difficulty', title: 'Difficulty',  side: 'right', order: 7 },
-  { id: 'project',    title: 'Project',     side: 'right', order: 8 },
-  { id: 'history',    title: 'History',     side: 'right', order: 9 },
+  { id: 'character',  title: 'Character',   side: 'right', order: 2 },
+  { id: 'properties', title: 'Properties',  side: 'right', order: 3 },
+  { id: 'transform',  title: 'Transform',   side: 'right', order: 4 },
+  { id: 'swatches',   title: 'Swatches',    side: 'right', order: 5 },
+  { id: 'hitzone',    title: 'Hit Zone',    side: 'right', order: 6 },
+  { id: 'surprise',   title: 'Surprise',    side: 'right', order: 7 },
+  { id: 'difficulty', title: 'Difficulty',  side: 'right', order: 8 },
+  { id: 'project',    title: 'Project',     side: 'right', order: 9 },
+  { id: 'history',    title: 'History',     side: 'right', order: 10 },
 ];
 
 // Stub DOM builder — returns a vanilla HTMLElement used as panel body
@@ -46,7 +47,7 @@ function makeStubNode(panelId, title) {
 // ── Initial group layout ─────────────────────────────────────────────────────
 const INITIAL_GROUPS = [
   { id: 'g1', tabs: ['layers', 'navigator'],           activeTab: 0, minimized: false, floating: false, x: 0,   y: 60,  width: 264, height: 380, zIndex: 0 },
-  { id: 'g2', tabs: ['properties', 'transform', 'swatches'], activeTab: 0, minimized: false, floating: false, x: 0, y: 60, width: 264, height: 320, zIndex: 0 },
+  { id: 'g2', tabs: ['character', 'properties', 'transform', 'swatches'], activeTab: 0, minimized: false, floating: false, x: 0, y: 60, width: 264, height: 320, zIndex: 0 },
   { id: 'g3', tabs: ['hitzone', 'surprise', 'difficulty'],   activeTab: 0, minimized: false, floating: false, x: 0, y: 60, width: 264, height: 280, zIndex: 0 },
   { id: 'g4', tabs: ['project', 'history'],            activeTab: 0, minimized: false, floating: false, x: 0,   y: 60,  width: 264, height: 280, zIndex: 0 },
 ];

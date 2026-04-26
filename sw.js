@@ -5,7 +5,7 @@
    newest version is always available offline next visit.
 ═══════════════════════════════════════════════════ */
 
-const CACHE = 'hidden-studio-shell-v38';
+const CACHE = 'hidden-studio-shell-v39';
 
 // Core app shell — pre-cached on SW install so the app
 // works even on the very first offline visit after install.
@@ -17,6 +17,8 @@ const PRECACHE = [
   './js/panels/panels-api.js',
   './js/panels/panel-system.jsx',
   './js/panels/mount.jsx',
+  './js/panels/content/layers-panel.js',
+  './js/panels/content/character-panel.js',
   './js/app.js',
   './js/editor.js',
   './js/game.js',

@@ -578,6 +578,86 @@ window.Editor = (function() {
     });
   }
 
+  function renderCharacterPanel() {
+    const root = document.getElementById('characterPanelRoot');
+    if (!root) return;
+
+    const txt = (selected?.kind === 'text' && project)
+      ? (project.texts || []).find(x => x.id === selected.id)
+      : null;
+
+    if (!txt) {
+      root.innerHTML = `<div class="character-empty">Select a text object to edit its style.</div>`;
+      return;
+    }
+
+    const fonts = ['Caveat', 'Fraunces', 'Source Sans 3'];
+    const colors = ['#1a1613','#c43f2e','#ffffff','#5a7a3a','#e6a030','#3860a8'];
+    const currentFamily = txt.fontFamily || 'Caveat';
+    const familyKey = fonts.find(f => currentFamily.includes(f)) || 'Caveat';
+
+    root.innerHTML = `
+      <label class="character-row">
+        <span>Font</span>
+        <select id="char-family" class="character-select">
+          ${fonts.map(f => `<option value="${f}"${f === familyKey ? ' selected' : ''}>${f}</option>`).join('')}
+        </select>
+      </label>
+      <label class="character-row">
+        <span>Size</span>
+        <div class="character-size-row">
+          <input type="range" id="char-size" min="8" max="200" value="${txt.size || 32}">
+          <input type="number" id="char-size-num" min="8" max="200" value="${txt.size || 32}">
+        </div>
+      </label>
+      <div class="character-row">
+        <span>Color</span>
+        <div class="character-color-row" id="char-colors">
+          ${colors.map(c => `<button class="color-swatch${txt.color === c ? ' active' : ''}" style="background:${c}" data-color="${c}"></button>`).join('')}
+          <input type="color" id="char-color-custom" value="${txt.color || '#1a1613'}" title="Custom color">
+        </div>
+      </div>
+    `;
+
+    const sizeRange = root.querySelector('#char-size');
+    const sizeNum   = root.querySelector('#char-size-num');
+    const setSize = (v) => {
+      const n = Math.max(8, Math.min(200, parseInt(v) || 32));
+      txt.size = n;
+      sizeRange.value = n;
+      sizeNum.value = n;
+      renderTexts();
+      schedSave();
+    };
+    sizeRange.addEventListener('input', e => setSize(e.target.value));
+    sizeNum.addEventListener('input',   e => setSize(e.target.value));
+
+    root.querySelector('#char-family').addEventListener('change', e => {
+      txt.fontFamily = e.target.value;
+      renderTexts();
+      schedSave();
+    });
+
+    root.querySelectorAll('#char-colors .color-swatch').forEach(sw => {
+      sw.addEventListener('click', () => {
+        root.querySelectorAll('#char-colors .color-swatch').forEach(x => x.classList.remove('active'));
+        sw.classList.add('active');
+        txt.color = sw.dataset.color;
+        const custom = root.querySelector('#char-color-custom');
+        if (custom) custom.value = sw.dataset.color;
+        renderTexts();
+        schedSave();
+      });
+    });
+
+    root.querySelector('#char-color-custom').addEventListener('input', e => {
+      txt.color = e.target.value;
+      root.querySelectorAll('#char-colors .color-swatch').forEach(x => x.classList.remove('active'));
+      renderTexts();
+      schedSave();
+    });
+  }
+
   function selectAtPoint(x, y) {
     // Prefer the smallest hit zone containing the point (so nested zones work)
     let best = null;
@@ -646,16 +726,19 @@ window.Editor = (function() {
     const data = getSelected();
     if (!data) {
       selectedPanel.classList.add('hidden');
+      renderCharacterPanel();
       return;
     }
     selectedPanel.classList.remove('hidden');
     if (selected.kind === 'text') {
       document.getElementById('selectedPanelTitle').textContent = 'Text';
       renderTextEditor(data);
+      renderCharacterPanel();
       return;
     }
     document.getElementById('selectedPanelTitle').textContent = selected.kind === 'item' ? 'Item' : 'Surprise';
     renderSelectedEditor(data, selected.kind);
+    renderCharacterPanel();
   }
 
   function renderSelectedEditor(data, kind) {
@@ -1232,6 +1315,7 @@ window.Editor = (function() {
       schedSave();
     });
     renderLayersPanel();
+    renderCharacterPanel();
   }
 
   /* ————————————————————————————————————————
@@ -1252,6 +1336,7 @@ window.Editor = (function() {
     window.Draw.setSelected(id);
     renderStrokeEditor();
     renderLayersPanel();
+    renderCharacterPanel();
   }
 
   function renderStrokeEditor() {
@@ -2393,6 +2478,7 @@ window.Editor = (function() {
     hitsLayer.querySelectorAll('.hit').forEach(el => el.classList.remove('selected'));
     renderSprites();
     renderSpriteEditor();
+    renderCharacterPanel();
   }
 
   function renderSpriteEditor() {
@@ -2845,7 +2931,7 @@ window.Editor = (function() {
     onStageTap,
     onDrawStart, onDrawMove, onDrawEnd, onDrawMoveRecord,
     renderBaseLayer, applyBaseTransform, renderBaseTransformPanel,
-    renderSprites, renderLayersPanel, createLayerGroup: _createGroup,
+    renderSprites, renderLayersPanel, renderCharacterPanel, createLayerGroup: _createGroup,
     selectSprite, selectBase, selectStroke,
     get selectedBase() { return selectedBase; },
     get selectedStroke() { return selectedStroke; },
