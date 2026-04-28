@@ -1507,25 +1507,37 @@ body.edit-mode #counter { display: none; }
   width: 18px; height: 18px;
   display: grid; place-items: center;
   border: none; background: transparent;
-  color: var(--ui-text-dim);
+  color: var(--ui-text);
   cursor: pointer;
   flex-shrink: 0;
   border-radius: 2px;
-  opacity: 0.35;
+  opacity: 0.55;
   transition: opacity 0.12s;
   padding: 0;
+  position: relative;
 }
 .layer-row:hover .layer-vis,
 .layer-row:hover .layer-lock,
 .layer-vis.is-hidden,
 .layer-lock.is-locked { opacity: 1; }
 .layer-vis:hover, .layer-lock:hover { background: rgba(212,212,212,0.1); opacity: 1; }
-.layer-vis.is-hidden { color: var(--ui-text-dim); text-decoration: line-through; }
+/* OFF state: full-opacity eye + visible diagonal slash */
+.layer-vis.is-hidden { color: var(--ui-text-dim); }
+.layer-vis.is-hidden::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 2px;
+  background: var(--ui-text-dim);
+  border-radius: 1px;
+  transform: rotate(-45deg);
+  pointer-events: none;
+}
 .layer-lock.is-locked { color: var(--accent-2); }
 
-/* Row with hidden flag — dim name and icon but keep controls readable */
+/* Row with hidden flag — dim name and icon clearly */
 .layer-row.layer-hidden .layer-name,
-.layer-row.layer-hidden .layer-icon { opacity: 0.4; }
+.layer-row.layer-hidden .layer-icon { opacity: 0.3; }
+.layer-row.layer-hidden { opacity: 0.7; }
 
 .layer-actions {
   display: flex;
