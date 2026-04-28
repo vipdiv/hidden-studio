@@ -211,20 +211,27 @@ window.Editor = (function() {
 
   function syncMissControls() {
     if (!project) return;
-    const ms = project.missStyle || {};
+    // Ensure missStyle exists and WYSIWYG defaults are written — controls display must match what renders
+    if (!project.missStyle) project.missStyle = {};
+    const ms = project.missStyle;
+    if (ms.color      === undefined) ms.color      = '#e6e0d4';
+    if (ms.fontSize   === undefined) ms.fontSize   = 24;
+    if (ms.fontFamily === undefined) ms.fontFamily = "'Caveat', cursive";
+    // stroke left undefined by default — no stroke unless user sets one
+
     const sel = document.getElementById('missSoundSelect');
     if (sel) {
       _ensureCustomMissOption(sel, !!project.missSoundData);
       sel.value = project.missSound ?? 'miss';
     }
     const colEl = document.getElementById('missColor');
-    if (colEl) colEl.value = ms.color || '#e6e0d4';
+    if (colEl) colEl.value = ms.color;
     const strokeEl = document.getElementById('missStroke');
     if (strokeEl) strokeEl.value = ms.stroke || '#0b0d1f';
     const fsEl = document.getElementById('missFontSize');
-    if (fsEl) { fsEl.value = ms.fontSize || 24; document.getElementById('missFontSizeVal').textContent = fsEl.value; }
+    if (fsEl) { fsEl.value = ms.fontSize; document.getElementById('missFontSizeVal').textContent = fsEl.value; }
     const ffEl = document.getElementById('missFontFamily');
-    if (ffEl) ffEl.value = ms.fontFamily || "'Caveat', cursive";
+    if (ffEl) ffEl.value = ms.fontFamily;
     _showMissSoundInfo(project.missSoundData);
   }
 
