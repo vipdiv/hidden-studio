@@ -280,9 +280,10 @@ window.Projects = (function() {
 :root { --paper:#f5efe2; --ink:#1a1613; --accent:#c43f2e; --space:#0b0d1f; --found:#5a7a3a; --miss:#ff8c6b; }
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fraunces',serif;overflow:hidden;-webkit-user-select:none;user-select:none}
-.hud{position:fixed;top:0;left:0;right:0;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;z-index:20;pointer-events:none}
+.hud{position:fixed;top:0;left:0;right:0;padding:10px 16px;display:flex;justify-content:space-between;align-items:flex-start;z-index:20;pointer-events:none}
 .hud > * {pointer-events:auto}
-.title{font-style:italic;font-weight:300;font-size:clamp(20px,3vw,28px)}
+.hud-left{display:flex;flex-direction:column;gap:2px}
+.title{font-style:italic;font-weight:300;font-size:clamp(18px,3vw,26px)}
 .title em{font-family:'Caveat',cursive;font-style:normal;font-weight:700;color:var(--accent);padding:0 .1em}
 .chip{font-family:'Caveat',cursive;font-size:17px;padding:5px 14px;border:1.5px solid rgba(245,239,226,.25);border-radius:20px;background:rgba(11,13,31,.8);color:var(--paper);backdrop-filter:blur(6px);cursor:pointer}
 .chip b{color:var(--accent)}
@@ -318,8 +319,8 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 .panel li.found .label{text-decoration:line-through;text-decoration-color:var(--accent)}
 .panel li.found .box::after{content:"✓";color:var(--accent);font-size:16px;line-height:.5}
 @media (max-width:640px){.panel{left:0;right:0;top:auto;bottom:0;width:100%;max-height:50vh;border-radius:6px 6px 0 0;transform:translateY(100%)}.panel.open{transform:translateY(0)}.popen{display:block;top:auto;bottom:14px;left:14px;width:auto;height:auto;padding:8px 14px;font-size:13px;font-family:'Caveat',cursive;border-radius:20px;border:1.5px solid rgba(245,239,226,.25)}.popen::after{content:" Find list"}.panel.open ~ .popen{display:none}}
-.attr{position:fixed;bottom:8px;left:50%;transform:translateX(-50%);font-family:'Fraunces',serif;font-size:11px;font-style:italic;color:rgba(245,239,226,.4);z-index:5;text-decoration:none;pointer-events:auto;white-space:nowrap}
-.attr:hover{color:rgba(245,239,226,.85)}
+.attr{font-family:'Fraunces',serif;font-size:10px;font-style:italic;color:rgba(245,239,226,.35);text-decoration:none;pointer-events:auto;white-space:nowrap;line-height:1}
+.attr:hover{color:rgba(245,239,226,.7)}
 .win-attr{display:block;margin-top:14px;font-size:11px;color:rgba(26,22,19,.55);font-style:italic;text-decoration:none}
 .win-attr:hover{color:var(--accent)}
 .win{position:fixed;inset:0;background:rgba(11,13,31,.85);backdrop-filter:blur(6px);display:grid;place-items:center;z-index:100;opacity:0;pointer-events:none;transition:opacity .5s}
@@ -360,7 +361,10 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 </style>
 </head><body>
 <div class="hud">
-  <div class="title">A Little <em>Hidden</em> Scene</div>
+  <div class="hud-left">
+    <div class="title">A Little <em>Hidden</em> Scene</div>
+    <a class="attr" href="https://github.com/vipdiv/hidden-studio" target="_blank" rel="noopener noreferrer">made with Hidden Studio</a>
+  </div>
   <div style="display:flex;gap:8px;align-items:center">
     <button class="chip" id="panlck" title="Canvas pan: locked — click to unlock" style="padding:5px 10px;font-size:15px">🔒</button>
     <button class="chip" id="sfx">🔊</button>
@@ -382,7 +386,6 @@ html,body{height:100%;background:var(--space);color:var(--paper);font-family:'Fr
 </aside>
 <button class="popen" id="po" title="Show find list" aria-label="Show find list">📋</button>
 <div class="win" id="w"><div class="win-card"><h2>You found them all!</h2><button onclick="R()">play again</button><a class="win-attr" href="https://github.com/vipdiv/hidden-studio" target="_blank" rel="noopener noreferrer">Make your own with Hidden Studio &rsaquo;</a></div></div>
-<a class="attr" href="https://github.com/vipdiv/hidden-studio" target="_blank" rel="noopener noreferrer">made with Hidden Studio</a>
 <script>
 const D = __PROJECT_DATA__;
 const B = __BASE_LAYER__;
