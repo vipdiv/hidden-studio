@@ -126,6 +126,26 @@ window.Editor = (function() {
       project.missStyle = Object.assign({}, project.missStyle, { fontFamily: e.target.value });
       schedSave();
     });
+    document.getElementById('missPreviewBtn')?.addEventListener('click', () => {
+      if (!project) return;
+      const ms = project.missStyle || {};
+      const defaults = ['nope!', 'miss!', 'hmm', 'not there', 'nuh-uh'];
+      const texts = (ms.texts && ms.texts.length) ? ms.texts : defaults;
+      const text = texts[Math.floor(Math.random() * texts.length)];
+      // Position at visible screen center in world coordinates
+      const cx = window.Game.camX ?? 0, cy = window.Game.camY ?? 0, sc = window.Game.scale ?? 1;
+      const wx = (window.innerWidth / 2 - cx) / sc;
+      const wy = (window.innerHeight / 2 - cy) / sc;
+      const el = document.createElement('div');
+      el.className = 'miss';
+      el.style.cssText = `position:absolute;left:${wx}px;top:${wy}px`;
+      el.textContent = text;
+      if (ms.color)      el.style.color      = ms.color;
+      if (ms.fontSize)   el.style.fontSize   = ms.fontSize + 'px';
+      if (ms.fontFamily) el.style.fontFamily = ms.fontFamily;
+      document.getElementById('playLayer')?.appendChild(el);
+      setTimeout(() => el.remove(), 1500);
+    });
     document.getElementById('clearDrawingsBtn').addEventListener('click', () => {
       if (confirm('Clear all pen drawings? (Cannot be undone.)')) {
         window.Draw.clearAll();
