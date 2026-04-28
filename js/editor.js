@@ -104,14 +104,15 @@ window.Editor = (function() {
       });
     }
     document.getElementById('missSoundUploadBtn')?.addEventListener('click', uploadCustomMissSound);
+    document.getElementById('missTexts')?.addEventListener('input', (e) => {
+      if (!project) return;
+      const lines = e.target.value.split('\n').map(s => s.trim()).filter(Boolean);
+      project.missStyle = Object.assign({}, project.missStyle, { texts: lines.length ? lines : undefined });
+      schedSave();
+    });
     document.getElementById('missColor')?.addEventListener('input', (e) => {
       if (!project) return;
       project.missStyle = Object.assign({}, project.missStyle, { color: e.target.value });
-      schedSave();
-    });
-    document.getElementById('missStroke')?.addEventListener('input', (e) => {
-      if (!project) return;
-      project.missStyle = Object.assign({}, project.missStyle, { stroke: e.target.value });
       schedSave();
     });
     document.getElementById('missFontSize')?.addEventListener('input', (e) => {
@@ -211,23 +212,24 @@ window.Editor = (function() {
 
   function syncMissControls() {
     if (!project) return;
-    // Ensure missStyle exists and WYSIWYG defaults are written — controls display must match what renders
     if (!project.missStyle) project.missStyle = {};
     const ms = project.missStyle;
     if (ms.color      === undefined) ms.color      = '#e6e0d4';
     if (ms.fontSize   === undefined) ms.fontSize   = 24;
     if (ms.fontFamily === undefined) ms.fontFamily = "'Caveat', cursive";
-    // stroke left undefined by default — no stroke unless user sets one
 
     const sel = document.getElementById('missSoundSelect');
     if (sel) {
       _ensureCustomMissOption(sel, !!project.missSoundData);
       sel.value = project.missSound ?? 'miss';
     }
+    const txEl = document.getElementById('missTexts');
+    if (txEl) {
+      const defaults = ['nope!', 'miss!', 'hmm', 'not there', 'nuh-uh'];
+      txEl.value = (ms.texts && ms.texts.length ? ms.texts : defaults).join('\n');
+    }
     const colEl = document.getElementById('missColor');
     if (colEl) colEl.value = ms.color;
-    const strokeEl = document.getElementById('missStroke');
-    if (strokeEl) strokeEl.value = ms.stroke || '#0b0d1f';
     const fsEl = document.getElementById('missFontSize');
     if (fsEl) { fsEl.value = ms.fontSize; document.getElementById('missFontSizeVal').textContent = fsEl.value; }
     const ffEl = document.getElementById('missFontFamily');

@@ -363,16 +363,16 @@
       <button class="ghost-btn sm" id="missSoundUploadBtn"
         title="Upload a short MP3/WAV. Recommended: under 1 second, &lt; 100 KB. Auto-compressed to ~16 kHz mono so it stays small (≈ 2–40 KB).">⬆ Upload custom sound</button>
       <p id="missSoundInfo" style="display:none;font-size:11px;margin:4px 0 0;line-height:1.5"></p>
-      <p style="font-size:11px;margin:6px 0 0;line-height:1.5;color:rgba(212,212,212,.55)">
-        Tip: keep it short (&lt; 1 s). Need free sounds?
-        <a href="https://freemusicarchive.org/" target="_blank" rel="noopener noreferrer" style="color:var(--accent,#ff8c6b)">freemusicarchive.org</a>
-        and <a href="https://freesound.org/" target="_blank" rel="noopener noreferrer" style="color:var(--accent,#ff8c6b)">freesound.org</a> are great places to start.
-      </p>
+      <label class="prop-label" style="flex-direction:column;align-items:flex-start;gap:4px">Messages
+        <textarea id="missTexts" rows="4" placeholder="one message per line" style="width:100%;background:var(--ui-bg);color:var(--ui-text);border:1px solid var(--panel-border);border-radius:3px;padding:5px 7px;font-size:13px;font-family:'Caveat',cursive;resize:vertical;line-height:1.5">nope!
+miss!
+hmm
+not there
+nuh-uh</textarea>
+        <span style="font-size:10px;color:var(--ui-text-dim);line-height:1.3">One per line. A random one plays on each miss.</span>
+      </label>
       <label class="prop-label">Text color
         <input type="color" id="missColor" value="#e6e0d4" class="prop-color">
-      </label>
-      <label class="prop-label">Stroke color
-        <input type="color" id="missStroke" value="#0b0d1f" class="prop-color">
       </label>
       <label class="prop-label">Font size
         <input type="range" id="missFontSize" min="12" max="72" value="24" class="prop-range">
@@ -529,7 +529,7 @@
 <script src="js/draw.js?v=44"></script>
 <script src="js/projects.js?v=50"></script>
 <script src="js/game.js?v=48"></script>
-<script src="js/editor.js?v=49"></script>
+<script src="js/editor.js?v=50"></script>
 <script src="js/shortcuts.js?v=44"></script>
 <script src="js/menu.js?v=44"></script>
 <script src="js/app.js?v=48"></script>
